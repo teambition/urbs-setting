@@ -1,0 +1,3 @@
+addr: ":3000"
+logger:
+  level: debug
