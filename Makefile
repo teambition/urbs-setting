@@ -28,7 +28,7 @@ GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/)
 .PHONY: lint
 lint:
 	@hash golint > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
-		go get -u github.com/golang/lint/golint; \
+		go get -u golang.org/x/lint/golint; \
 	fi
 	@golint -set_exit_status ${PKG_LIST}
 
