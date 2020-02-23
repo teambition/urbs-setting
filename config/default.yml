@@ -1,3 +1,21 @@
 addr: ":3000"
 logger:
   level: debug
+mysql:
+  host: localhost:3306
+  user: root
+  password: password
+  database: urbs
+  max_idle_conns: 8
+  max_open_conns: 64
+channels:
+  - stable
+  - beta
+  - dev
+clients:
+  - web
+  - ios
+  - android
+  - windows
+  - macos
+cache_label_expire: 1m
