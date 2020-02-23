@@ -1,4 +1,4 @@
-name: Go
+name: Urbs-Setting
 on: [push]
 jobs:
 
@@ -20,8 +20,14 @@ jobs:
       run: |
         go get -v -t -d ./...
 
-    # - name: Lint
-    #   run: make lint
+    - name: Lint
+      run: | # temporary fix. See https://github.com/actions/setup-go/issues/14
+        export PATH=$PATH:$(go env GOPATH)/bin
+        go get -u golang.org/x/lint/golint
+        make lint
 
     - name: Test
       run: make test
+
+    - name: Build
+      run: make build

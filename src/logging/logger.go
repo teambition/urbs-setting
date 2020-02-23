@@ -1,17 +1,26 @@
 package logging
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/teambition/gear"
 	gearLogging "github.com/teambition/gear/logging"
 )
 
+func init() {
+	Logger.SetJSONLog()
+}
+
 // Logger ...
 var Logger = gearLogging.New(os.Stdout)
 
-func init() {
-	Logger.SetJSONLog()
+// SrvLog returns a Log with kind of server.
+func SrvLog(format string, args ...interface{}) gearLogging.Log {
+	return gearLogging.Log{
+		"kind":    "server",
+		"message": fmt.Sprintf(format, args...),
+	}
 }
 
 // SetLevel ...
