@@ -66,6 +66,8 @@ github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81P
 github.com/teambition/compressible-go v1.0.1/go.mod h1:K91wjCUqzpuY2ZpSi039mt4WzzjMGxPFMZHHTEoTvak=
 github.com/teambition/gear v1.17.1 h1:id33kg9goc2635XWWhYeRQftAQr14sMeMbtVFKAlk8I=
 github.com/teambition/gear v1.17.1/go.mod h1:VDwKqDNiJm3bZqDQwlWnl76grJWq2/KUNWa15jLVYTI=
+github.com/teambition/gear v1.18.0 h1:BHHY1xcxR8YAt7rtt1W3OAJTBdnTX5ABtEk1hU8zHu4=
+github.com/teambition/gear v1.18.0/go.mod h1:VDwKqDNiJm3bZqDQwlWnl76grJWq2/KUNWa15jLVYTI=
 github.com/teambition/gear-tracing v1.0.2 h1:Fc59uORQW3NqJMHVX2xQFdMTDOqSW8lKbJRzTnhkrbg=
 github.com/teambition/gear-tracing v1.0.2/go.mod h1:HT+AHkSldjzXifAF6/RdXjtEkP3PnTA0JyI2+8KpG0s=
 github.com/teambition/trie-mux v1.4.2 h1:HgbwXfQDsingRLzyYdxEyut3i2Z9To/GOlVZD2gKRiM=

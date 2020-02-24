@@ -9,7 +9,9 @@ import (
 func init() {
 	p := &Config
 	util.ReadConfig(p, "/etc/urbs-setting/config.yml")
-	p.init()
+	if err := p.Validate(); err != nil {
+		panic(err)
+	}
 }
 
 // Logger logger config
@@ -23,6 +25,7 @@ type SQL struct {
 	User         string `json:"user" yaml:"user"`
 	Password     string `json:"password" yaml:"password"`
 	Database     string `json:"database" yaml:"database"`
+	Parameters   string `json:"parameters" yaml:"parameters"`
 	MaxIdleConns int    `json:"max_idle_conns" yaml:"max_idle_conns"`
 	MaxOpenConns int    `json:"max_open_conns" yaml:"max_open_conns"`
 }
@@ -41,12 +44,14 @@ type ConfigTpl struct {
 	HIDKey            string   `json:"hid_key" yaml:"hid_key"`
 }
 
-func (c *ConfigTpl) init() {
+// Validate 用于完成基本的配置验证和初始化工作。业务相关的配置验证建议放到相关代码中实现，如 mysql 的配置。
+func (c *ConfigTpl) Validate() error {
 	i, err := time.ParseDuration(c.CacheLabelExpireS)
 	if err != nil || i < time.Second*10 {
 		i = time.Second * 10
 	}
 	c.CacheLabelExpire = int64(i / time.Second)
+	return nil
 }
 
 // Config ...

@@ -3,6 +3,8 @@ package service
 import (
 	"database/sql"
 	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql" // go-sql-driver
@@ -38,21 +40,29 @@ func NewDB() *SQL {
 	}
 
 	if cfg.User == "" || cfg.Password == "" || cfg.Host == "" || cfg.Database == "" {
-		logging.Panic(logging.SrvLog("Invalid SQL DB config %s:%s***@(%s)/%s", cfg.User, cfg.Password[:4], cfg.Host, cfg.Database))
+		logging.Panic(logging.SrvLog("Invalid SQL DB config %s:%s@(%s)/%s", cfg.User, cfg.Password, cfg.Host, cfg.Database))
 	}
 
+	parameters, err := url.ParseQuery(cfg.Parameters)
+	if err != nil {
+		logging.Panic(logging.SrvLog("Invalid SQL DB parameters %s", cfg.Parameters))
+	}
+	// 强制使用
+	parameters.Set("collation", "utf8mb4_general_ci")
+	parameters.Set("parseTime", "true")
+
 	// https://github.com/go-sql-driver/mysql#parameters
-	url := fmt.Sprintf(`%s:%s@(%s)/%s?collation=utf8mb4_general_ci&parseTime=true&loc=UTC&readTimeout=10s&writeTimeout=10s&timeout=10s`, cfg.User, cfg.Password, cfg.Host, cfg.Database)
+	url := fmt.Sprintf(`%s:%s@(%s)/%s?%s`, cfg.User, cfg.Password, cfg.Host, cfg.Database, parameters.Encode())
 	db, err := gorm.Open("mysql", url)
 
 	if err != nil {
-		logging.Panic(logging.SrvLog("SQL DB connect failed with config %s:%s***@(%s)/%s, msg: %s", cfg.User, cfg.Password[:4], cfg.Host, cfg.Database, err))
+		url = strings.Replace(url, cfg.Password, cfg.Password[0:4]+"***", 1)
+		logging.Panic(logging.SrvLog("SQL DB connect failed %s, with config %s", err, url))
 	}
 
 	// 表名使用单数。
 	// https://the.agilesql.club/2019/05/should-i-pluralize-table-names-is-it-person-persons-people-or-people/
 	db.SingularTable(true)
-
 	// SetMaxIdleCons 设置连接池中的最大闲置连接数。
 	db.DB().SetMaxIdleConns(cfg.MaxIdleConns)
 	// SetMaxOpenCons 设置数据库的最大连接数量。
