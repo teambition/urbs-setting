@@ -1,5 +1,6 @@
 package schema
 
+// schema 模块不要引入官方库以外的其它模块或内部模块
 import (
 	"time"
 )

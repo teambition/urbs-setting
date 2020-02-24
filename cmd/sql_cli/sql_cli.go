@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/teambition/urbs-setting/src/api"
+	"github.com/teambition/urbs-setting/src/conf"
 	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/util"
 )
@@ -25,6 +26,8 @@ func main() {
 	}
 
 	data, err := ioutil.ReadFile(*file)
+
+	conf.Config.MySQL.Database = "" // 可能数据库还未初始化
 	if err == nil {
 		err = util.DigInvoke(func(sql *service.SQL) error {
 			return sql.DB.Exec(string(data)).Error

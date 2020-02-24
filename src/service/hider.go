@@ -1,9 +1,10 @@
-package schema
+package service
 
 import (
 	"errors"
 
 	"github.com/teambition/urbs-setting/src/conf"
+	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/util"
 )
 
@@ -25,9 +26,9 @@ type hIDer struct {
 // HID 从对象的 ID 转换为 HID，如果对象无效或者 ID （int64 > 0）不合法，则返回空字符串。
 func (h *hIDer) HID(obj interface{}) string {
 	switch v := obj.(type) {
-	case *Label:
+	case *schema.Label:
 		return h.label.ToHex(v.ID)
-	case *Setting:
+	case *schema.Setting:
 		return h.setting.ToHex(v.ID)
 	default:
 		return ""
@@ -38,13 +39,13 @@ func (h *hIDer) HID(obj interface{}) string {
 func (h *hIDer) PutHID(obj interface{}, hid string) error {
 	var id int64 = -1
 	switch v := obj.(type) {
-	case *Label:
+	case *schema.Label:
 		if id = h.label.ToInt64(hid); id > 0 {
 			v.ID = id
 			return nil
 		}
 
-	case *Setting:
+	case *schema.Setting:
 		if id = h.setting.ToInt64(hid); id > 0 {
 			v.ID = id
 			return nil

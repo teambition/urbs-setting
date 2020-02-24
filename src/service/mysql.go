@@ -39,7 +39,7 @@ func NewDB() *SQL {
 		cfg.MaxOpenConns = 64
 	}
 
-	if cfg.User == "" || cfg.Password == "" || cfg.Host == "" || cfg.Database == "" {
+	if cfg.User == "" || cfg.Password == "" || cfg.Host == "" {
 		logging.Panic(logging.SrvLog("Invalid SQL DB config %s:%s@(%s)/%s", cfg.User, cfg.Password, cfg.Host, cfg.Database))
 	}
 

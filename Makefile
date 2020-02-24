@@ -5,10 +5,10 @@ APP_VERSION := $(shell git describe --tags --always --match "v[0-9]*")
 APP_PATH := $(shell echo ${PWD} | sed -e "s\#${GOPATH}/src/\#\#g")
 
 dev:
-	@CONFIG_FILE_PATH=${PWD}/config/default.yml go run main.go
+	@CONFIG_FILE_PATH=${PWD}/config/default.yml APP_ENV=development go run main.go
 
 test:
-	@CONFIG_FILE_PATH=${PWD}/config/test-local.yml go test -v ./...
+	@CONFIG_FILE_PATH=${PWD}/config/test-local.yml APP_ENV=test go test -v ./...
 
 BUILD_TIME := $(shell date -u +"%FT%TZ")
 BUILD_COMMIT := $(shell git rev-parse HEAD)
