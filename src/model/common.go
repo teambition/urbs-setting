@@ -11,24 +11,24 @@ func init() {
 
 // Models ...
 type Models struct {
-	Healthz *healthz
-	User    *user
-	Group   *group
-	Product *product
-	Label   *label
-	Module  *module
-	Setting *setting
+	Healthz *Healthz
+	User    *User
+	Group   *Group
+	Product *Product
+	Label   *Label
+	Module  *Module
+	Setting *Setting
 }
 
 // NewModels ...
 func NewModels(sql *service.SQL) *Models {
 	return &Models{
-		Healthz: &healthz{DB: sql.DB},
-		User:    &user{DB: sql.DB},
-		Group:   &group{DB: sql.DB},
-		Product: &product{DB: sql.DB},
-		Label:   &label{DB: sql.DB},
-		Module:  &module{DB: sql.DB},
-		Setting: &setting{DB: sql.DB},
+		Healthz: &Healthz{DB: sql.DB},
+		User:    &User{DB: sql.DB},
+		Group:   &Group{DB: sql.DB},
+		Product: &Product{DB: sql.DB},
+		Label:   &Label{DB: sql.DB},
+		Module:  &Module{DB: sql.DB},
+		Setting: &Setting{DB: sql.DB},
 	}
 }

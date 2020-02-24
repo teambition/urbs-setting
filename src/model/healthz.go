@@ -7,10 +7,12 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-type healthz struct {
+// Healthz ...
+type Healthz struct {
 	DB *gorm.DB
 }
 
-func (m *healthz) DBStats(ctx context.Context) sql.DBStats {
+// DBStats ...
+func (m *Healthz) DBStats(ctx context.Context) sql.DBStats {
 	return m.DB.DB().Stats()
 }

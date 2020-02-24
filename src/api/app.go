@@ -37,6 +37,8 @@ func GetVersion() map[string]string {
 func NewApp() *gear.App {
 	app := gear.New()
 
+	app.Set(gear.SetTrustedProxy, true)
+	app.Set(gear.SetBodyParser, gear.DefaultBodyParser(2<<22)) // 8MB
 	// ignore TLS handshake error
 	app.Set(gear.SetLogger, log.New(gear.DefaultFilterWriter(), "", 0))
 

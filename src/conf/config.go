@@ -54,5 +54,10 @@ func (c *ConfigTpl) Validate() error {
 	return nil
 }
 
+// IsCacheLabelExpired 判断用户缓存的 labels 是否超过有效期
+func (c *ConfigTpl) IsCacheLabelExpired(now, activeAt int64) bool {
+	return now-activeAt > c.CacheLabelExpire
+}
+
 // Config ...
 var Config ConfigTpl

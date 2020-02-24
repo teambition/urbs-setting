@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/teambition/gear"
+	"github.com/teambition/urbs-setting/src/conf"
 	"github.com/teambition/urbs-setting/src/model"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/tpl"
@@ -14,20 +16,20 @@ type User struct {
 	ms *model.Models
 }
 
-// GetLables ...
-func (b *User) GetLables(ctx context.Context, uid, product, client, channel string) (*tpl.LabelsResponse, error) {
+// GetLablesInCache ...
+func (b *User) GetLablesInCache(ctx context.Context, uid, product, client, channel string) (*tpl.CacheLabelsRes, error) {
 	user, err := b.ms.User.FindByUID(ctx, uid, "id, `uid`, `active_at`, `labels`")
 	if err != nil {
 		return nil, err
 	}
 
-	res := &tpl.LabelsResponse{Result: []schema.UserLabelInfo{}}
+	res := &tpl.CacheLabelsRes{Result: []schema.UserCacheLabel{}}
 	if user == nil {
 		return res, nil // user 不存在，返回空
 	}
 
 	now := time.Now().UTC().Unix()
-	if user.IsStale(now) {
+	if conf.Config.IsCacheLabelExpired(now, user.ActiveAt) {
 		// user 上缓存的 labels 过期，则刷新获取最新，RefreshUser 要考虑并发场景
 		user.Labels, err = b.ms.User.RefreshLabels(ctx, user.ID, now)
 		if err != nil {
@@ -36,7 +38,7 @@ func (b *User) GetLables(ctx context.Context, uid, product, client, channel stri
 	}
 
 	labels := user.GetLabels()
-	res.Result = make([]schema.UserLabelInfo, 0, len(labels))
+	res.Result = make([]schema.UserCacheLabel, 0, len(labels))
 	for _, l := range labels {
 		if l.Product == product {
 			if client != "" && l.Client != "" && l.Client != client {
@@ -56,4 +58,34 @@ func (b *User) GetLables(ctx context.Context, uid, product, client, channel stri
 func (b *User) CheckExists(ctx context.Context, uid string) bool {
 	user, _ := b.ms.User.FindByUID(ctx, uid, "id")
 	return user != nil
+}
+
+// BatchAdd ...
+func (b *User) BatchAdd(ctx context.Context, users []tpl.AddUser) error {
+	uids := make([]string, len(users))
+	for i, user := range users {
+		uids[i] = user.UID
+	}
+
+	return b.ms.User.BatchAdd(ctx, uids)
+}
+
+// RemoveLable ...
+func (b *User) RemoveLable(ctx context.Context, uid string, lableID int64) error {
+	user, _ := b.ms.User.FindByUID(ctx, uid, "id")
+	if user == nil {
+		return gear.ErrNotFound.WithMsgf("User not found: %s", uid)
+	}
+
+	return b.ms.User.RemoveLable(ctx, user.ID, lableID)
+}
+
+// RemoveSetting ...
+func (b *User) RemoveSetting(ctx context.Context, uid string, settingID int64) error {
+	user, _ := b.ms.User.FindByUID(ctx, uid, "id")
+	if user == nil {
+		return gear.ErrNotFound.WithMsgf("User not found: %s", uid)
+	}
+
+	return b.ms.User.RemoveSetting(ctx, user.ID, settingID)
 }

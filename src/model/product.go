@@ -2,7 +2,8 @@ package model
 
 import "github.com/jinzhu/gorm"
 
-type product struct {
+// Product ...
+type Product struct {
 	DB *gorm.DB
 }
 

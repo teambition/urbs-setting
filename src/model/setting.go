@@ -2,7 +2,8 @@ package model
 
 import "github.com/jinzhu/gorm"
 
-type setting struct {
+// Setting ...
+type Setting struct {
 	DB *gorm.DB
 }
 
