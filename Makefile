@@ -13,7 +13,7 @@ test:
 BUILD_TIME := $(shell date -u +"%FT%TZ")
 BUILD_COMMIT := $(shell git rev-parse HEAD)
 
-.PHONY: build
+.PHONY: build build-tool
 build:
 	@mkdir -p ./dist
 	GO111MODULE=on go build -ldflags "-X ${APP_PATH}/src/api.AppName=${APP_NAME} \
@@ -21,6 +21,13 @@ build:
 	-X ${APP_PATH}/src/api.BuildTime=${BUILD_TIME} \
 	-X ${APP_PATH}/src/api.GitSHA1=${BUILD_COMMIT}" \
 	-o ./dist/urbs-setting main.go
+build-tool:
+	@mkdir -p ./dist
+	GO111MODULE=on go build -ldflags "-X ${APP_PATH}/src/api.AppName=${APP_NAME} \
+	-X ${APP_PATH}/src/api.AppVersion=${APP_VERSION} \
+	-X ${APP_PATH}/src/api.BuildTime=${BUILD_TIME} \
+	-X ${APP_PATH}/src/api.GitSHA1=${BUILD_COMMIT}" \
+	-o ./dist/sql-cli cmd/sql_cli/sql_cli.go
 
 PKG_LIST := $(shell go list ./... | grep -v /vendor/)
 GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/)

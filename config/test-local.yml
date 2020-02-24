@@ -2,10 +2,11 @@ addr: ":3000"
 logger:
   level: debug
 mysql:
-  host: localhost:3306
+  host: mysql:13306
   user: root
   password: password
   database: urbs
+  parameters: loc=UTC&readTimeout=10s&writeTimeout=10s&timeout=10s&multiStatements=true
   max_idle_conns: 8
   max_open_conns: 64
 channels:
