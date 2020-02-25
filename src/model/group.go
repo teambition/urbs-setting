@@ -17,12 +17,14 @@ type Group struct {
 
 // FindByUID 根据 uid 返回 user 数据
 func (m *Group) FindByUID(ctx context.Context, uid string, selectStr string) (*schema.Group, error) {
+	var err error
 	group := &schema.Group{UID: uid}
 	if selectStr == "" {
-		selectStr = "id"
+		err = m.DB.Take(group).Error
+	} else {
+		err = m.DB.Select(selectStr).Take(group).Error
 	}
 
-	err := m.DB.Select(selectStr).Take(group).Error
 	if err == nil {
 		return group, nil
 	}
@@ -33,7 +35,7 @@ func (m *Group) FindByUID(ctx context.Context, uid string, selectStr string) (*s
 	return nil, err
 }
 
-const groupLabelSQL = "select t2.`id`, t2.`name`, t2.`desc`, t3.`name` as `product` " +
+const groupLabelSQL = "select t2.`id`, t2.`name`, t2.`desc`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
 	"from `group_label` t1, `label` t2, `product` t3 " +
 	"where t1.`group_id` = ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.id " +
 	"order by t1.`created_at` desc " +
@@ -52,7 +54,7 @@ func (m *Group) GetLables(ctx context.Context, groupID int64, product string) ([
 	for rows.Next() {
 		label := schema.Label{}
 		labelInfo := tpl.LabelInfo{}
-		if err := rows.Scan(&label.ID, &labelInfo.Name, &labelInfo.Desc, &labelInfo.Product); err != nil {
+		if err := rows.Scan(&label.ID, &labelInfo.Name, &labelInfo.Desc, &labelInfo.Channels, &labelInfo.Clients, &labelInfo.Product); err != nil {
 			return nil, err
 		}
 		labelInfo.HID = service.HIDer.HID(&label)
@@ -63,7 +65,7 @@ func (m *Group) GetLables(ctx context.Context, groupID int64, product string) ([
 }
 
 // BatchAdd 批量添加群组
-func (m *Group) BatchAdd(ctx context.Context, groups []tpl.AddGroup) error {
+func (m *Group) BatchAdd(ctx context.Context, groups []tpl.GroupBody) error {
 	if len(groups) == 0 {
 		return nil
 	}
@@ -83,17 +85,17 @@ func (m *Group) BatchAdd(ctx context.Context, groups []tpl.AddGroup) error {
 	return nil
 }
 
-const batchAddAroupMembersSQL = "insert ignore into `user_group` (`user_id`, `group_id`, `sync_at`) " +
-	"select `user`.id, ?, ? from `user` where `user`.uid in ( ? )" +
+const batchAddGroupMemberSQL = "insert ignore into `user_group` (`user_id`, `group_id`, `sync_at`) " +
+	"select `user`.id, ?, ? from `user` where `user`.uid in ( ? ) " +
 	"on duplicate key update `sync_at` = values(`sync_at`)"
 
 // BatchAddMembers 批量添加群组成员，已存在则更新 sync_at
-func (m *Group) BatchAddMembers(ctx context.Context, group *schema.Group, uids []string) error {
-	if len(uids) == 0 {
+func (m *Group) BatchAddMembers(ctx context.Context, group *schema.Group, users []string) error {
+	if len(users) == 0 {
 		return nil
 	}
 
-	return m.DB.Exec(batchAddAroupMembersSQL, group.ID, group.SyncAt, uids).Error
+	return m.DB.Exec(batchAddGroupMemberSQL, group.ID, group.SyncAt, users).Error
 }
 
 // RemoveMembers 删除群组的成员

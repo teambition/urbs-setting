@@ -4,24 +4,19 @@ import (
 	"github.com/teambition/gear"
 )
 
-// BatchAddUsers ...
-type BatchAddUsers struct {
-	Users []AddUser `json:"users"`
-}
-
-// AddUser ...
-type AddUser struct {
-	UID string `json:"uid"`
+// UsersBody ...
+type UsersBody struct {
+	Users []string `json:"users"`
 }
 
 // Validate 实现 gear.BodyTemplate。
-func (t *BatchAddUsers) Validate() error {
+func (t *UsersBody) Validate() error {
 	if len(t.Users) == 0 {
 		return gear.ErrBadRequest.WithMsg("users emtpy")
 	}
-	for _, u := range t.Users {
-		if !validIDNameReg.MatchString(u.UID) {
-			return gear.ErrBadRequest.WithMsgf("invalid uid: %s", u.UID)
+	for _, uid := range t.Users {
+		if !validIDNameReg.MatchString(uid) {
+			return gear.ErrBadRequest.WithMsgf("invalid user: %s", uid)
 		}
 	}
 	return nil

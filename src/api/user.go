@@ -15,7 +15,7 @@ type User struct {
 
 // GetLablesInCache ..
 func (a *User) GetLablesInCache(ctx *gear.Context) error {
-	req := tpl.QueryLabel{}
+	req := tpl.LabelsURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
@@ -40,18 +40,18 @@ func (a *User) GetSettings(ctx *gear.Context) error {
 
 // CheckExists ..
 func (a *User) CheckExists(ctx *gear.Context) error {
-	req := tpl.UIDHIDReq{}
+	req := tpl.UIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res := tpl.ResponseType{Result: a.blls.User.CheckExists(ctx, req.UID)}
+	res := tpl.BoolRes{Result: a.blls.User.CheckExists(ctx, req.UID)}
 	return ctx.OkJSON(res)
 }
 
 // BatchAdd ..
 func (a *User) BatchAdd(ctx *gear.Context) error {
-	req := tpl.BatchAddUsers{}
+	req := tpl.UsersBody{}
 	if err := ctx.ParseBody(&req); err != nil {
 		return err
 	}
@@ -60,12 +60,12 @@ func (a *User) BatchAdd(ctx *gear.Context) error {
 		return err
 	}
 
-	return ctx.OkJSON(tpl.ResponseType{Result: true})
+	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }
 
 // RemoveLable ..
 func (a *User) RemoveLable(ctx *gear.Context) error {
-	req := tpl.UIDHIDReq{}
+	req := tpl.UIDHIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (a *User) RemoveLable(ctx *gear.Context) error {
 	if err := a.blls.User.RemoveLable(ctx, req.UID, label.ID); err != nil {
 		return err
 	}
-	return ctx.OkJSON(tpl.ResponseType{Result: true})
+	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }
 
 // UpdateSetting ..
@@ -87,7 +87,7 @@ func (a *User) UpdateSetting(ctx *gear.Context) error {
 
 // RemoveSetting ..
 func (a *User) RemoveSetting(ctx *gear.Context) error {
-	req := tpl.UIDHIDReq{}
+	req := tpl.UIDHIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
@@ -98,5 +98,5 @@ func (a *User) RemoveSetting(ctx *gear.Context) error {
 	if err := a.blls.User.RemoveSetting(ctx, req.UID, setting.ID); err != nil {
 		return err
 	}
-	return ctx.OkJSON(tpl.ResponseType{Result: true})
+	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }

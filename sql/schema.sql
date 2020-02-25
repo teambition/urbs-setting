@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS `urbs`.`product` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `deleted_at` datetime DEFAULT NULL,
+  `offline_at` datetime DEFAULT NULL,
   `name` varchar(63) NOT NULL,
   `desc` varchar(1023) NOT NULL DEFAULT '',
   `status` bigint NOT NULL  DEFAULT 0,
@@ -45,6 +46,8 @@ CREATE TABLE IF NOT EXISTS `urbs`.`label` (
   `product_id` bigint NOT NULL,
   `name` varchar(63) NOT NULL,
   `desc` varchar(1023) NOT NULL DEFAULT '',
+  `channels` varchar(255) NOT NULL DEFAULT '', -- split by comma
+  `clients` varchar(255) NOT NULL DEFAULT '', -- split by comma
   `status` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_label_product_id_name` (`product_id`,`name`)
@@ -71,8 +74,9 @@ CREATE TABLE IF NOT EXISTS `urbs`.`setting` (
   `module_id` bigint NOT NULL,
   `name` varchar(63) NOT NULL,
   `desc` varchar(1023) NOT NULL DEFAULT '',
-  `clients` varchar(1023) NOT NULL DEFAULT '',
-  `values` varchar(1023) NOT NULL DEFAULT '',
+  `channels` varchar(255) NOT NULL DEFAULT '', -- split by comma
+  `clients` varchar(255) NOT NULL DEFAULT '', -- split by comma
+  `values` varchar(1023) NOT NULL DEFAULT '', -- split by comma
   `status` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_setting_module_id_name` (`module_id`,`name`)
@@ -94,8 +98,6 @@ CREATE TABLE IF NOT EXISTS `urbs`.`user_label` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `user_id` bigint NOT NULL,
   `label_id` bigint NOT NULL,
-  `channel` varchar(31) NOT NULL DEFAULT '',
-  `client` varchar(31) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `idx_user_label_user_id` (`user_id`),
   KEY `idx_user_label_label_id` (`label_id`)
@@ -107,8 +109,6 @@ CREATE TABLE IF NOT EXISTS `urbs`.`user_setting` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `user_id` bigint NOT NULL,
   `setting_id` bigint NOT NULL,
-  `channel` varchar(31) NOT NULL DEFAULT '',
-  `client` varchar(31) NOT NULL DEFAULT '',
   `value` varchar(255) NOT NULL DEFAULT '',
   `last_value` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
