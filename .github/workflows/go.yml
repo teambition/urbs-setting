@@ -10,10 +10,7 @@ jobs:
         image: mysql:5.7
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
         env:
-          MYSQL_USER: root
           MYSQL_ROOT_PASSWORD: password
-        # ports:
-        #   - 13306:3306
     steps:
     - name: Set up Go 1.13
       uses: actions/setup-go@v1
