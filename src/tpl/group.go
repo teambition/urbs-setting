@@ -53,7 +53,7 @@ func (t *RemoveGroupMembersURL) Validate() error {
 	} else if t.SyncLt != 0 {
 		if t.SyncLt < 0 || t.SyncLt > (time.Now().UTC().Unix()+3600) {
 			// 较大的 SyncLt 可以删除整个群组成员！+3600 是防止把毫秒当秒用
-			return gear.ErrBadRequest.WithMsgf("invalid sync_lt: %s", t.SyncLt)
+			return gear.ErrBadRequest.WithMsgf("invalid sync_lt: %d", t.SyncLt)
 		}
 	} else {
 		return gear.ErrBadRequest.WithMsg("user or sync_lt required")
