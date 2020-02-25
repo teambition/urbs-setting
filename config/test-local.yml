@@ -4,7 +4,7 @@ logger:
 mysql:
   host: localhost:3306
   user: root
-  password: password
+  password: urbspassword
   database: urbs
   parameters: loc=UTC&readTimeout=10s&writeTimeout=10s&timeout=10s&multiStatements=true
   max_idle_conns: 8
