@@ -2,7 +2,7 @@ addr: ":3000"
 logger:
   level: debug
 mysql:
-  host: mysql:13306
+  host: localhost:3306
   user: root
   password: password
   database: urbs

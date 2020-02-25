@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/bll"
+	"github.com/teambition/urbs-setting/src/tpl"
 )
 
 // Module ..
@@ -11,21 +12,59 @@ type Module struct {
 }
 
 // List ..
-func (g *Module) List(ctx *gear.Context) error {
-	return nil
+func (a *Module) List(ctx *gear.Context) error {
+	req := tpl.ProductURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+	res, err := a.blls.Module.List(ctx, req.Product)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
 }
 
 // Create ..
-func (g *Module) Create(ctx *gear.Context) error {
-	return nil
+func (a *Module) Create(ctx *gear.Context) error {
+	req := tpl.ProductURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	body := tpl.NameDescBody{}
+	if err := ctx.ParseBody(&body); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Module.Create(ctx, req.Product, body.Name, body.Desc)
+	if err != nil {
+		return err
+	}
+
+	return ctx.OkJSON(res)
 }
 
 // Update ..
-func (g *Module) Update(ctx *gear.Context) error {
+func (a *Module) Update(ctx *gear.Context) error {
+	// TODO
 	return nil
 }
 
-// Delete ..
-func (g *Module) Delete(ctx *gear.Context) error {
+// Offline ..
+func (a *Module) Offline(ctx *gear.Context) error {
+	req := tpl.ProductModuleURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+	res, err := a.blls.Module.Offline(ctx, req.Product, req.Module)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
+// Online ..
+func (a *Module) Online(ctx *gear.Context) error {
+	// TODO
 	return nil
 }

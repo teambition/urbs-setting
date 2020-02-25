@@ -40,17 +40,12 @@ func (b *Group) CheckExists(ctx context.Context, uid string) bool {
 }
 
 // BatchAdd ...
-func (b *Group) BatchAdd(ctx context.Context, groups []tpl.AddGroup) error {
+func (b *Group) BatchAdd(ctx context.Context, groups []tpl.GroupBody) error {
 	return b.ms.Group.BatchAdd(ctx, groups)
 }
 
 // BatchAddMembers ...
-func (b *Group) BatchAddMembers(ctx context.Context, uid string, users []tpl.AddUser) error {
-	uids := make([]string, len(users))
-	for i, user := range users {
-		uids[i] = user.UID
-	}
-
+func (b *Group) BatchAddMembers(ctx context.Context, uid string, users []string) error {
 	group, err := b.ms.Group.FindByUID(ctx, uid, "id, `sync_at`")
 	if err != nil {
 		return err
@@ -59,7 +54,7 @@ func (b *Group) BatchAddMembers(ctx context.Context, uid string, users []tpl.Add
 		return gear.ErrNotFound.WithMsgf("group %s not found", uid)
 	}
 
-	return b.ms.Group.BatchAddMembers(ctx, group, uids)
+	return b.ms.Group.BatchAddMembers(ctx, group, users)
 }
 
 // RemoveMembers ...

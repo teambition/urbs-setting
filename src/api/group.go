@@ -15,7 +15,7 @@ type Group struct {
 
 // GetLables ..
 func (a *Group) GetLables(ctx *gear.Context) error {
-	req := tpl.QueryLabel{}
+	req := tpl.LabelsURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
@@ -36,18 +36,18 @@ func (a *Group) GetSettings(ctx *gear.Context) error {
 
 // CheckExists ..
 func (a *Group) CheckExists(ctx *gear.Context) error {
-	req := tpl.UIDHIDReq{}
+	req := tpl.UIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res := tpl.ResponseType{Result: a.blls.Group.CheckExists(ctx, req.UID)}
+	res := tpl.BoolRes{Result: a.blls.Group.CheckExists(ctx, req.UID)}
 	return ctx.OkJSON(res)
 }
 
 // BatchAdd ..
 func (a *Group) BatchAdd(ctx *gear.Context) error {
-	req := tpl.BatchAddGroups{}
+	req := tpl.GroupsBody{}
 	if err := ctx.ParseBody(&req); err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (a *Group) BatchAdd(ctx *gear.Context) error {
 		return err
 	}
 
-	return ctx.OkJSON(tpl.ResponseType{Result: true})
+	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }
 
 // Update ..
@@ -73,12 +73,12 @@ func (a *Group) Delete(ctx *gear.Context) error {
 
 // BatchAddMembers ..
 func (a *Group) BatchAddMembers(ctx *gear.Context) error {
-	req := tpl.UIDHIDReq{}
+	req := tpl.UIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	body := tpl.BatchAddUsers{}
+	body := tpl.UsersBody{}
 	if err := ctx.ParseBody(&body); err != nil {
 		return err
 	}
@@ -87,12 +87,12 @@ func (a *Group) BatchAddMembers(ctx *gear.Context) error {
 		return err
 	}
 
-	return ctx.OkJSON(tpl.ResponseType{Result: true})
+	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }
 
 // RemoveMembers ..
 func (a *Group) RemoveMembers(ctx *gear.Context) error {
-	req := tpl.RemoveGroupMembers{}
+	req := tpl.RemoveGroupMembersURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
@@ -100,12 +100,12 @@ func (a *Group) RemoveMembers(ctx *gear.Context) error {
 		return err
 	}
 
-	return ctx.OkJSON(tpl.ResponseType{Result: true})
+	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }
 
 // RemoveLable ..
 func (a *Group) RemoveLable(ctx *gear.Context) error {
-	req := tpl.UIDHIDReq{}
+	req := tpl.UIDHIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (a *Group) RemoveLable(ctx *gear.Context) error {
 	if err := a.blls.Group.RemoveLable(ctx, req.UID, label.ID); err != nil {
 		return err
 	}
-	return ctx.OkJSON(tpl.ResponseType{Result: true})
+	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }
 
 // UpdateSetting ..
@@ -127,7 +127,7 @@ func (a *Group) UpdateSetting(ctx *gear.Context) error {
 
 // RemoveSetting ..
 func (a *Group) RemoveSetting(ctx *gear.Context) error {
-	req := tpl.UIDHIDReq{}
+	req := tpl.UIDHIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
@@ -138,5 +138,5 @@ func (a *Group) RemoveSetting(ctx *gear.Context) error {
 	if err := a.blls.Group.RemoveSetting(ctx, req.UID, setting.ID); err != nil {
 		return err
 	}
-	return ctx.OkJSON(tpl.ResponseType{Result: true})
+	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }

@@ -2,6 +2,7 @@ package bll
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/teambition/gear"
@@ -17,13 +18,13 @@ type User struct {
 }
 
 // GetLablesInCache ...
-func (b *User) GetLablesInCache(ctx context.Context, uid, product, client, channel string) (*tpl.CacheLabelsRes, error) {
+func (b *User) GetLablesInCache(ctx context.Context, uid, product, client, channel string) (*tpl.CacheLabelsInfoRes, error) {
 	user, err := b.ms.User.FindByUID(ctx, uid, "id, `uid`, `active_at`, `labels`")
 	if err != nil {
 		return nil, err
 	}
 
-	res := &tpl.CacheLabelsRes{Result: []schema.UserCacheLabel{}}
+	res := &tpl.CacheLabelsInfoRes{Result: []schema.UserCacheLabel{}}
 	if user == nil {
 		return res, nil // user 不存在，返回空
 	}
@@ -41,10 +42,10 @@ func (b *User) GetLablesInCache(ctx context.Context, uid, product, client, chann
 	res.Result = make([]schema.UserCacheLabel, 0, len(labels))
 	for _, l := range labels {
 		if l.Product == product {
-			if client != "" && l.Client != "" && l.Client != client {
+			if client != "" && l.Clients != "" && !strings.Contains(l.Clients, client) {
 				continue
 			}
-			if channel != "" && l.Channel != "" && l.Channel != channel {
+			if channel != "" && l.Channels != "" && !strings.Contains(l.Channels, channel) {
 				continue
 			}
 			r := l
@@ -61,13 +62,8 @@ func (b *User) CheckExists(ctx context.Context, uid string) bool {
 }
 
 // BatchAdd ...
-func (b *User) BatchAdd(ctx context.Context, users []tpl.AddUser) error {
-	uids := make([]string, len(users))
-	for i, user := range users {
-		uids[i] = user.UID
-	}
-
-	return b.ms.User.BatchAdd(ctx, uids)
+func (b *User) BatchAdd(ctx context.Context, users []string) error {
+	return b.ms.User.BatchAdd(ctx, users)
 }
 
 // RemoveLable ...

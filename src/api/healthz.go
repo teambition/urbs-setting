@@ -11,8 +11,8 @@ type Healthz struct {
 }
 
 // Get ..
-func (h *Healthz) Get(ctx *gear.Context) error {
+func (a *Healthz) Get(ctx *gear.Context) error {
 	return ctx.OkJSON(map[string]interface{}{
-		"sql_db": h.blls.Models.Healthz.DBStats(ctx),
+		"sql_db": a.blls.Models.Healthz.DBStats(ctx),
 	})
 }

@@ -12,8 +12,8 @@ jobs:
         env:
           MYSQL_USER: root
           MYSQL_ROOT_PASSWORD: password
-        ports:
-          - 13306:3306
+        # ports:
+        #   - 13306:3306
     steps:
     - name: Set up Go 1.13
       uses: actions/setup-go@v1
