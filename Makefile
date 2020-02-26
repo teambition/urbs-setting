@@ -8,7 +8,7 @@ dev:
 	@CONFIG_FILE_PATH=${PWD}/config/default.yml APP_ENV=development go run main.go
 
 test:
-	@CONFIG_FILE_PATH=${PWD}/config/test-local.yml APP_ENV=test go test -v ./...
+	@CONFIG_FILE_PATH=${PWD}/config/test.yml APP_ENV=test go test -v ./...
 
 BUILD_TIME := $(shell date -u +"%FT%TZ")
 BUILD_COMMIT := $(shell git rev-parse HEAD)

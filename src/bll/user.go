@@ -17,8 +17,8 @@ type User struct {
 	ms *model.Models
 }
 
-// GetLablesInCache ...
-func (b *User) GetLablesInCache(ctx context.Context, uid, product, client, channel string) (*tpl.CacheLabelsInfoRes, error) {
+// ListLablesInCache ...
+func (b *User) ListLablesInCache(ctx context.Context, uid, product, client, channel string) (*tpl.CacheLabelsInfoRes, error) {
 	user, err := b.ms.User.FindByUID(ctx, uid, "id, `uid`, `active_at`, `labels`")
 	if err != nil {
 		return nil, err

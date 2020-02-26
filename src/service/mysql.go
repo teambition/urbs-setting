@@ -63,6 +63,7 @@ func NewDB() *SQL {
 	// 表名使用单数。
 	// https://the.agilesql.club/2019/05/should-i-pluralize-table-names-is-it-person-persons-people-or-people/
 	db.SingularTable(true)
+	db.LogMode(true)
 	// SetMaxIdleCons 设置连接池中的最大闲置连接数。
 	db.DB().SetMaxIdleConns(cfg.MaxIdleConns)
 	// SetMaxOpenCons 设置数据库的最大连接数量。

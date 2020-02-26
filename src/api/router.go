@@ -51,9 +51,9 @@ func newRouters(apis *APIs) []*gear.Router {
 
 	// ***** user ******
 	// 读取指定用户的灰度标签，支持条件筛选，返回轻量级 labels，用于网关
-	routerV1.Get("/users/:uid/labels:cache", apis.User.GetLablesInCache)
+	routerV1.Get("/users/:uid/labels:cache", apis.User.ListLablesInCache)
 	// 读取指定用户的功能配置项，支持条件筛选
-	routerV1.Get("/users/:uid/settings", apis.User.GetSettings)
+	routerV1.Get("/users/:uid/settings", apis.User.ListSettings)
 	// 查询指定用户是否存在
 	routerV1.Get("/users/:uid+:exists", apis.User.CheckExists)
 	// 批量添加用户
@@ -67,9 +67,11 @@ func newRouters(apis *APIs) []*gear.Router {
 
 	// ***** group ******
 	// 读取指定群组的灰度标签，支持条件筛选
-	routerV1.Get("/groups/:uid/labels", apis.Group.GetLables)
+	routerV1.Get("/groups/:uid/labels", apis.Group.ListLables)
 	// 读取指定群组的功能配置项，支持条件筛选
-	routerV1.Get("/groups/:uid/settings", apis.Group.GetSettings)
+	routerV1.Get("/groups/:uid/settings", apis.Group.ListSettings)
+	// 读取群组列表，支持条件筛选
+	routerV1.Get("/groups", apis.Group.List)
 	// 查询指定群组是否存在
 	routerV1.Get("/groups/:uid+:exists", apis.Group.CheckExists)
 	// 批量添加群组
@@ -78,6 +80,8 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Put("/groups/:uid", apis.Group.Update)
 	// 删除指定群组
 	routerV1.Delete("/groups/:uid", apis.Group.Delete)
+	// 读取群组成员列表，支持条件筛选
+	routerV1.Get("/groups/:uid/members", apis.Group.ListMembers)
 	// 指定群组批量添加成员
 	routerV1.Post("/groups/:uid/members:batch", apis.Group.BatchAddMembers)
 	// 指定群组根据条件清理成员
@@ -136,6 +140,8 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Post("/products/:product/labels", apis.Label.Create)
 	// 更新指定产品灰度标签
 	routerV1.Put("/products/:product/labels/:label", apis.Label.Update)
+	// 更新指定产品灰度标签
+	routerV1.Delete("/products/:product/labels/:label", apis.Label.Delete)
 	// 下线指定产品灰度标签
 	routerV1.Put("/products/:product/labels/:label+:offline", apis.Label.Offline)
 	// 重新上线指定产品灰度标签

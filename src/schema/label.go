@@ -8,11 +8,11 @@ import (
 // Label 详见 ./sql/schema.sql table `label`
 // 灰度标签
 type Label struct {
-	ID        int64      `gorm:"column:id" json:"-"`
+	ID        int64      `gorm:"column:id" json:"id"`
 	CreatedAt time.Time  `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time  `gorm:"column:updated_at" json:"updated_at"`
 	OfflineAt *time.Time `gorm:"column:offline_at" json:"offline_at"` // 计划下线时间，用于灰度管理
-	ProductID int64      `gorm:"column:product_id" json:"-"`          // 所从属的产品线 ID
+	ProductID int64      `gorm:"column:product_id" json:"product_id"` // 所从属的产品线 ID
 	Name      string     `gorm:"column:name" json:"name"`             // varchar(63) 灰度标签名称，产品线内唯一
 	Desc      string     `gorm:"column:desc" json:"desc"`             // varchar(1023) 灰度标签描述
 	Channels  string     `gorm:"column:channels" json:"channels"`     // varchar(255) 标签适用的版本通道，未配置表示都适用

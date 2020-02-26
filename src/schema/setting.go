@@ -8,11 +8,11 @@ import (
 // Setting 详见 ./sql/schema.sql table `setting`
 // 功能模块的配置项
 type Setting struct {
-	ID        int64      `gorm:"column:id" json:"-"`
+	ID        int64      `gorm:"column:id" json:"id"`
 	CreatedAt time.Time  `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time  `gorm:"column:updated_at" json:"updated_at"`
 	OfflineAt *time.Time `gorm:"column:offline_at" json:"offline_at"` // 计划下线时间，用于灰度管理
-	ModuleID  int64      `gorm:"column:module_id" json:"-"`           // 配置项所从属的功能模块 ID
+	ModuleID  int64      `gorm:"column:module_id" json:"module_id"`   // 配置项所从属的功能模块 ID
 	Name      string     `gorm:"column:name" json:"name"`             // varchar(63) 配置项名称，功能模块内唯一
 	Desc      string     `gorm:"column:desc" json:"desc"`             // varchar(1023) 配置项描述信息
 	Channels  string     `gorm:"column:channels" json:"channels"`     // varchar(255) 配置项适用的版本通道，未配置表示都适用

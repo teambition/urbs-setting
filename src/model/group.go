@@ -18,11 +18,13 @@ type Group struct {
 // FindByUID 根据 uid 返回 user 数据
 func (m *Group) FindByUID(ctx context.Context, uid string, selectStr string) (*schema.Group, error) {
 	var err error
-	group := &schema.Group{UID: uid}
+	group := &schema.Group{}
+	db := m.DB.Where("uid = ?", uid)
+
 	if selectStr == "" {
-		err = m.DB.Take(group).Error
+		err = db.First(group).Error
 	} else {
-		err = m.DB.Select(selectStr).Take(group).Error
+		err = db.Select(selectStr).First(group).Error
 	}
 
 	if err == nil {
@@ -35,16 +37,23 @@ func (m *Group) FindByUID(ctx context.Context, uid string, selectStr string) (*s
 	return nil, err
 }
 
-const groupLabelSQL = "select t2.`id`, t2.`name`, t2.`desc`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
+// Find 根据条件查找 groups
+func (m *Group) Find(ctx context.Context) ([]schema.Group, error) {
+	groups := make([]schema.Group, 0)
+	err := m.DB.Order("`created_at`").Limit(1000).Find(&groups).Error
+	return groups, err
+}
+
+const groupLabelsSQL = "select t2.`id`, t2.`name`, t2.`desc`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
 	"from `group_label` t1, `label` t2, `product` t3 " +
 	"where t1.`group_id` = ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.id " +
 	"order by t1.`created_at` desc " +
 	"limit 1000"
 
-// GetLables 根据群组 ID 返回其 labels 数据。TODO：支持更多筛选条件和分页
-func (m *Group) GetLables(ctx context.Context, groupID int64, product string) ([]tpl.LabelInfo, error) {
+// FindLables 根据群组 ID 返回其 labels 数据。TODO：支持更多筛选条件和分页
+func (m *Group) FindLables(ctx context.Context, groupID int64, product string) ([]tpl.LabelInfo, error) {
 	data := []tpl.LabelInfo{}
-	rows, err := m.DB.Raw(groupLabelSQL, groupID).Rows()
+	rows, err := m.DB.Raw(groupLabelsSQL, groupID).Rows()
 	defer rows.Close()
 
 	if err != nil {
@@ -96,6 +105,33 @@ func (m *Group) BatchAddMembers(ctx context.Context, group *schema.Group, users 
 	}
 
 	return m.DB.Exec(batchAddGroupMemberSQL, group.ID, group.SyncAt, users).Error
+}
+
+const groupMembersSQL = "select t2.`uid`, t1.`created_at`, t1.`sync_at` " +
+	"from `user_group` t1, `user` t2 " +
+	"where t1.`group_id` = ? and t1.`user_id` = t2.`id` " +
+	"order by t1.`sync_at` desc " +
+	"limit 10000"
+
+// FindMembers 根据条件查找群组成员
+func (m *Group) FindMembers(ctx context.Context, groupID int64) ([]tpl.GroupMember, error) {
+	data := []tpl.GroupMember{}
+	rows, err := m.DB.Raw(groupMembersSQL, groupID).Rows()
+	defer rows.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		member := tpl.GroupMember{}
+		if err := rows.Scan(&member.User, &member.CreatedAt, &member.SyncAt); err != nil {
+			return nil, err
+		}
+		data = append(data, member)
+	}
+
+	return data, nil
 }
 
 // RemoveMembers 删除群组的成员

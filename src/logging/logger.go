@@ -8,10 +8,6 @@ import (
 	gearLogging "github.com/teambition/gear/logging"
 )
 
-func init() {
-	Logger.SetJSONLog()
-}
-
 // Logger ...
 var Logger = gearLogging.New(os.Stdout)
 

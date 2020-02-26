@@ -99,8 +99,7 @@ CREATE TABLE IF NOT EXISTS `urbs`.`user_label` (
   `user_id` bigint NOT NULL,
   `label_id` bigint NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `idx_user_label_user_id` (`user_id`),
-  KEY `idx_user_label_label_id` (`label_id`)
+  UNIQUE KEY `uk_user_label_user_id_label_id` (`user_id`,`label_id`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS `urbs`.`user_setting` (
@@ -112,8 +111,7 @@ CREATE TABLE IF NOT EXISTS `urbs`.`user_setting` (
   `value` varchar(255) NOT NULL DEFAULT '',
   `last_value` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
-  KEY `idx_user_setting_user_id` (`user_id`),
-  KEY `idx_user_setting_setting_id` (`setting_id`)
+  UNIQUE KEY `uk_user_setting_user_id_setting_id` (`user_id`,`setting_id`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS `urbs`.`group_label` (
@@ -122,7 +120,7 @@ CREATE TABLE IF NOT EXISTS `urbs`.`group_label` (
   `group_id` bigint NOT NULL,
   `label_id` bigint NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_group_id_label_id` (`group_id`,`label_id`)
+  UNIQUE KEY `uk_group_label_group_id_label_id` (`group_id`,`label_id`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS `urbs`.`group_setting` (
@@ -134,5 +132,5 @@ CREATE TABLE IF NOT EXISTS `urbs`.`group_setting` (
   `value` varchar(255) NOT NULL DEFAULT '',
   `last_value` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_group_id_setting_id` (`group_id`,`setting_id`)
+  UNIQUE KEY `uk_group_setting_group_id_setting_id` (`group_id`,`setting_id`)
 ) ENGINE=InnoDB;

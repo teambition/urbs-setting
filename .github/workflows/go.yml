@@ -38,7 +38,8 @@ jobs:
         make lint
 
     - name: Test
-      run: make test
+      run: |
+        CONFIG_FILE_PATH=${PWD}/config/test_on_github.yml APP_ENV=test go test -v ./...
 
     - name: Build
       run: make build

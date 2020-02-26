@@ -86,3 +86,16 @@ func (a *Setting) Assign(ctx *gear.Context) error {
 	}
 	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }
+
+// Delete ..
+func (a *Setting) Delete(ctx *gear.Context) error {
+	req := tpl.ProductModuleSettingURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+	res, err := a.blls.Setting.Delete(ctx, req.Product, req.Module, req.Setting)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}

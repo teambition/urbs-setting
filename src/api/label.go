@@ -86,3 +86,16 @@ func (a *Label) Assign(ctx *gear.Context) error {
 	}
 	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }
+
+// Delete ..
+func (a *Label) Delete(ctx *gear.Context) error {
+	req := tpl.ProductLabelURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+	res, err := a.blls.Label.Delete(ctx, req.Product, req.Label)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}

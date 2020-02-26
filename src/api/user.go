@@ -13,8 +13,8 @@ type User struct {
 	blls *bll.Blls
 }
 
-// GetLablesInCache ..
-func (a *User) GetLablesInCache(ctx *gear.Context) error {
+// ListLablesInCache ..
+func (a *User) ListLablesInCache(ctx *gear.Context) error {
 	req := tpl.LabelsURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
@@ -24,7 +24,7 @@ func (a *User) GetLablesInCache(ctx *gear.Context) error {
 		return gear.ErrBadRequest.WithMsg("product required")
 	}
 
-	res, err := a.blls.User.GetLablesInCache(ctx, req.UID, req.Product, req.Client, req.Channel)
+	res, err := a.blls.User.ListLablesInCache(ctx, req.UID, req.Product, req.Client, req.Channel)
 	if err != nil {
 		return err
 	}
@@ -32,8 +32,8 @@ func (a *User) GetLablesInCache(ctx *gear.Context) error {
 	return ctx.OkJSON(res)
 }
 
-// GetSettings ..
-func (a *User) GetSettings(ctx *gear.Context) error {
+// ListSettings ..
+func (a *User) ListSettings(ctx *gear.Context) error {
 	// TODO
 	return nil
 }

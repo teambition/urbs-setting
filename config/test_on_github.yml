@@ -1,0 +1,23 @@
+addr: ":3000"
+logger:
+  level: error
+mysql:
+  host: localhost:3306
+  user: root
+  password: root
+  database: urbs
+  parameters: loc=UTC&readTimeout=10s&writeTimeout=10s&timeout=10s&multiStatements=false
+  max_idle_conns: 8
+  max_open_conns: 64
+channels:
+  - stable
+  - beta
+  - canary
+  - dev
+clients:
+  - web
+  - ios
+  - android
+  - windows
+  - macos
+cache_label_expire: 1m

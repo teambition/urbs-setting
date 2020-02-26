@@ -158,3 +158,39 @@ func (b *Setting) Assign(ctx context.Context, productName, moduleName, settingNa
 	}
 	return b.ms.Setting.Assign(ctx, setting.ID, value, users, groups)
 }
+
+// Delete 物理删除配置项
+func (b *Setting) Delete(ctx context.Context, productName, moduleName, settingName string) (*tpl.BoolRes, error) {
+	product, err := b.ms.Product.FindByName(ctx, productName, "id")
+	if err != nil {
+		return nil, err
+	}
+	if product == nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
+	}
+
+	module, err := b.ms.Module.FindByName(ctx, product.ID, moduleName, "id")
+	if err != nil {
+		return nil, err
+	}
+	if module == nil {
+		return nil, gear.ErrNotFound.WithMsgf("module %s not found", moduleName)
+	}
+
+	setting, err := b.ms.Setting.FindByName(ctx, module.ID, settingName, "id, `offline_at`")
+	if err != nil {
+		return nil, err
+	}
+
+	res := &tpl.BoolRes{Result: false}
+	if setting != nil {
+		if setting.OfflineAt == nil {
+			return nil, gear.ErrConflict.WithMsgf("setting %s is not offline", settingName)
+		}
+		if err = b.ms.Setting.Delete(ctx, setting.ID); err != nil {
+			return nil, err
+		}
+		res.Result = true
+	}
+	return res, nil
+}

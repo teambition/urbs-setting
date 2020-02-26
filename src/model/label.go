@@ -16,11 +16,14 @@ type Label struct {
 // FindByName 根据 productID 和 name 返回 label 数据
 func (m *Label) FindByName(ctx context.Context, productID int64, name, selectStr string) (*schema.Label, error) {
 	var err error
-	label := &schema.Label{ProductID: productID, Name: name}
+	label := &schema.Label{}
+
+	db := m.DB.Where("product_id = ? and name = ?", productID, name)
+
 	if selectStr == "" {
-		err = m.DB.Take(label).Error
+		err = db.First(label).Error
 	} else {
-		err = m.DB.Select(selectStr).Take(label).Error
+		err = db.Select(selectStr).First(label).Error
 	}
 
 	if err == nil {
@@ -36,18 +39,13 @@ func (m *Label) FindByName(ctx context.Context, productID int64, name, selectStr
 // Find 根据条件查找 labels
 func (m *Label) Find(ctx context.Context, productID int64) ([]schema.Label, error) {
 	labels := make([]schema.Label, 0)
-	err := m.DB.Where("`product_id` is ?", productID).Order("`status`, `created_at`").Limit(1000).Find(labels).Error
+	err := m.DB.Where("`product_id` = ?", productID).Order("`status`, `created_at`").Limit(1000).Find(&labels).Error
 	return labels, err
 }
 
 // Create ...
 func (m *Label) Create(ctx context.Context, label *schema.Label) error {
-	db := m.DB.Create(label)
-	if db.Error != nil {
-		return db.Error
-	}
-
-	return db.Take(label).Error
+	return m.DB.Create(label).Error
 }
 
 // Offline 标记 label 下线，同时真删除用户和群组的 labels
@@ -58,7 +56,7 @@ func (m *Label) Offline(ctx context.Context, labelID int64) error {
 		Status:    -1,
 	})
 	if db.Error == nil {
-		go deleteUserAndGroupLabels(db.DB(), []int64{labelID})
+		go deleteUserAndGroupLabels(db, []int64{labelID})
 	}
 	return db.Error
 }
@@ -79,4 +77,9 @@ func (m *Label) Assign(ctx context.Context, labelID int64, users, groups []strin
 	}
 
 	return err
+}
+
+// Delete 对标签进行物理删除
+func (m *Label) Delete(ctx context.Context, labelID int64) error {
+	return m.DB.Delete(&schema.Label{ID: labelID}).Error
 }
