@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/teambition/gear"
+	"github.com/teambition/urbs-setting/src/schema"
 )
 
 // GroupsBody ...
@@ -33,15 +34,15 @@ func (t *GroupsBody) Validate() error {
 	return nil
 }
 
-// RemoveGroupMembersURL ...
-type RemoveGroupMembersURL struct {
+// GroupMembersURL ...
+type GroupMembersURL struct {
 	UID    string `json:"uid" param:"uid"`
 	User   string `json:"user" query:"user"`       // 根据用户 uid 删除一个成员
 	SyncLt int64  `json:"sync_lt" query:"sync_lt"` // 或根据 sync_lt 删除同步时间小于指定值的所有成员
 }
 
 // Validate 实现 gear.BodyTemplate。
-func (t *RemoveGroupMembersURL) Validate() error {
+func (t *GroupMembersURL) Validate() error {
 	if !validIDNameReg.MatchString(t.UID) {
 		return gear.ErrBadRequest.WithMsgf("invalid group uid: %s", t.UID)
 	}
@@ -59,4 +60,23 @@ func (t *RemoveGroupMembersURL) Validate() error {
 		return gear.ErrBadRequest.WithMsg("user or sync_lt required")
 	}
 	return nil
+}
+
+// GroupsRes ...
+type GroupsRes struct {
+	ResponseType
+	Result []schema.Group `json:"result"`
+}
+
+// GroupMember ...
+type GroupMember struct {
+	User      string    `json:"user"`
+	CreatedAt time.Time `json:"created_at"`
+	SyncAt    int64     `json:"sync_at"` // 归属关系同步时间戳，1970 以来的秒数，应该与 group.sync_at 相等
+}
+
+// GroupMembersRes ...
+type GroupMembersRes struct {
+	ResponseType
+	Result []GroupMember `json:"result"`
 }

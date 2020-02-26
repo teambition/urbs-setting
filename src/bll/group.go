@@ -13,23 +13,49 @@ type Group struct {
 	ms *model.Models
 }
 
-// GetLables ...
-func (b *Group) GetLables(ctx context.Context, uid, product string) (*tpl.LabelsInfoRes, error) {
+// List 返回群组列表，TODO：支持分页
+func (b *Group) List(ctx context.Context) (*tpl.GroupsRes, error) {
+	groups, err := b.ms.Group.Find(ctx)
+	if err != nil {
+		return nil, err
+	}
+	res := &tpl.GroupsRes{Result: groups}
+	return res, nil
+}
+
+// ListLables ...
+func (b *Group) ListLables(ctx context.Context, uid, product string) (*tpl.LabelsInfoRes, error) {
 	group, err := b.ms.Group.FindByUID(ctx, uid, "id")
 	if err != nil {
 		return nil, err
 	}
-
-	res := &tpl.LabelsInfoRes{Result: []tpl.LabelInfo{}}
 	if group == nil {
-		return res, nil // group 不存在，返回空
+		return nil, gear.ErrNotFound.WithMsgf("group %s not found", uid)
 	}
 
-	labels, err := b.ms.Group.GetLables(ctx, group.ID, product)
+	labels, err := b.ms.Group.FindLables(ctx, group.ID, product)
 	if err != nil {
 		return nil, err
 	}
-	res.Result = labels
+	res := &tpl.LabelsInfoRes{Result: labels}
+	return res, nil
+}
+
+// ListMembers ...
+func (b *Group) ListMembers(ctx context.Context, uid string) (*tpl.GroupMembersRes, error) {
+	group, err := b.ms.Group.FindByUID(ctx, uid, "id")
+	if err != nil {
+		return nil, err
+	}
+	if group == nil {
+		return nil, gear.ErrNotFound.WithMsgf("group %s not found", uid)
+	}
+
+	members, err := b.ms.Group.FindMembers(ctx, group.ID)
+	if err != nil {
+		return nil, err
+	}
+	res := &tpl.GroupMembersRes{Result: members}
 	return res, nil
 }
 
@@ -44,7 +70,7 @@ func (b *Group) BatchAdd(ctx context.Context, groups []tpl.GroupBody) error {
 	return b.ms.Group.BatchAdd(ctx, groups)
 }
 
-// BatchAddMembers ...
+// BatchAddMembers 批量给群组添加成员，如果用户未加入系统，则会自动加入
 func (b *Group) BatchAddMembers(ctx context.Context, uid string, users []string) error {
 	group, err := b.ms.Group.FindByUID(ctx, uid, "id, `sync_at`")
 	if err != nil {
@@ -52,6 +78,10 @@ func (b *Group) BatchAddMembers(ctx context.Context, uid string, users []string)
 	}
 	if group == nil {
 		return gear.ErrNotFound.WithMsgf("group %s not found", uid)
+	}
+
+	if err := b.ms.User.BatchAdd(ctx, users); err != nil {
+		return err
 	}
 
 	return b.ms.Group.BatchAddMembers(ctx, group, users)

@@ -16,11 +16,13 @@ type Setting struct {
 // FindByName 根据 moduleID 和 name 返回 setting 数据
 func (m *Setting) FindByName(ctx context.Context, moduleID int64, name, selectStr string) (*schema.Setting, error) {
 	var err error
-	setting := &schema.Setting{ModuleID: moduleID, Name: name}
+	setting := &schema.Setting{}
+	db := m.DB.Where("module_id = ? and name = ?", moduleID, name)
+
 	if selectStr == "" {
-		err = m.DB.Take(setting).Error
+		err = db.First(setting).Error
 	} else {
-		err = m.DB.Select(selectStr).Take(setting).Error
+		err = db.Select(selectStr).First(setting).Error
 	}
 
 	if err == nil {
@@ -36,18 +38,13 @@ func (m *Setting) FindByName(ctx context.Context, moduleID int64, name, selectSt
 // Find 根据条件查找 settings
 func (m *Setting) Find(ctx context.Context, moduleID int64) ([]schema.Setting, error) {
 	settings := make([]schema.Setting, 0)
-	err := m.DB.Where("`module_id` is ?", moduleID).Order("`status`, `created_at`").Limit(1000).Find(settings).Error
+	err := m.DB.Where("`module_id` = ?", moduleID).Order("`status`, `created_at`").Limit(1000).Find(&settings).Error
 	return settings, err
 }
 
 // Create ...
 func (m *Setting) Create(ctx context.Context, setting *schema.Setting) error {
-	db := m.DB.Create(setting)
-	if db.Error != nil {
-		return db.Error
-	}
-
-	return db.Take(setting).Error
+	return m.DB.Create(setting).Error
 }
 
 // Offline 标记配置项下线，同时真删除用户和群组的配置项值
@@ -58,7 +55,7 @@ func (m *Setting) Offline(ctx context.Context, settingID int64) error {
 		Status:    -1,
 	})
 	if db.Error == nil {
-		go deleteUserAndGroupSettings(db.DB(), []int64{settingID})
+		go deleteUserAndGroupSettings(db, []int64{settingID})
 	}
 	return db.Error
 }
@@ -81,4 +78,9 @@ func (m *Setting) Assign(ctx context.Context, settingID int64, value string, use
 	}
 
 	return err
+}
+
+// Delete 对配置项进行物理删除
+func (m *Setting) Delete(ctx context.Context, settingID int64) error {
+	return m.DB.Delete(&schema.Setting{ID: settingID}).Error
 }

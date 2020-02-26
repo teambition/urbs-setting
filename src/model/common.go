@@ -1,9 +1,9 @@
 package model
 
 import (
-	"database/sql"
 	"fmt"
 
+	"github.com/jinzhu/gorm"
 	"github.com/teambition/urbs-setting/src/logging"
 	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/util"
@@ -37,11 +37,11 @@ func NewModels(sql *service.SQL) *Models {
 	}
 }
 
-func deleteUserAndGroupLabels(db *sql.DB, labelIDs []int64) {
+func deleteUserAndGroupLabels(db *gorm.DB, labelIDs []int64) {
 	var err error
 	if len(labelIDs) > 0 {
-		if _, err = db.Exec("delete from `user_label` where `label_id` in (?)", labelIDs); err == nil {
-			_, err = db.Exec("delete from `group_label` where `label_id` in (?)", labelIDs)
+		if err = db.Exec("delete from `user_label` where `label_id` in ( ? )", labelIDs).Error; err == nil {
+			err = db.Exec("delete from `group_label` where `label_id` in ( ? )", labelIDs).Error
 		}
 	}
 	if err != nil {
@@ -49,11 +49,11 @@ func deleteUserAndGroupLabels(db *sql.DB, labelIDs []int64) {
 	}
 }
 
-func deleteUserAndGroupSettings(db *sql.DB, settingIDs []int64) {
+func deleteUserAndGroupSettings(db *gorm.DB, settingIDs []int64) {
 	var err error
 	if len(settingIDs) > 0 {
-		if _, err = db.Exec("delete from `user_setting` where `setting_id` in (?)", settingIDs); err == nil {
-			_, err = db.Exec("delete from `user_setting` where `setting_id` in (?)", settingIDs)
+		if err = db.Exec("delete from `user_setting` where `setting_id` in ( ? )", settingIDs).Error; err == nil {
+			err = db.Exec("delete from `group_setting` where `setting_id` in ( ? )", settingIDs).Error
 		}
 	}
 	if err != nil {

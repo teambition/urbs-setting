@@ -13,7 +13,7 @@ import (
 
 const maxInt64u = uint64(math.MaxInt64)
 
-// HID 基于 HMAC 算法，将内部 int64的 ID 与 base64 URL 字符串进行相互转换。
+// HID 基于 HMAC 算法，将内部 int64 的 ID 与 base64 URL 字符串进行相互转换。API 接口不支持 int64 ID 参数。
 type HID struct {
 	hs hash.Hash
 }

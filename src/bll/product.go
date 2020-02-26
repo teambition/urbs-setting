@@ -60,22 +60,23 @@ func (b *Product) Offline(ctx context.Context, productName string) (*tpl.BoolRes
 // Delete 逻辑删除产品
 func (b *Product) Delete(ctx context.Context, productName string) (*tpl.BoolRes, error) {
 	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+
 	if err != nil {
 		return nil, err
 	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.OfflineAt != nil {
-		return nil, gear.ErrBadRequest.WithMsgf("product %s is not offline", productName)
-	}
 
 	res := &tpl.BoolRes{Result: false}
-	if product.DeletedAt == nil {
-		if err = b.ms.Product.Delete(ctx, product.ID); err != nil {
-			return nil, err
+	if product != nil {
+		if product.OfflineAt == nil {
+			return nil, gear.ErrConflict.WithMsgf("product %s is not offline", productName)
 		}
-		res.Result = true
+
+		if product.DeletedAt == nil {
+			if err = b.ms.Product.Delete(ctx, product.ID); err != nil {
+				return nil, err
+			}
+			res.Result = true
+		}
 	}
 	return res, nil
 }

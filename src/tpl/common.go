@@ -1,6 +1,9 @@
 package tpl
 
 import (
+	"crypto/rand"
+	"encoding/base64"
+	"fmt"
 	"regexp"
 
 	"github.com/teambition/gear"
@@ -8,6 +11,24 @@ import (
 
 var validIDNameReg = regexp.MustCompile(`^[0-9A-Za-z._-]{3,63}$`)
 var validHIDReg = regexp.MustCompile(`^[0-9A-Za-z_=-]{24}$`)
+
+// RandUID for testing
+func RandUID() string {
+	b := make([]byte, 31)
+	if _, err := rand.Read(b); err != nil {
+		panic("crypto-go: rand.Read() failed, " + err.Error())
+	}
+	return fmt.Sprintf("%x", b)
+}
+
+// RandName for testing
+func RandName() string {
+	b := make([]byte, 31)
+	if _, err := rand.Read(b); err != nil {
+		panic("crypto-go: rand.Read() failed, " + err.Error())
+	}
+	return base64.RawURLEncoding.EncodeToString(b)
+}
 
 // ResponseType 定义了标准的 List 接口返回数据模型
 type ResponseType struct {

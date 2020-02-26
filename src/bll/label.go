@@ -51,11 +51,11 @@ func (b *Label) Create(ctx context.Context, productName, labelName, desc string)
 		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
 	}
 
-	label := &schema.Label{ProductID: product.ID, Name: labelName, Desc: desc}
-	if err = b.ms.Label.Create(ctx, label); err != nil {
+	label := schema.Label{ProductID: product.ID, Name: labelName, Desc: desc}
+	if err = b.ms.Label.Create(ctx, &label); err != nil {
 		return nil, err
 	}
-	return &tpl.LabelRes{Result: *label}, nil
+	return &tpl.LabelRes{Result: label}, nil
 }
 
 // Offline 下线标签
@@ -115,4 +115,33 @@ func (b *Label) Assign(ctx context.Context, productName, labelName string, users
 		return gear.ErrNotFound.WithMsgf("label %s was offline", labelName)
 	}
 	return b.ms.Label.Assign(ctx, label.ID, users, groups)
+}
+
+// Delete 物理删除标签
+func (b *Label) Delete(ctx context.Context, productName, labelName string) (*tpl.BoolRes, error) {
+	product, err := b.ms.Product.FindByName(ctx, productName, "id")
+	if err != nil {
+		return nil, err
+	}
+	if product == nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
+	}
+
+	label, err := b.ms.Label.FindByName(ctx, product.ID, labelName, "id, `offline_at`")
+	if err != nil {
+		return nil, err
+	}
+
+	res := &tpl.BoolRes{Result: false}
+	if label != nil {
+		if label.OfflineAt == nil {
+			return nil, gear.ErrConflict.WithMsgf("label %s is not offline", labelName)
+		}
+
+		if err = b.ms.Label.Delete(ctx, label.ID); err != nil {
+			return nil, err
+		}
+		res.Result = true
+	}
+	return res, nil
 }

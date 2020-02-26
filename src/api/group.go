@@ -13,14 +13,9 @@ type Group struct {
 	blls *bll.Blls
 }
 
-// GetLables ..
-func (a *Group) GetLables(ctx *gear.Context) error {
-	req := tpl.LabelsURL{}
-	if err := ctx.ParseURL(&req); err != nil {
-		return err
-	}
-
-	res, err := a.blls.Group.GetLables(ctx, req.UID, req.Product)
+// List ..
+func (a *Group) List(ctx *gear.Context) error {
+	res, err := a.blls.Group.List(ctx)
 	if err != nil {
 		return err
 	}
@@ -28,8 +23,38 @@ func (a *Group) GetLables(ctx *gear.Context) error {
 	return ctx.OkJSON(res)
 }
 
-// GetSettings ..
-func (a *Group) GetSettings(ctx *gear.Context) error {
+// ListLables ..
+func (a *Group) ListLables(ctx *gear.Context) error {
+	req := tpl.LabelsURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Group.ListLables(ctx, req.UID, req.Product)
+	if err != nil {
+		return err
+	}
+
+	return ctx.OkJSON(res)
+}
+
+// ListMembers ..
+func (a *Group) ListMembers(ctx *gear.Context) error {
+	req := tpl.UIDURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Group.ListMembers(ctx, req.UID)
+	if err != nil {
+		return err
+	}
+
+	return ctx.OkJSON(res)
+}
+
+// ListSettings ..
+func (a *Group) ListSettings(ctx *gear.Context) error {
 	// TODO
 	return nil
 }
@@ -92,7 +117,7 @@ func (a *Group) BatchAddMembers(ctx *gear.Context) error {
 
 // RemoveMembers ..
 func (a *Group) RemoveMembers(ctx *gear.Context) error {
-	req := tpl.RemoveGroupMembersURL{}
+	req := tpl.GroupMembersURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}

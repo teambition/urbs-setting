@@ -19,11 +19,13 @@ type User struct {
 // FindByUID 根据 uid 返回 user 数据
 func (m *User) FindByUID(ctx context.Context, uid string, selectStr string) (*schema.User, error) {
 	var err error
-	user := &schema.User{UID: uid}
+	user := &schema.User{}
+	db := m.DB.Where("uid = ?", uid)
+
 	if selectStr == "" {
-		err = m.DB.Take(user).Error
+		err = db.First(user).Error
 	} else {
-		err = m.DB.Select(selectStr).Take(user).Error
+		err = db.Select(selectStr).First(user).Error
 	}
 
 	if err == nil {
@@ -55,7 +57,7 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (string, 
 	err := m.DB.Transaction(func(tx *gorm.DB) error {
 		user := &schema.User{ID: id}
 		// 指定 id 的记录被锁住，如果表中无符合记录的数据则排他锁不生效
-		if err := tx.Set("gorm:query_option", "FOR UPDATE").Take(user).Error; err != nil {
+		if err := tx.Set("gorm:query_option", "FOR UPDATE").First(user).Error; err != nil {
 			return err
 		}
 
@@ -87,7 +89,7 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (string, 
 		user.ActiveAt = time.Now().UTC().Unix()
 		labels = user.Labels
 
-		return tx.Model(user).Updates(user).Error // 返回 nil 提交事务，否则回滚
+		return tx.Model(&schema.User{ID: id}).Updates(user).Error // 返回 nil 提交事务，否则回滚
 	})
 
 	return labels, err

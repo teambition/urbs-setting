@@ -8,7 +8,7 @@ import (
 
 func init() {
 	p := &Config
-	util.ReadConfig(p, "/etc/urbs-setting/config.yml")
+	util.ReadConfig(p)
 	if err := p.Validate(); err != nil {
 		panic(err)
 	}

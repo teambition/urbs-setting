@@ -1,10 +1,10 @@
 addr: ":3000"
 logger:
-  level: debug
+  level: error
 mysql:
   host: localhost:3306
   user: root
-  password: root
+  password: password
   database: urbs
   parameters: loc=UTC&readTimeout=10s&writeTimeout=10s&timeout=10s&multiStatements=true
   max_idle_conns: 8
