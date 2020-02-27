@@ -66,7 +66,7 @@ func (m *Group) FindLables(ctx context.Context, groupID int64, product string) (
 		if err := rows.Scan(&label.ID, &labelInfo.Name, &labelInfo.Desc, &labelInfo.Channels, &labelInfo.Clients, &labelInfo.Product); err != nil {
 			return nil, err
 		}
-		labelInfo.HID = service.HIDer.HID(&label)
+		labelInfo.HID = service.HIDer.HID(label)
 		data = append(data, labelInfo)
 	}
 
@@ -148,7 +148,7 @@ func (m *Group) RemoveMembers(ctx context.Context, groupID, userID int64, syncLt
 
 // RemoveLable 删除群组的 label
 func (m *Group) RemoveLable(ctx context.Context, groupID, lableID int64) error {
-	return m.DB.Where("group_id = ? and lable_id = ?", groupID, lableID).Delete(&schema.GroupLabel{}).Error
+	return m.DB.Where("group_id = ? and label_id = ?", groupID, lableID).Delete(&schema.GroupLabel{}).Error
 }
 
 // RemoveSetting 删除群组的 setting

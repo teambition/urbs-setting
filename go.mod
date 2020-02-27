@@ -1,6 +1,6 @@
 module github.com/teambition/urbs-setting
 
-go 1.13
+go 1.14
 
 require (
 	github.com/DavidCai1993/request v0.0.0-20171115020405-aad722fa9b76

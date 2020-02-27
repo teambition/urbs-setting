@@ -27,6 +27,33 @@ func createGroup(appHost string) (string, error) {
 	return groupUID, nil
 }
 
+func createGroupWithUsers(appHost string, count int) (group string, users []string, err error) {
+	group = tpl.RandName()
+
+	users = make([]string, count)
+	for i := 0; i < count; i++ {
+		users[i] = tpl.RandName()
+	}
+
+	_, err = request.Post(fmt.Sprintf("%s/v1/groups:batch", appHost)).
+		Set("Content-Type", "application/json").
+		Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
+			tpl.GroupBody{UID: group, Desc: group},
+		}}).
+		End()
+
+	if err != nil {
+		return "", nil, err
+	}
+
+	_, err = request.Post(fmt.Sprintf("%s/v1/groups/%s/members:batch", appHost, group)).
+		Set("Content-Type", "application/json").
+		Send(tpl.UsersBody{Users: users}).
+		End()
+
+	return group, users, nil
+}
+
 func TestGroupAPIs(t *testing.T) {
 	tt, cleanup := SetUpTestTools()
 	defer cleanup()
@@ -253,4 +280,10 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal(0, len(json2.Result))
 		})
 	})
+
+	// t.Run(`"GET /v1/groups/:uid/labels"`, func(t *testing.T) {
+	// 	t.Run("should work", func(t *testing.T) {
+	// 		assert := assert.New(t)
+	// 	})
+	// })
 }

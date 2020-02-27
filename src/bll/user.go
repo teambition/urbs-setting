@@ -55,6 +55,24 @@ func (b *User) ListLablesInCache(ctx context.Context, uid, product, client, chan
 	return res, nil
 }
 
+// ListLables ...
+func (b *User) ListLables(ctx context.Context, uid, product string) (*tpl.LabelsInfoRes, error) {
+	user, err := b.ms.User.FindByUID(ctx, uid, "id")
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, gear.ErrNotFound.WithMsgf("user %s not found", uid)
+	}
+
+	labels, err := b.ms.User.FindLables(ctx, user.ID, product)
+	if err != nil {
+		return nil, err
+	}
+	res := &tpl.LabelsInfoRes{Result: labels}
+	return res, nil
+}
+
 // CheckExists ...
 func (b *User) CheckExists(ctx context.Context, uid string) bool {
 	user, _ := b.ms.User.FindByUID(ctx, uid, "id")

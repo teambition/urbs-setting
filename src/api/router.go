@@ -50,8 +50,10 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Use(tracing.New())
 
 	// ***** user ******
-	// 读取指定用户的灰度标签，支持条件筛选，返回轻量级 labels，用于网关
+	// 读取指定用户的灰度标签，包括继承自群组的标签，支持条件筛选，返回轻量级 labels，用于网关
 	routerV1.Get("/users/:uid/labels:cache", apis.User.ListLablesInCache)
+	// 读取指定用户的灰度标签，支持条件筛选
+	routerV1.Get("/users/:uid/labels", apis.User.ListLables)
 	// 读取指定用户的功能配置项，支持条件筛选
 	routerV1.Get("/users/:uid/settings", apis.User.ListSettings)
 	// 查询指定用户是否存在
