@@ -32,6 +32,21 @@ func (a *User) ListLablesInCache(ctx *gear.Context) error {
 	return ctx.OkJSON(res)
 }
 
+// ListLables ..
+func (a *User) ListLables(ctx *gear.Context) error {
+	req := tpl.LabelsURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	res, err := a.blls.User.ListLables(ctx, req.UID, req.Product)
+	if err != nil {
+		return err
+	}
+
+	return ctx.OkJSON(res)
+}
+
 // ListSettings ..
 func (a *User) ListSettings(ctx *gear.Context) error {
 	// TODO

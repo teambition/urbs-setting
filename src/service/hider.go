@@ -28,7 +28,11 @@ func (h *hIDer) HID(obj interface{}) string {
 	switch v := obj.(type) {
 	case *schema.Label:
 		return h.label.ToHex(v.ID)
+	case schema.Label:
+		return h.label.ToHex(v.ID)
 	case *schema.Setting:
+		return h.setting.ToHex(v.ID)
+	case schema.Setting:
 		return h.setting.ToHex(v.ID)
 	default:
 		return ""
@@ -44,8 +48,17 @@ func (h *hIDer) PutHID(obj interface{}, hid string) error {
 			v.ID = id
 			return nil
 		}
-
+	case schema.Label:
+		if id = h.label.ToInt64(hid); id > 0 {
+			v.ID = id
+			return nil
+		}
 	case *schema.Setting:
+		if id = h.setting.ToInt64(hid); id > 0 {
+			v.ID = id
+			return nil
+		}
+	case schema.Setting:
 		if id = h.setting.ToInt64(hid); id > 0 {
 			v.ID = id
 			return nil

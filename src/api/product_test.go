@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/DavidCai1993/request"
 	"github.com/stretchr/testify/assert"
@@ -211,6 +212,92 @@ func TestProductAPIs(t *testing.T) {
 			assert.Nil(tt.DB.First(&s).Error)
 			assert.NotNil(s.OfflineAt)
 			assert.True(true)
+		})
+
+		t.Run("should not effect other data", func(t *testing.T) {
+			assert := assert.New(t)
+
+			product1, err := createProduct(tt.Host)
+			assert.Nil(err)
+
+			product2, err := createProduct(tt.Host)
+			assert.Nil(err)
+
+			label1, err := createLabel(tt.Host, product1.Name)
+			assert.Nil(err)
+
+			label2, err := createLabel(tt.Host, product2.Name)
+			assert.Nil(err)
+
+			users, err := createUsers(tt.Host, 10)
+			assert.Nil(err)
+
+			group, err := createGroup(tt.Host)
+			assert.Nil(err)
+
+			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s:assign", tt.Host, product1.Name, label1.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.UsersGroupsBody{
+					Users:  users,
+					Groups: []string{group},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			var count int64
+			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label1.ID).Count(&count).Error)
+			assert.Equal(int64(10), count)
+
+			assert.Nil(tt.DB.Table(`group_label`).Where("label_id = ?", label1.ID).Count(&count).Error)
+			assert.Equal(int64(1), count)
+
+			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s:assign", tt.Host, product2.Name, label2.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.UsersGroupsBody{
+					Users:  users,
+					Groups: []string{group},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label2.ID).Count(&count).Error)
+			assert.Equal(int64(10), count)
+
+			assert.Nil(tt.DB.Table(`group_label`).Where("label_id = ?", label2.ID).Count(&count).Error)
+			assert.Equal(int64(1), count)
+
+			res, err = request.Put(fmt.Sprintf("%s/v1/products/%s:offline", tt.Host, product1.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			time.Sleep(time.Second * 2)
+
+			assert.Nil(tt.DB.First(product1).Error)
+			assert.NotNil(product1.OfflineAt)
+
+			assert.Nil(tt.DB.First(label1).Error)
+			assert.NotNil(label1.OfflineAt)
+
+			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label1.ID).Count(&count).Error)
+			assert.Equal(int64(0), count)
+
+			assert.Nil(tt.DB.Table(`group_label`).Where("label_id = ?", label1.ID).Count(&count).Error)
+			assert.Equal(int64(0), count)
+
+			assert.Nil(tt.DB.First(product2).Error)
+			assert.Nil(product2.OfflineAt)
+
+			assert.Nil(tt.DB.First(label2).Error)
+			assert.Nil(label2.OfflineAt)
+
+			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label2.ID).Count(&count).Error)
+			assert.Equal(int64(10), count)
+
+			assert.Nil(tt.DB.Table(`group_label`).Where("label_id = ?", label2.ID).Count(&count).Error)
+			assert.Equal(int64(1), count)
 		})
 	})
 }
