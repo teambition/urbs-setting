@@ -1,8 +1,6 @@
 package model
 
 import (
-	"fmt"
-
 	"github.com/jinzhu/gorm"
 	"github.com/teambition/urbs-setting/src/logging"
 	"github.com/teambition/urbs-setting/src/service"
@@ -45,7 +43,7 @@ func deleteUserAndGroupLabels(db *gorm.DB, labelIDs []int64) {
 		}
 	}
 	if err != nil {
-		logging.Err(fmt.Sprintf("deleteUserAndGroupLabels with label_id(%v) error: %v", labelIDs, err))
+		logging.Errf("deleteUserAndGroupLabels with label_id(%v) error: %v", labelIDs, err)
 	}
 }
 
@@ -57,6 +55,6 @@ func deleteUserAndGroupSettings(db *gorm.DB, settingIDs []int64) {
 		}
 	}
 	if err != nil {
-		logging.Err(fmt.Sprintf("deleteUserAndGroupSettings with setting_id(%v) error: %v", settingIDs, err))
+		logging.Errf("deleteUserAndGroupSettings with setting_id(%v) error: %v", settingIDs, err)
 	}
 }

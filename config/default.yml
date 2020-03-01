@@ -20,4 +20,6 @@ clients:
   - windows
   - macos
 cache_label_expire: 5m
+auth_keys:
+  # - kqGuLsiKT1J5ANFDKXUHc2lAYfdzWBnriL1iHgBbYQ
 hid_key: q7FltzZWfvGIrdEdHYY # 一旦设定，尽量不要改变，否则派生出去的 HID 无法识别

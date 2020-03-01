@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS `urbs`.`user` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `active_at` bigint NOT NULL DEFAULT 0,
   `uid` varchar(63) NOT NULL,
-  `labels` varchar(8191) NOT NULL DEFAULT '',
+  `labels` varchar(8190) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_uid` (`uid`),
   KEY `idx_user_active_at` (`active_at`)
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `urbs`.`user` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `sync_at` bigint NOT NULL DEFAULT 0,
   `uid` varchar(63) NOT NULL,
-  `desc` varchar(1023) NOT NULL DEFAULT '',
+  `desc` varchar(1022) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_group_uid` (`uid`),
   KEY `idx_group_sync_at` (`sync_at`)
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS `urbs`.`product` (
   `deleted_at` datetime DEFAULT NULL,
   `offline_at` datetime DEFAULT NULL,
   `name` varchar(63) NOT NULL,
-  `desc` varchar(1023) NOT NULL DEFAULT '',
+  `desc` varchar(1022) NOT NULL DEFAULT '',
   `status` bigint NOT NULL  DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_product_name` (`name`),
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS `urbs`.`label` (
   `offline_at` datetime DEFAULT NULL,
   `product_id` bigint NOT NULL,
   `name` varchar(63) NOT NULL,
-  `desc` varchar(1023) NOT NULL DEFAULT '',
+  `desc` varchar(1022) NOT NULL DEFAULT '',
   `channels` varchar(255) NOT NULL DEFAULT '', -- split by comma
   `clients` varchar(255) NOT NULL DEFAULT '', -- split by comma
   `status` bigint NOT NULL DEFAULT 0,
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS `urbs`.`module` (
   `offline_at` datetime DEFAULT NULL,
   `product_id` bigint NOT NULL,
   `name` varchar(63) NOT NULL,
-  `desc` varchar(1023) NOT NULL DEFAULT '',
+  `desc` varchar(1022) NOT NULL DEFAULT '',
   `status` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_module_product_id_name` (`product_id`,`name`)
@@ -73,10 +73,10 @@ CREATE TABLE IF NOT EXISTS `urbs`.`setting` (
   `offline_at` datetime DEFAULT NULL,
   `module_id` bigint NOT NULL,
   `name` varchar(63) NOT NULL,
-  `desc` varchar(1023) NOT NULL DEFAULT '',
+  `desc` varchar(1022) NOT NULL DEFAULT '',
   `channels` varchar(255) NOT NULL DEFAULT '', -- split by comma
   `clients` varchar(255) NOT NULL DEFAULT '', -- split by comma
-  `values` varchar(1023) NOT NULL DEFAULT '', -- split by comma
+  `values` varchar(1022) NOT NULL DEFAULT '', -- split by comma
   `status` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_setting_module_id_name` (`module_id`,`name`)

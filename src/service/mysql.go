@@ -40,12 +40,12 @@ func NewDB() *SQL {
 	}
 
 	if cfg.User == "" || cfg.Password == "" || cfg.Host == "" {
-		logging.Panic(logging.SrvLog("Invalid SQL DB config %s:%s@(%s)/%s", cfg.User, cfg.Password, cfg.Host, cfg.Database))
+		logging.Panicf("Invalid SQL DB config %s:%s@(%s)/%s", cfg.User, cfg.Password, cfg.Host, cfg.Database)
 	}
 
 	parameters, err := url.ParseQuery(cfg.Parameters)
 	if err != nil {
-		logging.Panic(logging.SrvLog("Invalid SQL DB parameters %s", cfg.Parameters))
+		logging.Panicf("Invalid SQL DB parameters %s", cfg.Parameters)
 	}
 	// 强制使用
 	parameters.Set("collation", "utf8mb4_general_ci")
@@ -57,7 +57,7 @@ func NewDB() *SQL {
 
 	if err != nil {
 		url = strings.Replace(url, cfg.Password, cfg.Password[0:4]+"***", 1)
-		logging.Panic(logging.SrvLog("SQL DB connect failed %s, with config %s", err, url))
+		logging.Panicf("SQL DB connect failed %s, with config %s", err, url)
 	}
 
 	// 表名使用单数。

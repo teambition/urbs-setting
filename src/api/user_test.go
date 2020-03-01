@@ -15,7 +15,7 @@ import (
 func createUsers(appHost string, count int) ([]string, error) {
 	uids := make([]string, count)
 	for i := 0; i < count; i++ {
-		uids[i] = tpl.RandName()
+		uids[i] = tpl.RandUID()
 	}
 
 	_, err := request.Post(fmt.Sprintf("%s/v1/users:batch", appHost)).

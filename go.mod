@@ -8,7 +8,8 @@ require (
 	github.com/jinzhu/gorm v1.9.12
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
 	github.com/stretchr/testify v1.4.0
-	github.com/teambition/gear v1.18.0
+	github.com/teambition/gear v1.19.0
+	github.com/teambition/gear-auth v1.7.0
 	github.com/teambition/gear-tracing v1.0.2
 	go.uber.org/dig v1.8.0
 	gopkg.in/yaml.v2 v2.2.8

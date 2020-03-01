@@ -13,5 +13,5 @@ type Group struct {
 	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
 	SyncAt    int64     `gorm:"column:sync_at" json:"sync_at"` // 群组成员同步时间点
 	UID       string    `gorm:"column:uid" json:"uid"`         // varchar(63)，群组外部ID，表内唯一， 如 Teambition organization id
-	Desc      string    `gorm:"column:desc" json:"desc"`       // varchar(1023)，群组描述
+	Desc      string    `gorm:"column:desc" json:"desc"`       // varchar(1022)，群组描述
 }
