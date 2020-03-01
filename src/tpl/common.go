@@ -14,7 +14,7 @@ var validHIDReg = regexp.MustCompile(`^[0-9A-Za-z_=-]{24}$`)
 
 // RandUID for testing
 func RandUID() string {
-	b := make([]byte, 31)
+	b := make([]byte, 12)
 	if _, err := rand.Read(b); err != nil {
 		panic("crypto-go: rand.Read() failed, " + err.Error())
 	}
@@ -23,7 +23,7 @@ func RandUID() string {
 
 // RandName for testing
 func RandName() string {
-	b := make([]byte, 31)
+	b := make([]byte, 12)
 	if _, err := rand.Read(b); err != nil {
 		panic("crypto-go: rand.Read() failed, " + err.Error())
 	}

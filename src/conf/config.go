@@ -42,6 +42,7 @@ type ConfigTpl struct {
 	Channels          []string `json:"channels" yaml:"channels"`
 	Clients           []string `json:"clients" yaml:"clients"`
 	HIDKey            string   `json:"hid_key" yaml:"hid_key"`
+	AuthKeys          []string `json:"auth_keys" yaml:"auth_keys"`
 }
 
 // Validate 用于完成基本的配置验证和初始化工作。业务相关的配置验证建议放到相关代码中实现，如 mysql 的配置。

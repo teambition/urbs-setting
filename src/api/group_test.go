@@ -12,7 +12,7 @@ import (
 )
 
 func createGroup(appHost string) (string, error) {
-	groupUID := tpl.RandName()
+	groupUID := tpl.RandUID()
 
 	_, err := request.Post(fmt.Sprintf("%s/v1/groups:batch", appHost)).
 		Set("Content-Type", "application/json").
@@ -28,11 +28,11 @@ func createGroup(appHost string) (string, error) {
 }
 
 func createGroupWithUsers(appHost string, count int) (group string, users []string, err error) {
-	group = tpl.RandName()
+	group = tpl.RandUID()
 
 	users = make([]string, count)
 	for i := 0; i < count; i++ {
-		users[i] = tpl.RandName()
+		users[i] = tpl.RandUID()
 	}
 
 	_, err = request.Post(fmt.Sprintf("%s/v1/groups:batch", appHost)).

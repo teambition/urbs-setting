@@ -8,7 +8,6 @@ import (
 	"github.com/teambition/gear"
 	"github.com/teambition/gear/middleware/requestid"
 
-	"github.com/teambition/urbs-setting/src/conf"
 	"github.com/teambition/urbs-setting/src/logging"
 	"github.com/teambition/urbs-setting/src/util"
 )
@@ -67,10 +66,9 @@ func NewApp() *gear.App {
 	})
 
 	app.Use(requestid.New())
-
-	logging.SetLevel(conf.Config.Logger.Level)
-	logging.Logger.SetJSONLog()
-	app.UseHandler(logging.Logger)
+	if app.Env() != "test" {
+		app.UseHandler(logging.AccessLogger)
+	}
 
 	err := util.DigInvoke(func(routers []*gear.Router) error {
 		for _, router := range routers {
@@ -80,7 +78,7 @@ func NewApp() *gear.App {
 	})
 
 	if err != nil {
-		logging.Panic(err)
+		logging.Panicf("DigInvoke error: %v", err)
 	}
 
 	return app
