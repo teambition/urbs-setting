@@ -1,5 +1,6 @@
 package util
 
+// util 模块不要引入其它内部模块
 import (
 	"encoding/json"
 	"fmt"
