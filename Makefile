@@ -5,18 +5,25 @@ APP_VERSION := $(shell git describe --tags --always --match "v[0-9]*")
 APP_PATH := $(shell echo ${PWD} | sed -e "s\#${GOPATH}/src/\#\#g")
 
 dev:
-	@CONFIG_FILE_PATH=${PWD}/config/default.yml go run main.go
+	@CONFIG_FILE_PATH=${PWD}/config/default.yml APP_ENV=development go run main.go
 
 test:
-	@CONFIG_FILE_PATH=${PWD}/config/test-local.yml go test -v ./...
+	@CONFIG_FILE_PATH=${PWD}/config/test.yml APP_ENV=test go test -v ./...
 
 BUILD_TIME := $(shell date -u +"%FT%TZ")
 BUILD_COMMIT := $(shell git rev-parse HEAD)
 
-.PHONY: build
+.PHONY: build build-tool
 build:
 	@mkdir -p ./dist
 	GO111MODULE=on go build -ldflags "-X ${APP_PATH}/src/api.AppName=${APP_NAME} \
+	-X ${APP_PATH}/src/api.AppVersion=${APP_VERSION} \
+	-X ${APP_PATH}/src/api.BuildTime=${BUILD_TIME} \
+	-X ${APP_PATH}/src/api.GitSHA1=${BUILD_COMMIT}" \
+	-o ./dist/urbs-setting main.go
+build-linux:
+	@mkdir -p ./dist
+	GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X ${APP_PATH}/src/api.AppName=${APP_NAME} \
 	-X ${APP_PATH}/src/api.AppVersion=${APP_VERSION} \
 	-X ${APP_PATH}/src/api.BuildTime=${BUILD_TIME} \
 	-X ${APP_PATH}/src/api.GitSHA1=${BUILD_COMMIT}" \
@@ -50,7 +57,7 @@ coverhtml:
 	@go tool cover -html=coverage/cover.out -o coverage/coverage.html
 	@go tool cover -func=coverage/cover.out | tail -n 1
 
-DOCKER_IMAGE_TAG := ${APP_NAME}:${APP_VERSION}
+DOCKER_IMAGE_TAG := ${APP_NAME}:latest
 .PHONY: image
 image:
 	docker build --rm -t ${DOCKER_IMAGE_TAG} .

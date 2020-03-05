@@ -7,4 +7,4 @@ COPY config/default.yml /etc/urbs-setting/config.yml
 
 COPY ./dist/urbs-setting .
 
-CMD ["./urbs-setting"]
+ENTRYPOINT ["./urbs-setting"]

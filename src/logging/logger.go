@@ -1,60 +1,65 @@
 package logging
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/teambition/gear"
 	gearLogging "github.com/teambition/gear/logging"
+	"github.com/teambition/urbs-setting/src/conf"
 )
-
-// Logger ...
-var Logger = gearLogging.New(os.Stdout)
 
 func init() {
 	Logger.SetJSONLog()
-}
+	AccessLogger.SetJSONLog()
 
-// SetLevel ...
-func SetLevel(level string) {
-	l, err := gearLogging.ParseLevel(level)
-	if err == nil {
-		Logger.SetLevel(l)
-	} else {
+	// AccessLogger is not needed to set level.
+	err := gearLogging.SetLoggerLevel(Logger, conf.Config.Logger.Level)
+	if err != nil {
 		Logger.Err(err)
 	}
 }
 
-// Err produce a "Error" log with the default logger
-func Err(v interface{}) {
-	Logger.Err(v)
+// AccessLogger is used for access log
+var AccessLogger = gearLogging.New(os.Stdout)
+
+// Logger is used for the server.
+var Logger = gearLogging.New(os.Stderr)
+
+// SrvLog returns a Log with kind of server.
+func SrvLog(format string, args ...interface{}) gearLogging.Log {
+	return gearLogging.Log{
+		"kind":    "server",
+		"message": fmt.Sprintf(format, args...),
+	}
 }
 
-// Warning produce a "Warning" log with the default logger
-func Warning(v interface{}) {
-	Logger.Warning(v)
+// Panicf produce a "Emergency" log into the Logger.
+func Panicf(format string, args ...interface{}) {
+	Logger.Panic(SrvLog(format, args...))
 }
 
-// Info produce a "Informational" log with the default logger
-func Info(v interface{}) {
-	Logger.Info(v)
+// Errf produce a "Error" log into the Logger.
+func Errf(format string, args ...interface{}) {
+	Logger.Err(SrvLog(format, args...))
 }
 
-// Debug produce a "Debug" log with the default logger
-func Debug(v interface{}) {
-	Logger.Debug(v)
+// Warningf produce a "Warning" log into the Logger.
+func Warningf(format string, args ...interface{}) {
+	Logger.Warning(SrvLog(format, args...))
 }
 
-// Debugf produce a "Debug" log in the manner of fmt.Printf with the default logger
+// Infof produce a "Informational" log into the Logger.
+func Infof(format string, args ...interface{}) {
+	Logger.Info(SrvLog(format, args...))
+}
+
+// Debugf produce a "Debug" log into the Logger.
 func Debugf(format string, args ...interface{}) {
-	Logger.Debugf(format, args...)
+	Logger.Debug(SrvLog(format, args...))
 }
 
-// Panic produce a "Emergency" log with the default logger and then calls panic with the message
-func Panic(v interface{}) {
-	Logger.Panic(v)
-}
-
-// FromCtx retrieve the Log instance for the default logger.
+// FromCtx retrieve the Log instance for the AccessLogger.
 func FromCtx(ctx *gear.Context) gearLogging.Log {
-	return Logger.FromCtx(ctx)
+	return AccessLogger.FromCtx(ctx)
 }
