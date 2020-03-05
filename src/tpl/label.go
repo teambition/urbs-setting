@@ -9,8 +9,6 @@ import (
 type LabelsURL struct {
 	UID     string `json:"uid" param:"uid"`
 	Product string `json:"product" query:"product"`
-	Client  string `json:"client" query:"client"`
-	Channel string `json:"channel" query:"channel"`
 }
 
 // Validate 实现 gear.BodyTemplate。
@@ -20,6 +18,23 @@ func (t *LabelsURL) Validate() error {
 	}
 	if t.Product != "" && !validIDNameReg.MatchString(t.Product) {
 		return gear.ErrBadRequest.WithMsgf("invalid product name: %s", t.Product)
+	}
+	return nil
+}
+
+// LabelBody ...
+type LabelBody struct {
+	Name string `json:"Name"`
+	Desc string `json:"desc"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *LabelBody) Validate() error {
+	if !validLabelReg.MatchString(t.Name) {
+		return gear.ErrBadRequest.WithMsgf("invalid label: %s", t.Name)
+	}
+	if len(t.Desc) > 1022 {
+		return gear.ErrBadRequest.WithMsgf("desc too long: %d (<= 1022)", len(t.Desc))
 	}
 	return nil
 }
@@ -43,7 +58,8 @@ type LabelsInfoRes struct {
 // CacheLabelsInfoRes ...
 type CacheLabelsInfoRes struct {
 	ResponseType
-	Result []schema.UserCacheLabel `json:"result"` // 空数组也保留
+	Timestamp int64                   `json:"timestamp"` // labels 数组生成时间
+	Result    []schema.UserCacheLabel `json:"result"`    // 空数组也保留
 }
 
 // LabelRes ...

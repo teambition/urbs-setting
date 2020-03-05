@@ -24,7 +24,7 @@ func (a *User) ListLablesInCache(ctx *gear.Context) error {
 		return gear.ErrBadRequest.WithMsg("product required")
 	}
 
-	res, err := a.blls.User.ListLablesInCache(ctx, req.UID, req.Product, req.Client, req.Channel)
+	res, err := a.blls.User.ListLablesInCache(ctx, req.UID, req.Product)
 	if err != nil {
 		return err
 	}

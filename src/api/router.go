@@ -42,6 +42,8 @@ func newRouters(apis *APIs) []*gear.Router {
 	router := gear.NewRouter()
 	// health check
 	router.Get("/healthz", apis.Healthz.Get)
+	// 读取指定用户的灰度标签，包括继承自群组的标签，返回轻量级 labels，无身份验证，用于网关
+	router.Get("/users/:uid/labels:cache", tracing.New(), apis.User.ListLablesInCache)
 
 	routerV1 := gear.NewRouter(gear.RouterOptions{
 		Root: "/v1",
@@ -50,8 +52,6 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Use(tracing.New())
 
 	// ***** user ******
-	// 读取指定用户的灰度标签，包括继承自群组的标签，支持条件筛选，返回轻量级 labels，用于网关
-	routerV1.Get("/users/:uid/labels:cache", apis.User.ListLablesInCache)
 	// 读取指定用户的灰度标签，支持条件筛选
 	routerV1.Get("/users/:uid/labels", apis.User.ListLables)
 	// 读取指定用户的功能配置项，支持条件筛选

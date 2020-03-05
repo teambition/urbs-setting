@@ -12,13 +12,17 @@ import (
 var validIDNameReg = regexp.MustCompile(`^[0-9A-Za-z._-]{3,63}$`)
 var validHIDReg = regexp.MustCompile(`^[0-9A-Za-z_=-]{24}$`)
 
+// Should be subset of DNS-1035 label
+// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
+var validLabelReg = regexp.MustCompile(`^[a-z][0-9a-z-]{1,62}$`)
+
 // RandUID for testing
 func RandUID() string {
 	b := make([]byte, 12)
 	if _, err := rand.Read(b); err != nil {
 		panic("crypto-go: rand.Read() failed, " + err.Error())
 	}
-	return fmt.Sprintf("%x", b)
+	return fmt.Sprintf("uid-%x", b)
 }
 
 // RandName for testing
@@ -28,6 +32,15 @@ func RandName() string {
 		panic("crypto-go: rand.Read() failed, " + err.Error())
 	}
 	return base64.RawURLEncoding.EncodeToString(b)
+}
+
+// RandLabel for testing
+func RandLabel() string {
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		panic("crypto-go: rand.Read() failed, " + err.Error())
+	}
+	return fmt.Sprintf("label-%x", b)
 }
 
 // ResponseType 定义了标准的 List 接口返回数据模型
@@ -86,8 +99,8 @@ func (t *NameDescBody) Validate() error {
 	if !validIDNameReg.MatchString(t.Name) {
 		return gear.ErrBadRequest.WithMsgf("invalid name: %s", t.Name)
 	}
-	if len(t.Desc) > 1023 {
-		return gear.ErrBadRequest.WithMsgf("desc too long: %d (<= 1023)", len(t.Desc))
+	if len(t.Desc) > 1022 {
+		return gear.ErrBadRequest.WithMsgf("desc too long: %d (<= 1022)", len(t.Desc))
 	}
 	return nil
 }

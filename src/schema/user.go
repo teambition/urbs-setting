@@ -20,15 +20,17 @@ type User struct {
 
 // UserCacheLabel 用于在 User 数据上缓存 labels
 type UserCacheLabel struct {
-	Product  string `json:"p"`
 	Label    string `json:"l"`
 	Clients  string `json:"cls,omitempty"`
 	Channels string `json:"chs,omitempty"`
 }
 
+// UserCacheLabels 用于在 User 数据上缓存 labels
+type UserCacheLabels map[string][]UserCacheLabel
+
 // GetLabels 从 user 上读取结构化的 labels 数据
-func (u *User) GetLabels() []UserCacheLabel {
-	data := []UserCacheLabel{}
+func (u *User) GetLabels() UserCacheLabels {
+	data := make(UserCacheLabels)
 	if u.Labels == "" {
 		return data
 	}
@@ -37,7 +39,7 @@ func (u *User) GetLabels() []UserCacheLabel {
 }
 
 // PutLabels 把结构化的 labels 数据转成字符串设置在 user.Labels 上
-func (u *User) PutLabels(labels []UserCacheLabel) error {
+func (u *User) PutLabels(labels UserCacheLabels) error {
 	data, err := json.Marshal(labels)
 	if err == nil {
 		u.Labels = string(data)
