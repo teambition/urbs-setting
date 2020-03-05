@@ -2,7 +2,6 @@ package bll
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/teambition/gear"
@@ -18,39 +17,30 @@ type User struct {
 }
 
 // ListLablesInCache ...
-func (b *User) ListLablesInCache(ctx context.Context, uid, product, client, channel string) (*tpl.CacheLabelsInfoRes, error) {
+func (b *User) ListLablesInCache(ctx context.Context, uid, product string) (*tpl.CacheLabelsInfoRes, error) {
 	user, err := b.ms.User.FindByUID(ctx, uid, "id, `uid`, `active_at`, `labels`")
 	if err != nil {
 		return nil, err
 	}
 
-	res := &tpl.CacheLabelsInfoRes{Result: []schema.UserCacheLabel{}}
+	now := time.Now().UTC().Unix()
+	res := &tpl.CacheLabelsInfoRes{Result: []schema.UserCacheLabel{}, Timestamp: now}
 	if user == nil {
 		return res, nil // user 不存在，返回空
 	}
 
-	now := time.Now().UTC().Unix()
 	if conf.Config.IsCacheLabelExpired(now, user.ActiveAt) {
 		// user 上缓存的 labels 过期，则刷新获取最新，RefreshUser 要考虑并发场景
-		user.Labels, err = b.ms.User.RefreshLabels(ctx, user.ID, now)
+		user, err = b.ms.User.RefreshLabels(ctx, user.ID, now)
 		if err != nil {
 			return res, nil
 		}
 	}
 
 	labels := user.GetLabels()
-	res.Result = make([]schema.UserCacheLabel, 0, len(labels))
-	for _, l := range labels {
-		if l.Product == product {
-			if client != "" && l.Clients != "" && !strings.Contains(l.Clients, client) {
-				continue
-			}
-			if channel != "" && l.Channels != "" && !strings.Contains(l.Channels, channel) {
-				continue
-			}
-			r := l
-			res.Result = append(res.Result, r)
-		}
+	if result, ok := labels[product]; ok {
+		res.Result = result
+		res.Timestamp = user.ActiveAt
 	}
 	return res, nil
 }

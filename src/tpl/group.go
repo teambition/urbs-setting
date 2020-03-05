@@ -27,7 +27,7 @@ func (t *GroupsBody) Validate() error {
 		if !validIDNameReg.MatchString(g.UID) {
 			return gear.ErrBadRequest.WithMsgf("invalid group uid: %s", g.UID)
 		}
-		if len(g.Desc) > 1023 {
+		if len(g.Desc) > 1022 {
 			return gear.ErrBadRequest.WithMsgf("desc too long: %d", len(g.Desc))
 		}
 	}

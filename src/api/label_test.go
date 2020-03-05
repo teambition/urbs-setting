@@ -12,10 +12,10 @@ import (
 )
 
 func createLabel(appHost, productName string) (*schema.Label, error) {
-	name := tpl.RandName()
+	name := tpl.RandLabel()
 	res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels", appHost, productName)).
 		Set("Content-Type", "application/json").
-		Send(tpl.NameDescBody{Name: name, Desc: name}).
+		Send(tpl.LabelBody{Name: name, Desc: name}).
 		End()
 
 	if err != nil {
@@ -34,7 +34,7 @@ func TestLabelAPIs(t *testing.T) {
 	product, err := createProduct(tt.Host)
 	assert.Nil(t, err)
 
-	n1 := tpl.RandName()
+	n1 := tpl.RandLabel()
 
 	t.Run(`"POST /products/:product/labels"`, func(t *testing.T) {
 		t.Run("should work", func(t *testing.T) {
@@ -42,7 +42,7 @@ func TestLabelAPIs(t *testing.T) {
 
 			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels", tt.Host, product.Name)).
 				Set("Content-Type", "application/json").
-				Send(tpl.NameDescBody{Name: n1, Desc: "test"}).
+				Send(tpl.LabelBody{Name: n1, Desc: "test"}).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -69,7 +69,7 @@ func TestLabelAPIs(t *testing.T) {
 
 			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels", tt.Host, product.Name)).
 				Set("Content-Type", "application/json").
-				Send(tpl.NameDescBody{Name: n1, Desc: "test"}).
+				Send(tpl.LabelBody{Name: n1, Desc: "test"}).
 				End()
 			assert.Nil(err)
 			assert.Equal(409, res.StatusCode)
@@ -80,7 +80,7 @@ func TestLabelAPIs(t *testing.T) {
 
 			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels", tt.Host, product.Name)).
 				Set("Content-Type", "application/json").
-				Send(tpl.NameDescBody{Name: "ab", Desc: "test"}).
+				Send(tpl.LabelBody{Name: "1abc", Desc: "test"}).
 				End()
 			assert.Nil(err)
 			assert.Equal(400, res.StatusCode)

@@ -52,11 +52,9 @@ const userCacheLabelsSQL = "(select t2.`id`, t1.`created_at`, t2.`name`, t3.`nam
 	"order by `created_at` desc"
 
 // RefreshLabels 更新 user 上的 labels 缓存，包括通过 group 关系获得的 labels
-func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (string, error) {
-	labels := ""
-
+func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (*schema.User, error) {
+	user := &schema.User{ID: id}
 	err := m.DB.Transaction(func(tx *gorm.DB) error {
-		user := &schema.User{ID: id}
 		// 指定 id 的记录被锁住，如果表中无符合记录的数据则排他锁不生效
 		if err := tx.Set("gorm:query_option", "FOR UPDATE").First(user).Error; err != nil {
 			return err
@@ -64,11 +62,10 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (string, 
 
 		if !conf.Config.IsCacheLabelExpired(now, user.ActiveAt) {
 			// 已被其它请求更新
-			labels = user.Labels
 			return nil
 		}
 
-		data := make([]schema.UserCacheLabel, 0, 8)
+		data := make(schema.UserCacheLabels)
 		rows, err := tx.Raw(userCacheLabelsSQL, id, id).Rows()
 		defer rows.Close()
 
@@ -80,9 +77,10 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (string, 
 		set := make(map[int64]struct{})
 		for rows.Next() {
 			var ignoreID int64
+			var product string
 			label := schema.UserCacheLabel{}
 			// ScanRows 扫描一行记录到 user
-			if err := rows.Scan(&ignoreID, &ignoreTime, &label.Label, &label.Product, &label.Channels, &label.Clients); err != nil {
+			if err := rows.Scan(&ignoreID, &ignoreTime, &label.Label, &product, &label.Channels, &label.Clients); err != nil {
 				return err
 			}
 			if _, ok := set[ignoreID]; ok {
@@ -90,17 +88,20 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (string, 
 			}
 
 			set[ignoreID] = struct{}{}
-			data = append(data, label)
+			arr, ok := data[product]
+			if !ok {
+				arr = make([]schema.UserCacheLabel, 0)
+			}
+			data[product] = append(arr, label)
 		}
 		user.PutLabels(data)
 		user.ActiveAt = time.Now().UTC().Unix()
-		labels = user.Labels
 
 		return tx.Model(&schema.User{ID: id}).Updates(map[string]interface{}{
 			"labels": user.Labels, "active_at": user.ActiveAt}).Error // 返回 nil 提交事务，否则回滚
 	})
 
-	return labels, err
+	return user, err
 }
 
 const userLabelsSQL = "select t2.`id`, t2.`name`, t2.`desc`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +

@@ -31,7 +31,7 @@ func (a *Label) Create(ctx *gear.Context) error {
 		return err
 	}
 
-	body := tpl.NameDescBody{}
+	body := tpl.LabelBody{}
 	if err := ctx.ParseBody(&body); err != nil {
 		return err
 	}

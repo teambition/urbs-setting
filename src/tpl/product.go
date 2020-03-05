@@ -29,8 +29,8 @@ func (t *ProductLabelURL) Validate() error {
 	if err := t.ProductURL.Validate(); err != nil {
 		return err
 	}
-	if !validIDNameReg.MatchString(t.Label) {
-		return gear.ErrBadRequest.WithMsgf("invalid label name: %s", t.Label)
+	if !validLabelReg.MatchString(t.Label) {
+		return gear.ErrBadRequest.WithMsgf("invalid label: %s", t.Label)
 	}
 	return nil
 }

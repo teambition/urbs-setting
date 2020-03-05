@@ -21,13 +21,13 @@ build:
 	-X ${APP_PATH}/src/api.BuildTime=${BUILD_TIME} \
 	-X ${APP_PATH}/src/api.GitSHA1=${BUILD_COMMIT}" \
 	-o ./dist/urbs-setting main.go
-build-tool:
+build-linux:
 	@mkdir -p ./dist
-	GO111MODULE=on go build -ldflags "-X ${APP_PATH}/src/api.AppName=${APP_NAME} \
+	GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X ${APP_PATH}/src/api.AppName=${APP_NAME} \
 	-X ${APP_PATH}/src/api.AppVersion=${APP_VERSION} \
 	-X ${APP_PATH}/src/api.BuildTime=${BUILD_TIME} \
 	-X ${APP_PATH}/src/api.GitSHA1=${BUILD_COMMIT}" \
-	-o ./dist/sql-cli cmd/sql_cli/sql_cli.go
+	-o ./dist/urbs-setting main.go
 
 PKG_LIST := $(shell go list ./... | grep -v /vendor/)
 GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/)
@@ -57,7 +57,7 @@ coverhtml:
 	@go tool cover -html=coverage/cover.out -o coverage/coverage.html
 	@go tool cover -func=coverage/cover.out | tail -n 1
 
-DOCKER_IMAGE_TAG := ${APP_NAME}:${APP_VERSION}
+DOCKER_IMAGE_TAG := ${APP_NAME}:latest
 .PHONY: image
 image:
 	docker build --rm -t ${DOCKER_IMAGE_TAG} .
