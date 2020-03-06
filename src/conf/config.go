@@ -9,6 +9,9 @@ import (
 func init() {
 	p := &Config
 	util.ReadConfig(p)
+	if err := p.Validate(); err != nil {
+		panic(err)
+	}
 }
 
 // Logger logger config
@@ -29,21 +32,35 @@ type SQL struct {
 
 // ConfigTpl ...
 type ConfigTpl struct {
-	SrvAddr          string        `json:"addr" yaml:"addr"`
-	CertFile         string        `json:"cert_file" yaml:"cert_file"`
-	KeyFile          string        `json:"key_file" yaml:"key_file"`
-	Logger           Logger        `json:"logger" yaml:"logger"`
-	MySQL            SQL           `json:"mysql" yaml:"mysql"`
-	CacheLabelExpire time.Duration `json:"cache_label_expire" yaml:"cache_label_expire"`
-	Channels         []string      `json:"channels" yaml:"channels"`
-	Clients          []string      `json:"clients" yaml:"clients"`
-	HIDKey           string        `json:"hid_key" yaml:"hid_key"`
-	AuthKeys         []string      `json:"auth_keys" yaml:"auth_keys"`
+	SrvAddr          string   `json:"addr" yaml:"addr"`
+	CertFile         string   `json:"cert_file" yaml:"cert_file"`
+	KeyFile          string   `json:"key_file" yaml:"key_file"`
+	Logger           Logger   `json:"logger" yaml:"logger"`
+	MySQL            SQL      `json:"mysql" yaml:"mysql"`
+	CacheLabelExpire string   `json:"cache_label_expire" yaml:"cache_label_expire"`
+	Channels         []string `json:"channels" yaml:"channels"`
+	Clients          []string `json:"clients" yaml:"clients"`
+	HIDKey           string   `json:"hid_key" yaml:"hid_key"`
+	AuthKeys         []string `json:"auth_keys" yaml:"auth_keys"`
+	cacheLabelExpire int64    // seconds, default to 60 seconds
+}
+
+// Validate 用于完成基本的配置验证和初始化工作。业务相关的配置验证建议放到相关代码中实现，如 mysql 的配置。
+func (c *ConfigTpl) Validate() error {
+	du, err := time.ParseDuration(c.CacheLabelExpire)
+	if err != nil {
+		return err
+	}
+	if du < time.Minute {
+		du = time.Minute
+	}
+	c.cacheLabelExpire = int64(du / time.Second)
+	return nil
 }
 
 // IsCacheLabelExpired 判断用户缓存的 labels 是否超过有效期
 func (c *ConfigTpl) IsCacheLabelExpired(now, activeAt int64) bool {
-	return now-activeAt > int64(c.CacheLabelExpire/time.Second)
+	return now-activeAt > c.cacheLabelExpire
 }
 
 // Config ...
