@@ -1,4 +1,6 @@
 addr: ":3000"
+cert_file:
+key_file:
 logger:
   level: debug
 mysql:
