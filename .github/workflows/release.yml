@@ -9,24 +9,21 @@ jobs:
   build:
     name: Build And Upload Release Asset
     runs-on: ubuntu-latest
+    container: golang:1.14.0
     steps:
-      - name: Set up Go 1.14
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.14
-        id: go
-
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
       - name: Get dependencies
         run: |
+          go version
           go get -v -d ./...
 
       - name: Build project # This would actually build your project, using zip for an example artifact
         run: |
-          make build-linux
-          zip -j ./dist/urbs-setting.linux-amd64.zip ./dist/urbs-setting
+          make build
+          cd dist
+          tar -czf urbs-setting.linux-amd64.tar.gz urbs-setting
 
       - name: Create Release
         id: create_release
@@ -46,6 +43,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ./dist/urbs-setting.linux-amd64.zip
-          asset_name: urbs-setting.linux-amd64.zip
-          asset_content_type: application/zip
+          asset_path: ./dist/urbs-setting.linux-amd64.tar.gz
+          asset_name: urbs-setting.linux-amd64.tar.gz
+          asset_content_type: application/octet-stream
