@@ -41,12 +41,12 @@ func (m *User) FindByUID(ctx context.Context, uid string, selectStr string) (*sc
 }
 
 const userCacheLabelsSQL = "(select t2.`id`, t1.`created_at`, t2.`name`, t3.`name` as `p`, t2.`channels`, t2.`clients` " +
-	"from `user_label` t1, `label` t2, `product` t3 " +
+	"from `user_label` t1, `urbs_label` t2, `urbs_product` t3 " +
 	"where t1.`user_id` = ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.`id` " +
 	"order by t1.`created_at` desc limit 1000) " +
 	"union all " + // 期望能基于 id distinct
 	"(select t3.`id`, t2.`created_at`, t3.`name`, t4.`name` as `p`, t3.`channels`, t3.`clients` " +
-	"from `user_group` t1, `group_label` t2, `label` t3, `product` t4 " +
+	"from `user_group` t1, `group_label` t2, `urbs_label` t3, `urbs_product` t4 " +
 	"where t1.`user_id` = ? and t1.`group_id` = t2.`group_id` and t2.`label_id` = t3.`id` and t3.`product_id` = t4.`id` " +
 	"order by t2.`created_at` desc limit 1000)" +
 	"order by `created_at` desc"
@@ -104,8 +104,8 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (*schema.
 	return user, err
 }
 
-const userLabelsSQL = "select t2.`id`, t2.`name`, t2.`desc`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
-	"from `user_label` t1, `label` t2, `product` t3 " +
+const userLabelsSQL = "select t2.`id`, t2.`name`, t2.`description`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
+	"from `user_label` t1, `urbs_label` t2, `urbs_product` t3 " +
 	"where t1.`user_id` = ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.id " +
 	"order by t1.`created_at` desc " +
 	"limit 1000"
@@ -134,12 +134,13 @@ func (m *User) FindLables(ctx context.Context, userID int64, product string) ([]
 }
 
 // BatchAdd 批量添加用户
+// uids 经过了 `^[0-9A-Za-z._-]{3,63}$` 正则验证
 func (m *User) BatchAdd(ctx context.Context, uids []string) error {
 	if len(uids) == 0 {
 		return nil
 	}
 	var buf bytes.Buffer
-	fmt.Fprint(&buf, "insert ignore into `user` (`uid`) values")
+	fmt.Fprint(&buf, "insert ignore into `urbs_user` (`uid`) values")
 	for _, uid := range uids {
 		fmt.Fprintf(&buf, " ('%s'),", uid)
 	}

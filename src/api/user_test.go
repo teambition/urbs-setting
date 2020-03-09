@@ -30,7 +30,7 @@ func createUsers(appHost string, count int) ([]string, error) {
 }
 
 func cleanupUserLabels(db *gorm.DB, uid string) error {
-	return db.Table("user").Where("uid = ?", uid).Updates(map[string]interface{}{
+	return db.Table("urbs_user").Where("uid = ?", uid).Updates(map[string]interface{}{
 		"labels": "", "active_at": 1}).Error
 }
 

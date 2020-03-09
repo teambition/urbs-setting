@@ -61,10 +61,10 @@ func (m *Setting) Offline(ctx context.Context, settingID int64) error {
 }
 
 const batchAddUserSettingSQL = "insert ignore into `user_setting` (`user_id`, `setting_id`, `value`) " +
-	"select `user`.id, ?, ? from `user` where `user`.uid in ( ? ) " +
+	"select `urbs_user`.id, ?, ? from `urbs_user` where `urbs_user`.uid in ( ? ) " +
 	"on duplicate key update `last_value` = values(`value`), `value` = ?, `updated_at` = current_timestamp()"
 const batchAddGroupSettingSQL = "insert ignore into `group_setting` (`group_id`, `setting_id`, `value`) " +
-	"select `group`.id, ?, ? from `group` where `group`.uid in ( ? ) " +
+	"select `urbs_group`.id, ?, ? from `urbs_group` where `urbs_group`.uid in ( ? ) " +
 	"on duplicate key update `last_value` = values(`value`), `value` = ?, `updated_at` = current_timestamp()"
 
 // Assign 把标签批量分配给用户或群组，如果用户或群组不存在则忽略，如果已经分配，则把原值保存到 last_value 并更新值
