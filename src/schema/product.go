@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Product 详见 ./sql/schema.sql table `product`
+// Product 详见 ./sql/schema.sql table `urbs_product`
 // 产品线
 type Product struct {
 	ID        int64      `gorm:"column:id" json:"id"`
@@ -14,6 +14,11 @@ type Product struct {
 	DeletedAt *time.Time `gorm:"column:deleted_at" json:"deleted_at"` // 删除时间，用于灰度管理
 	OfflineAt *time.Time `gorm:"column:offline_at" json:"offline_at"` // 下线时间，用于灰度管理
 	Name      string     `gorm:"column:name" json:"name"`             // varchar(63) 产品线名称，表内唯一
-	Desc      string     `gorm:"column:desc" json:"desc"`             // varchar(1022) 产品线描述
+	Desc      string     `gorm:"column:description" json:"desc"`      // varchar(1022) 产品线描述
 	Status    int64      `gorm:"column:status" json:"status"`         // -1 下线弃用，0 未使用，大于 0 为有效功能模块数
+}
+
+// TableName retuns table name
+func (Product) TableName() string {
+	return "urbs_product"
 }

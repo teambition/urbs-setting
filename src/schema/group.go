@@ -5,13 +5,18 @@ import (
 	"time"
 )
 
-// Group 详见 ./sql/schema.sql table `group`
+// Group 详见 ./sql/schema.sql table `urbs_group`
 // 用户群组
 type Group struct {
 	ID        int64     `gorm:"column:id" json:"id"`
 	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
-	SyncAt    int64     `gorm:"column:sync_at" json:"sync_at"` // 群组成员同步时间点
-	UID       string    `gorm:"column:uid" json:"uid"`         // varchar(63)，群组外部ID，表内唯一， 如 Teambition organization id
-	Desc      string    `gorm:"column:desc" json:"desc"`       // varchar(1022)，群组描述
+	SyncAt    int64     `gorm:"column:sync_at" json:"sync_at"`  // 群组成员同步时间点
+	UID       string    `gorm:"column:uid" json:"uid"`          // varchar(63)，群组外部ID，表内唯一， 如 Teambition organization id
+	Desc      string    `gorm:"column:description" json:"desc"` // varchar(1022)，群组描述
+}
+
+// TableName retuns table name
+func (Group) TableName() string {
+	return "urbs_group"
 }

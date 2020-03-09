@@ -44,8 +44,8 @@ func (m *Group) Find(ctx context.Context) ([]schema.Group, error) {
 	return groups, err
 }
 
-const groupLabelsSQL = "select t2.`id`, t2.`name`, t2.`desc`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
-	"from `group_label` t1, `label` t2, `product` t3 " +
+const groupLabelsSQL = "select t2.`id`, t2.`name`, t2.`description`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
+	"from `group_label` t1, `urbs_label` t2, `urbs_product` t3 " +
 	"where t1.`group_id` = ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.id " +
 	"order by t1.`created_at` desc " +
 	"limit 1000"
@@ -80,7 +80,7 @@ func (m *Group) BatchAdd(ctx context.Context, groups []tpl.GroupBody) error {
 	}
 
 	syncAt := time.Now().UTC().Unix()
-	stmt, err := m.DB.DB().Prepare("insert ignore into `group` (`uid`, `sync_at`, `desc`) values (?, ?, ?)")
+	stmt, err := m.DB.DB().Prepare("insert ignore into `urbs_group` (`uid`, `sync_at`, `description`) values (?, ?, ?)")
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (m *Group) BatchAdd(ctx context.Context, groups []tpl.GroupBody) error {
 }
 
 const batchAddGroupMemberSQL = "insert ignore into `user_group` (`user_id`, `group_id`, `sync_at`) " +
-	"select `user`.id, ?, ? from `user` where `user`.uid in ( ? ) " +
+	"select `urbs_user`.id, ?, ? from `urbs_user` where `urbs_user`.uid in ( ? ) " +
 	"on duplicate key update `sync_at` = values(`sync_at`)"
 
 // BatchAddMembers 批量添加群组成员，已存在则更新 sync_at
@@ -108,7 +108,7 @@ func (m *Group) BatchAddMembers(ctx context.Context, group *schema.Group, users 
 }
 
 const groupMembersSQL = "select t2.`uid`, t1.`created_at`, t1.`sync_at` " +
-	"from `user_group` t1, `user` t2 " +
+	"from `user_group` t1, `urbs_user` t2 " +
 	"where t1.`group_id` = ? and t1.`user_id` = t2.`id` " +
 	"order by t1.`sync_at` desc " +
 	"limit 10000"
