@@ -38,22 +38,36 @@ func (m *Group) FindByUID(ctx context.Context, uid string, selectStr string) (*s
 }
 
 // Find 根据条件查找 groups
-func (m *Group) Find(ctx context.Context) ([]schema.Group, error) {
+func (m *Group) Find(ctx context.Context, pg tpl.Pagination) ([]schema.Group, error) {
 	groups := make([]schema.Group, 0)
-	err := m.DB.Order("`created_at`").Limit(1000).Find(&groups).Error
+	pageToken := pg.TokenToID()
+
+	err := m.DB.Where("`id` >= ?", pageToken).
+		Order("`id`").Limit(pg.PageSize + 1).Find(&groups).Error
 	return groups, err
 }
 
-const groupLabelsSQL = "select t2.`id`, t2.`name`, t2.`description`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
+// Count 计算 group 总数
+func (m *Group) Count(ctx context.Context) (int, error) {
+
+	count := 0
+	err := m.DB.Model(&schema.Group{}).Count(&count).Error
+	return count, err
+}
+
+const groupLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`offline_at`, t2.`name`, " +
+	"t2.`description`, t2.`status`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
 	"from `group_label` t1, `urbs_label` t2, `urbs_product` t3 " +
-	"where t1.`group_id` = ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.id " +
-	"order by t1.`created_at` desc " +
-	"limit 1000"
+	"where t1.`group_id` = ? and t1.`id` >= ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.id " +
+	"order by t1.`id` asc " +
+	"limit ?"
 
 // FindLables 根据群组 ID 返回其 labels 数据。TODO：支持更多筛选条件和分页
-func (m *Group) FindLables(ctx context.Context, groupID int64, product string) ([]tpl.LabelInfo, error) {
+func (m *Group) FindLables(ctx context.Context, groupID int64, pg tpl.Pagination) ([]tpl.LabelInfo, error) {
 	data := []tpl.LabelInfo{}
-	rows, err := m.DB.Raw(groupLabelsSQL, groupID).Rows()
+	pageToken := pg.TokenToID()
+
+	rows, err := m.DB.Raw(groupLabelsSQL, groupID, pageToken, pg.PageSize+1).Rows()
 	defer rows.Close()
 
 	if err != nil {
@@ -61,16 +75,28 @@ func (m *Group) FindLables(ctx context.Context, groupID int64, product string) (
 	}
 
 	for rows.Next() {
-		label := schema.Label{}
+		var clients string
+		var channels string
 		labelInfo := tpl.LabelInfo{}
-		if err := rows.Scan(&label.ID, &labelInfo.Name, &labelInfo.Desc, &labelInfo.Channels, &labelInfo.Clients, &labelInfo.Product); err != nil {
+		if err := rows.Scan(&labelInfo.ID, &labelInfo.CreatedAt, &labelInfo.UpdatedAt, &labelInfo.OfflineAt,
+			&labelInfo.Name, &labelInfo.Desc, &labelInfo.Status, &channels, &clients, &labelInfo.Product); err != nil {
 			return nil, err
 		}
-		labelInfo.HID = service.HIDer.HID(label)
+		labelInfo.Channels = tpl.StringToSlice(channels)
+		labelInfo.Clients = tpl.StringToSlice(clients)
+		labelInfo.HID = service.IDToHID(labelInfo.ID, "label")
 		data = append(data, labelInfo)
 	}
 
 	return data, nil
+}
+
+// CountLabels 计算 group labels 总数
+func (m *Group) CountLabels(ctx context.Context, groupID int64) (int, error) {
+
+	count := 0
+	err := m.DB.Model(&schema.GroupLabel{}).Where("group_id = ?", groupID).Count(&count).Error
+	return count, err
 }
 
 // BatchAdd 批量添加群组
@@ -80,14 +106,14 @@ func (m *Group) BatchAdd(ctx context.Context, groups []tpl.GroupBody) error {
 	}
 
 	syncAt := time.Now().UTC().Unix()
-	stmt, err := m.DB.DB().Prepare("insert ignore into `urbs_group` (`uid`, `sync_at`, `description`) values (?, ?, ?)")
+	stmt, err := m.DB.DB().Prepare("insert ignore into `urbs_group` (`uid`, `kind`, `sync_at`, `description`) values (?, ?, ?, ?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for _, group := range groups {
-		if _, err := stmt.Exec(group.UID, syncAt, group.Desc); err != nil {
+		if _, err := stmt.Exec(group.UID, group.Kind, syncAt, group.Desc); err != nil {
 			return err
 		}
 	}
@@ -107,16 +133,26 @@ func (m *Group) BatchAddMembers(ctx context.Context, group *schema.Group, users 
 	return m.DB.Exec(batchAddGroupMemberSQL, group.ID, group.SyncAt, users).Error
 }
 
-const groupMembersSQL = "select t2.`uid`, t1.`created_at`, t1.`sync_at` " +
+// CountMembers 计算成员总数
+func (m *Group) CountMembers(ctx context.Context, groupID int64) (int, error) {
+
+	count := 0
+	err := m.DB.Model(&schema.UserGroup{}).Where("group_id = ?", groupID).Count(&count).Error
+	return count, err
+}
+
+const groupMembersSQL = "select t1.`id`, t2.`uid`, t1.`created_at`, t1.`sync_at` " +
 	"from `user_group` t1, `urbs_user` t2 " +
-	"where t1.`group_id` = ? and t1.`user_id` = t2.`id` " +
-	"order by t1.`sync_at` desc " +
-	"limit 10000"
+	"where t1.`group_id` = ? and t1.`id` >= ? and t1.`user_id` = t2.`id` " +
+	"order by t1.`id` asc " +
+	"limit ?"
 
 // FindMembers 根据条件查找群组成员
-func (m *Group) FindMembers(ctx context.Context, groupID int64) ([]tpl.GroupMember, error) {
+func (m *Group) FindMembers(ctx context.Context, groupID int64, pg tpl.Pagination) ([]tpl.GroupMember, error) {
 	data := []tpl.GroupMember{}
-	rows, err := m.DB.Raw(groupMembersSQL, groupID).Rows()
+	pageToken := pg.TokenToID()
+
+	rows, err := m.DB.Raw(groupMembersSQL, groupID, pageToken, pg.PageSize+1).Rows()
 	defer rows.Close()
 
 	if err != nil {
@@ -125,7 +161,7 @@ func (m *Group) FindMembers(ctx context.Context, groupID int64) ([]tpl.GroupMemb
 
 	for rows.Next() {
 		member := tpl.GroupMember{}
-		if err := rows.Scan(&member.User, &member.CreatedAt, &member.SyncAt); err != nil {
+		if err := rows.Scan(&member.ID, &member.User, &member.CreatedAt, &member.SyncAt); err != nil {
 			return nil, err
 		}
 		data = append(data, member)
@@ -141,7 +177,7 @@ func (m *Group) RemoveMembers(ctx context.Context, groupID, userID int64, syncLt
 		err = m.DB.Where("group_id = ? and sync_at < ?", groupID, syncLt).Delete(&schema.UserGroup{}).Error
 	}
 	if err == nil && userID > 0 {
-		err = m.DB.Where("group_id = ? and user_id = ?", groupID, userID).Delete(&schema.UserGroup{}).Error
+		err = m.DB.Where("user_id = ? and group_id = ?", userID, groupID).Delete(&schema.UserGroup{}).Error
 	}
 	return err
 }

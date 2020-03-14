@@ -15,6 +15,7 @@ type GroupsBody struct {
 // GroupBody ...
 type GroupBody struct {
 	UID  string `json:"uid"`
+	Kind string `json:"kind"`
 	Desc string `json:"desc"`
 }
 
@@ -26,6 +27,9 @@ func (t *GroupsBody) Validate() error {
 	for _, g := range t.Groups {
 		if !validIDNameReg.MatchString(g.UID) {
 			return gear.ErrBadRequest.WithMsgf("invalid group uid: %s", g.UID)
+		}
+		if !validLabelReg.MatchString(g.Kind) {
+			return gear.ErrBadRequest.WithMsgf("invalid group kind: %s", g.Kind)
 		}
 		if len(g.Desc) > 1022 {
 			return gear.ErrBadRequest.WithMsgf("desc too long: %d", len(g.Desc))
@@ -64,12 +68,13 @@ func (t *GroupMembersURL) Validate() error {
 
 // GroupsRes ...
 type GroupsRes struct {
-	ResponseType
+	SuccessResponseType
 	Result []schema.Group `json:"result"`
 }
 
 // GroupMember ...
 type GroupMember struct {
+	ID        int64
 	User      string    `json:"user"`
 	CreatedAt time.Time `json:"created_at"`
 	SyncAt    int64     `json:"sync_at"` // 归属关系同步时间戳，1970 以来的秒数，应该与 group.sync_at 相等
@@ -77,6 +82,6 @@ type GroupMember struct {
 
 // GroupMembersRes ...
 type GroupMembersRes struct {
-	ResponseType
+	SuccessResponseType
 	Result []GroupMember `json:"result"`
 }

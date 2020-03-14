@@ -6,6 +6,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/teambition/urbs-setting/src/schema"
+	"github.com/teambition/urbs-setting/src/tpl"
 )
 
 // Product ...
@@ -36,10 +37,19 @@ func (m *Product) FindByName(ctx context.Context, name, selectStr string) (*sche
 }
 
 // Find 根据条件查找 products
-func (m *Product) Find(ctx context.Context) ([]schema.Product, error) {
+func (m *Product) Find(ctx context.Context, pg tpl.Pagination) ([]schema.Product, error) {
 	products := make([]schema.Product, 0)
-	err := m.DB.Where("`deleted_at` is null").Order("`status`, `created_at`").Limit(1000).Find(&products).Error
+	pageToken := pg.TokenToID()
+	err := m.DB.Where("`id` >= ? and `deleted_at` is null", pageToken).
+		Order("`id`").Limit(pg.PageSize + 1).Find(&products).Error
 	return products, err
+}
+
+// Count 计算 products 总数
+func (m *Product) Count(ctx context.Context) (int, error) {
+	count := 0
+	err := m.DB.Model(&schema.Product{}).Where("deleted_at is null").Count(&count).Error
+	return count, err
 }
 
 // Create ...

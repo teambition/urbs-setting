@@ -6,12 +6,12 @@ import (
 
 // ModuleRes ...
 type ModuleRes struct {
-	ResponseType
+	SuccessResponseType
 	Result schema.Module `json:"result"` // 空数组也保留
 }
 
 // ModulesRes ...
 type ModulesRes struct {
-	ResponseType
+	SuccessResponseType
 	Result []schema.Module `json:"result"` // 空数组也保留
 }

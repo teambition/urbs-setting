@@ -13,11 +13,11 @@ type Module struct {
 
 // List ..
 func (a *Module) List(ctx *gear.Context) error {
-	req := tpl.ProductURL{}
+	req := tpl.ProductPaginationURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
-	res, err := a.blls.Module.List(ctx, req.Product)
+	res, err := a.blls.Module.List(ctx, req.Product, req.Pagination)
 	if err != nil {
 		return err
 	}

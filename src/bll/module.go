@@ -15,7 +15,7 @@ type Module struct {
 }
 
 // List 返回产品下的功能模块列表，TODO：支持分页
-func (b *Module) List(ctx context.Context, productName string) (*tpl.ModulesRes, error) {
+func (b *Module) List(ctx context.Context, productName string, pg tpl.Pagination) (*tpl.ModulesRes, error) {
 	product, err := b.ms.Product.FindByName(ctx, productName, "id, `deleted_at`")
 	if err != nil {
 		return nil, err
@@ -26,12 +26,22 @@ func (b *Module) List(ctx context.Context, productName string) (*tpl.ModulesRes,
 	if product.DeletedAt != nil {
 		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
 	}
-	modules, err := b.ms.Module.Find(ctx, product.ID)
+	modules, err := b.ms.Module.Find(ctx, product.ID, pg)
+	if err != nil {
+		return nil, err
+	}
+
+	total, err := b.ms.Module.Count(ctx, product.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	res := &tpl.ModulesRes{Result: modules}
+	res.TotalSize = total
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
 	return res, nil
 }
 

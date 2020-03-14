@@ -34,12 +34,12 @@ func (a *User) ListLablesInCache(ctx *gear.Context) error {
 
 // ListLables ..
 func (a *User) ListLables(ctx *gear.Context) error {
-	req := tpl.LabelsURL{}
+	req := tpl.UIDPaginationURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res, err := a.blls.User.ListLables(ctx, req.UID, req.Product)
+	res, err := a.blls.User.ListLables(ctx, req.UID, req.Pagination)
 	if err != nil {
 		return err
 	}
@@ -85,8 +85,9 @@ func (a *User) RemoveLable(ctx *gear.Context) error {
 		return err
 	}
 	label := &schema.Label{}
-	if err := service.HIDer.PutHID(label, req.HID); err != nil {
-		return err
+	label.ID = service.HIDToID(req.HID, "label")
+	if label.ID == 0 {
+		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", req.HID)
 	}
 	if err := a.blls.User.RemoveLable(ctx, req.UID, label.ID); err != nil {
 		return err
@@ -107,8 +108,9 @@ func (a *User) RemoveSetting(ctx *gear.Context) error {
 		return err
 	}
 	setting := &schema.Setting{}
-	if err := service.HIDer.PutHID(setting, req.HID); err != nil {
-		return err
+	setting.ID = service.HIDToID(req.HID, "setting")
+	if setting.ID == 0 {
+		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", req.HID)
 	}
 	if err := a.blls.User.RemoveSetting(ctx, req.UID, setting.ID); err != nil {
 		return err

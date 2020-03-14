@@ -11,27 +11,29 @@ import (
 	"github.com/teambition/urbs-setting/src/tpl"
 )
 
-func createModule(appHost, productName string) (*schema.Module, error) {
+func createModule(tt *TestTools, productName string) (module schema.Module, err error) {
 	name := tpl.RandName()
-	res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/modules", appHost, productName)).
+	_, err = request.Post(fmt.Sprintf("%s/v1/products/%s/modules", tt.Host, productName)).
 		Set("Content-Type", "application/json").
 		Send(tpl.NameDescBody{Name: name, Desc: name}).
 		End()
 
-	if err != nil {
-		return nil, err
+	var product schema.Product
+	if err == nil {
+		err = tt.DB.Where("name = ?", productName).First(&product).Error
 	}
 
-	json := tpl.ModuleRes{}
-	res.JSON(&json)
-	return &json.Result, nil
+	if err == nil {
+		err = tt.DB.Where("product_id = ? and name = ?", product.ID, name).First(&module).Error
+	}
+	return
 }
 
 func TestModuleAPIs(t *testing.T) {
 	tt, cleanup := SetUpTestTools()
 	defer cleanup()
 
-	product, err := createProduct(tt.Host)
+	product, err := createProduct(tt)
 	assert.Nil(t, err)
 
 	n1 := tpl.RandName()

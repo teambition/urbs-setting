@@ -14,13 +14,23 @@ type Product struct {
 	ms *model.Models
 }
 
-// List 返回产品列表，TODO：支持分页
-func (b *Product) List(ctx context.Context) (*tpl.ProductsRes, error) {
-	products, err := b.ms.Product.Find(ctx)
+// List 返回产品列表
+func (b *Product) List(ctx context.Context, pg tpl.Pagination) (*tpl.ProductsRes, error) {
+	products, err := b.ms.Product.Find(ctx, pg)
 	if err != nil {
 		return nil, err
 	}
+	total, err := b.ms.Product.Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	res := &tpl.ProductsRes{Result: products}
+	res.TotalSize = total
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
 	return res, nil
 }
 

@@ -14,8 +14,8 @@ type Label struct {
 	ms *model.Models
 }
 
-// List 返回产品下的标签列表，TODO：支持分页
-func (b *Label) List(ctx context.Context, productName string) (*tpl.LabelsRes, error) {
+// List 返回产品下的标签列表
+func (b *Label) List(ctx context.Context, productName string, pg tpl.Pagination) (*tpl.LabelsInfoRes, error) {
 	product, err := b.ms.Product.FindByName(ctx, productName, "id, `deleted_at`")
 	if err != nil {
 		return nil, err
@@ -26,17 +26,27 @@ func (b *Label) List(ctx context.Context, productName string) (*tpl.LabelsRes, e
 	if product.DeletedAt != nil {
 		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
 	}
-	labels, err := b.ms.Label.Find(ctx, product.ID)
+	labels, err := b.ms.Label.Find(ctx, product.ID, pg)
+	if err != nil {
+		return nil, err
+	}
+	total, err := b.ms.Label.Count(ctx, product.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	res := &tpl.LabelsRes{Result: labels}
+	labelInfos := tpl.LabelInfosFrom(labels, productName)
+	res := &tpl.LabelsInfoRes{Result: labelInfos}
+	res.TotalSize = total
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
 	return res, nil
 }
 
 // Create 创建标签
-func (b *Label) Create(ctx context.Context, productName, labelName, desc string) (*tpl.LabelRes, error) {
+func (b *Label) Create(ctx context.Context, productName, labelName, desc string) (*tpl.LabelInfoRes, error) {
 	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
 	if err != nil {
 		return nil, err
@@ -55,7 +65,7 @@ func (b *Label) Create(ctx context.Context, productName, labelName, desc string)
 	if err = b.ms.Label.Create(ctx, &label); err != nil {
 		return nil, err
 	}
-	return &tpl.LabelRes{Result: label}, nil
+	return &tpl.LabelInfoRes{Result: tpl.LabelInfoFrom(label, productName)}, nil
 }
 
 // Offline 下线标签

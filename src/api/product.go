@@ -13,7 +13,12 @@ type Product struct {
 
 // List ..
 func (a *Product) List(ctx *gear.Context) error {
-	res, err := a.blls.Product.List(ctx)
+	req := tpl.Pagination{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Product.List(ctx, req)
 	if err != nil {
 		return err
 	}

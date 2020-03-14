@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/DavidCai1993/request"
@@ -35,6 +36,23 @@ func SetUpTestTools() (tt *TestTools, cleanup func()) {
 	return tt, func() {
 		srv.Close()
 	}
+}
+
+func TestMain(m *testing.M) {
+	tt, cleanup := SetUpTestTools()
+	tt.DB.Exec("TRUNCATE TABLE urbs_user;")
+	tt.DB.Exec("TRUNCATE TABLE urbs_group;")
+	tt.DB.Exec("TRUNCATE TABLE urbs_product;")
+	tt.DB.Exec("TRUNCATE TABLE urbs_label;")
+	tt.DB.Exec("TRUNCATE TABLE urbs_module;")
+	tt.DB.Exec("TRUNCATE TABLE urbs_setting;")
+	tt.DB.Exec("TRUNCATE TABLE user_group;")
+	tt.DB.Exec("TRUNCATE TABLE user_label;")
+	tt.DB.Exec("TRUNCATE TABLE user_setting;")
+	tt.DB.Exec("TRUNCATE TABLE group_label;")
+	tt.DB.Exec("TRUNCATE TABLE group_setting;")
+	cleanup()
+	os.Exit(m.Run())
 }
 
 func TestApp(t *testing.T) {

@@ -1,17 +1,65 @@
 package tpl
 
 import (
+	"time"
+
 	"github.com/teambition/urbs-setting/src/schema"
+	"github.com/teambition/urbs-setting/src/service"
 )
 
-// SettingRes ...
-type SettingRes struct {
-	ResponseType
-	Result schema.Setting `json:"result"` // 空数组也保留
+// SettingInfo ...
+type SettingInfo struct {
+	ID        int64
+	HID       string     `json:"hid"`
+	Product   string     `json:"product"`
+	Module    string     `json:"module"`
+	Name      string     `json:"name"`
+	Desc      string     `json:"desc"`
+	Channels  []string   `json:"channels"`
+	Clients   []string   `json:"clients"`
+	Values    []string   `json:"values"`
+	Status    int64      `json:"status"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	OfflineAt *time.Time `json:"offline_at"`
 }
 
-// SettingsRes ...
-type SettingsRes struct {
-	ResponseType
-	Result []schema.Setting `json:"result"` // 空数组也保留
+// SettingInfoFrom create a SettingInfo from schema.Setting
+func SettingInfoFrom(setting schema.Setting, product, module string) SettingInfo {
+	return SettingInfo{
+		ID:        setting.ID,
+		HID:       service.IDToHID(setting.ID, "setting"),
+		Product:   product,
+		Module:    module,
+		Name:      setting.Name,
+		Desc:      setting.Desc,
+		Channels:  StringToSlice(setting.Channels),
+		Clients:   StringToSlice(setting.Clients),
+		Values:    StringToSlice(setting.Values),
+		Status:    setting.Status,
+		CreatedAt: setting.CreatedAt,
+		UpdatedAt: setting.UpdatedAt,
+		OfflineAt: setting.OfflineAt,
+	}
+}
+
+// SettingInfosFrom create a slice of SettingInfo from a slice of schema.Setting
+func SettingInfosFrom(settings []schema.Setting, product, module string) []SettingInfo {
+	res := make([]SettingInfo, len(settings))
+	for i, l := range settings {
+		res[i] = SettingInfoFrom(l, product, module)
+	}
+	return res
+}
+
+// SettingsInfoRes ...
+type SettingsInfoRes struct {
+	SuccessResponseType
+	Result []SettingInfo `json:"result"` // 空数组也保留
+}
+
+// SettingInfoRes ...
+type SettingInfoRes struct {
+	SuccessResponseType
+	Result SettingInfo `json:"result"` // 空数组也保留
 }

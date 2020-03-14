@@ -6,6 +6,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/teambition/urbs-setting/src/schema"
+	"github.com/teambition/urbs-setting/src/tpl"
 )
 
 // Module ...
@@ -36,10 +37,19 @@ func (m *Module) FindByName(ctx context.Context, productID int64, name, selectSt
 }
 
 // Find 根据条件查找 modules
-func (m *Module) Find(ctx context.Context, productID int64) ([]schema.Module, error) {
+func (m *Module) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Module, error) {
 	modules := make([]schema.Module, 0)
-	err := m.DB.Where("`product_id` = ?", productID).Order("`status`, `created_at`").Limit(1000).Find(&modules).Error
+	pageToken := pg.TokenToID()
+	err := m.DB.Where("`product_id` = ? and `id` >= ?", productID, pageToken).
+		Order("`id`").Limit(pg.PageSize + 1).Find(&modules).Error
 	return modules, err
+}
+
+// Count 计算 product modules 总数
+func (m *Module) Count(ctx context.Context, productID int64) (int, error) {
+	count := 0
+	err := m.DB.Model(&schema.Module{}).Where("product_id = ?", productID).Count(&count).Error
+	return count, err
 }
 
 // Create ...

@@ -8,7 +8,7 @@ import (
 // Product 详见 ./sql/schema.sql table `urbs_product`
 // 产品线
 type Product struct {
-	ID        int64      `gorm:"column:id" json:"id"`
+	ID        int64      `gorm:"column:id"`
 	CreatedAt time.Time  `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time  `gorm:"column:updated_at" json:"updated_at"`
 	DeletedAt *time.Time `gorm:"column:deleted_at" json:"deleted_at"` // 删除时间，用于灰度管理

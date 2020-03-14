@@ -15,7 +15,7 @@ type Setting struct {
 }
 
 // List 返回产品下的功能模块配置项列表，TODO：支持分页
-func (b *Setting) List(ctx context.Context, productName, moduleName string) (*tpl.SettingsRes, error) {
+func (b *Setting) List(ctx context.Context, productName, moduleName string, pg tpl.Pagination) (*tpl.SettingsInfoRes, error) {
 	product, err := b.ms.Product.FindByName(ctx, productName, "id, `deleted_at`")
 	if err != nil {
 		return nil, err
@@ -35,17 +35,26 @@ func (b *Setting) List(ctx context.Context, productName, moduleName string) (*tp
 		return nil, gear.ErrNotFound.WithMsgf("module %s not found", moduleName)
 	}
 
-	settings, err := b.ms.Setting.Find(ctx, module.ID)
+	settings, err := b.ms.Setting.Find(ctx, module.ID, pg)
+	if err != nil {
+		return nil, err
+	}
+	total, err := b.ms.Setting.Count(ctx, module.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	res := &tpl.SettingsRes{Result: settings}
+	res := &tpl.SettingsInfoRes{Result: tpl.SettingInfosFrom(settings, productName, moduleName)}
+	res.TotalSize = total
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
 	return res, nil
 }
 
 // Create 创建功能模块配置项
-func (b *Setting) Create(ctx context.Context, productName, moduleName, settingName, desc string) (*tpl.SettingRes, error) {
+func (b *Setting) Create(ctx context.Context, productName, moduleName, settingName, desc string) (*tpl.SettingInfoRes, error) {
 	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
 	if err != nil {
 		return nil, err
@@ -75,7 +84,7 @@ func (b *Setting) Create(ctx context.Context, productName, moduleName, settingNa
 	if err = b.ms.Setting.Create(ctx, setting); err != nil {
 		return nil, err
 	}
-	return &tpl.SettingRes{Result: *setting}, nil
+	return &tpl.SettingInfoRes{Result: tpl.SettingInfoFrom(*setting, productName, moduleName)}, nil
 }
 
 // Offline 下线功能模块配置项

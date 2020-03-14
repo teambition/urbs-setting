@@ -18,6 +18,23 @@ func (t *ProductURL) Validate() error {
 	return nil
 }
 
+// ProductPaginationURL ...
+type ProductPaginationURL struct {
+	Pagination
+	Product string `json:"product" param:"product"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *ProductPaginationURL) Validate() error {
+	if !validIDNameReg.MatchString(t.Product) {
+		return gear.ErrBadRequest.WithMsgf("invalid product name: %s", t.Product)
+	}
+	if err := t.Pagination.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ProductLabelURL ...
 type ProductLabelURL struct {
 	ProductURL
@@ -37,17 +54,21 @@ func (t *ProductLabelURL) Validate() error {
 
 // ProductModuleURL ...
 type ProductModuleURL struct {
+	Pagination
 	ProductURL
 	Module string `json:"module" param:"module"`
 }
 
 // Validate 实现 gear.BodyTemplate。
 func (t *ProductModuleURL) Validate() error {
+	if !validIDNameReg.MatchString(t.Module) {
+		return gear.ErrBadRequest.WithMsgf("invalid module name: %s", t.Module)
+	}
 	if err := t.ProductURL.Validate(); err != nil {
 		return err
 	}
-	if !validIDNameReg.MatchString(t.Module) {
-		return gear.ErrBadRequest.WithMsgf("invalid module name: %s", t.Module)
+	if err := t.Pagination.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -71,12 +92,12 @@ func (t *ProductModuleSettingURL) Validate() error {
 
 // ProductsRes ...
 type ProductsRes struct {
-	ResponseType
+	SuccessResponseType
 	Result []schema.Product `json:"result"`
 }
 
 // ProductRes ...
 type ProductRes struct {
-	ResponseType
+	SuccessResponseType
 	Result schema.Product `json:"result"`
 }
