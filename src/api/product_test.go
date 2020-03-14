@@ -12,20 +12,17 @@ import (
 	"github.com/teambition/urbs-setting/src/tpl"
 )
 
-func createProduct(appHost string) (*schema.Product, error) {
+func createProduct(tt *TestTools) (product schema.Product, err error) {
 	name := tpl.RandName()
-	res, err := request.Post(fmt.Sprintf("%s/v1/products", appHost)).
+	_, err = request.Post(fmt.Sprintf("%s/v1/products", tt.Host)).
 		Set("Content-Type", "application/json").
 		Send(tpl.NameDescBody{Name: name, Desc: name}).
 		End()
 
-	if err != nil {
-		return nil, err
+	if err == nil {
+		err = tt.DB.Where("name = ?", name).First(&product).Error
 	}
-
-	json := tpl.ProductRes{}
-	res.JSON(&json)
-	return &json.Result, nil
+	return
 }
 
 func TestProductAPIs(t *testing.T) {
@@ -156,16 +153,16 @@ func TestProductAPIs(t *testing.T) {
 	})
 
 	t.Run(`"PUT /products/:product+:offline"`, func(t *testing.T) {
-		product, err := createProduct(tt.Host)
+		product, err := createProduct(tt)
 		assert.Nil(t, err)
 
-		label, err := createLabel(tt.Host, product.Name)
+		label, err := createLabel(tt, product.Name)
 		assert.Nil(t, err)
 
-		module, err := createModule(tt.Host, product.Name)
+		module, err := createModule(tt, product.Name)
 		assert.Nil(t, err)
 
-		setting, err := createSetting(tt.Host, product.Name, module.Name)
+		setting, err := createSetting(tt, product.Name, module.Name)
 		assert.Nil(t, err)
 
 		t.Run("should work", func(t *testing.T) {
@@ -198,17 +195,17 @@ func TestProductAPIs(t *testing.T) {
 			assert := assert.New(t)
 
 			assert.Nil(label.OfflineAt)
-			l := *label
+			l := label
 			assert.Nil(tt.DB.First(&l).Error)
 			assert.NotNil(l.OfflineAt)
 
 			assert.Nil(module.OfflineAt)
-			m := *module
+			m := module
 			assert.Nil(tt.DB.First(&m).Error)
 			assert.NotNil(m.OfflineAt)
 
 			assert.Nil(setting.OfflineAt)
-			s := *setting
+			s := setting
 			assert.Nil(tt.DB.First(&s).Error)
 			assert.NotNil(s.OfflineAt)
 			assert.True(true)
@@ -217,29 +214,29 @@ func TestProductAPIs(t *testing.T) {
 		t.Run("should not effect other data", func(t *testing.T) {
 			assert := assert.New(t)
 
-			product1, err := createProduct(tt.Host)
+			product1, err := createProduct(tt)
 			assert.Nil(err)
 
-			product2, err := createProduct(tt.Host)
+			product2, err := createProduct(tt)
 			assert.Nil(err)
 
-			label1, err := createLabel(tt.Host, product1.Name)
+			label1, err := createLabel(tt, product1.Name)
 			assert.Nil(err)
 
-			label2, err := createLabel(tt.Host, product2.Name)
+			label2, err := createLabel(tt, product2.Name)
 			assert.Nil(err)
 
-			users, err := createUsers(tt.Host, 10)
+			users, err := createUsers(tt, 10)
 			assert.Nil(err)
 
-			group, err := createGroup(tt.Host)
+			group, err := createGroup(tt)
 			assert.Nil(err)
 
 			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s:assign", tt.Host, product1.Name, label1.Name)).
 				Set("Content-Type", "application/json").
 				Send(tpl.UsersGroupsBody{
-					Users:  users,
-					Groups: []string{group},
+					Users:  schema.GetUsersUID(users),
+					Groups: []string{group.UID},
 				}).
 				End()
 			assert.Nil(err)
@@ -255,8 +252,8 @@ func TestProductAPIs(t *testing.T) {
 			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s:assign", tt.Host, product2.Name, label2.Name)).
 				Set("Content-Type", "application/json").
 				Send(tpl.UsersGroupsBody{
-					Users:  users,
-					Groups: []string{group},
+					Users:  schema.GetUsersUID(users),
+					Groups: []string{group.UID},
 				}).
 				End()
 			assert.Nil(err)
@@ -275,10 +272,10 @@ func TestProductAPIs(t *testing.T) {
 
 			time.Sleep(time.Second * 2)
 
-			assert.Nil(tt.DB.First(product1).Error)
+			assert.Nil(tt.DB.First(&product1).Error)
 			assert.NotNil(product1.OfflineAt)
 
-			assert.Nil(tt.DB.First(label1).Error)
+			assert.Nil(tt.DB.First(&label1).Error)
 			assert.NotNil(label1.OfflineAt)
 
 			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label1.ID).Count(&count).Error)
@@ -287,10 +284,10 @@ func TestProductAPIs(t *testing.T) {
 			assert.Nil(tt.DB.Table(`group_label`).Where("label_id = ?", label1.ID).Count(&count).Error)
 			assert.Equal(int64(0), count)
 
-			assert.Nil(tt.DB.First(product2).Error)
+			assert.Nil(tt.DB.First(&product2).Error)
 			assert.Nil(product2.OfflineAt)
 
-			assert.Nil(tt.DB.First(label2).Error)
+			assert.Nil(tt.DB.First(&label2).Error)
 			assert.Nil(label2.OfflineAt)
 
 			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label2.ID).Count(&count).Error)

@@ -17,7 +17,7 @@ func (a *Setting) List(ctx *gear.Context) error {
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
-	res, err := a.blls.Setting.List(ctx, req.Product, req.Module)
+	res, err := a.blls.Setting.List(ctx, req.Product, req.Module, req.Pagination)
 	if err != nil {
 		return err
 	}

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/teambition/gear"
 )
@@ -43,18 +44,28 @@ func RandLabel() string {
 	return fmt.Sprintf("label-%x", b)
 }
 
-// ResponseType 定义了标准的 List 接口返回数据模型
+// ErrorResponseType 定义了标准的 API 接口错误时返回数据模型
+type ErrorResponseType struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
+
+// SuccessResponseType 定义了标准的 API 接口成功时返回数据模型
+type SuccessResponseType struct {
+	TotalSize     int         `json:"totalSize,omitempty"`
+	NextPageToken string      `json:"nextPageToken"`
+	Result        interface{} `json:"result"`
+}
+
+// ResponseType ...
 type ResponseType struct {
-	Error         string      `json:"error,omitempty"`
-	Message       string      `json:"message,omitempty"`
-	NextPageToken string      `json:"nextPageToken,omitempty"`
-	TotalSize     uint64      `json:"totalSize,omitempty"`
-	Result        interface{} `json:"result,omitempty"`
+	ErrorResponseType
+	SuccessResponseType
 }
 
 // BoolRes ...
 type BoolRes struct {
-	ResponseType
+	SuccessResponseType
 	Result bool `json:"result"`
 }
 
@@ -84,6 +95,23 @@ func (t *UIDHIDURL) Validate() error {
 	}
 	if !validHIDReg.MatchString(t.HID) {
 		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", t.HID)
+	}
+	return nil
+}
+
+// UIDPaginationURL ...
+type UIDPaginationURL struct {
+	Pagination
+	UID string `json:"uid" param:"uid"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *UIDPaginationURL) Validate() error {
+	if !validIDNameReg.MatchString(t.UID) {
+		return gear.ErrBadRequest.WithMsgf("invalid uid: %s", t.UID)
+	}
+	if err := t.Pagination.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -132,4 +160,12 @@ func (t *UsersGroupsBody) Validate() error {
 		return gear.ErrBadRequest.WithMsgf("value too long: %d (<= 255)", len(t.Value))
 	}
 	return nil
+}
+
+// StringToSlice ...
+func StringToSlice(s string) []string {
+	if s == "" {
+		return make([]string, 0)
+	}
+	return strings.Split(s, ",")
 }

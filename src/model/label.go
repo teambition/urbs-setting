@@ -6,6 +6,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/teambition/urbs-setting/src/schema"
+	"github.com/teambition/urbs-setting/src/tpl"
 )
 
 // Label ...
@@ -37,10 +38,19 @@ func (m *Label) FindByName(ctx context.Context, productID int64, name, selectStr
 }
 
 // Find 根据条件查找 labels
-func (m *Label) Find(ctx context.Context, productID int64) ([]schema.Label, error) {
+func (m *Label) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Label, error) {
 	labels := make([]schema.Label, 0)
-	err := m.DB.Where("`product_id` = ?", productID).Order("`status`, `created_at`").Limit(1000).Find(&labels).Error
+	pageToken := pg.TokenToID()
+	err := m.DB.Where("`product_id` = ? and `id` >= ?", productID, pageToken).
+		Order("`id`").Limit(pg.PageSize + 1).Find(&labels).Error
 	return labels, err
+}
+
+// Count 计算 product labels 总数
+func (m *Label) Count(ctx context.Context, productID int64) (int, error) {
+	count := 0
+	err := m.DB.Model(&schema.Label{}).Where("product_id = ?", productID).Count(&count).Error
+	return count, err
 }
 
 // Create ...

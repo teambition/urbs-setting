@@ -1,4 +1,4 @@
-addr: ":3000"
+addr: ":8080"
 cert_file:
 key_file:
 logger:

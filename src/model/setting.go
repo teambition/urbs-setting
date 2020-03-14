@@ -6,6 +6,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/teambition/urbs-setting/src/schema"
+	"github.com/teambition/urbs-setting/src/tpl"
 )
 
 // Setting ...
@@ -36,10 +37,19 @@ func (m *Setting) FindByName(ctx context.Context, moduleID int64, name, selectSt
 }
 
 // Find 根据条件查找 settings
-func (m *Setting) Find(ctx context.Context, moduleID int64) ([]schema.Setting, error) {
+func (m *Setting) Find(ctx context.Context, moduleID int64, pg tpl.Pagination) ([]schema.Setting, error) {
 	settings := make([]schema.Setting, 0)
-	err := m.DB.Where("`module_id` = ?", moduleID).Order("`status`, `created_at`").Limit(1000).Find(&settings).Error
+	pageToken := pg.TokenToID()
+	err := m.DB.Where("`module_id` = ? and `id` >= ?", moduleID, pageToken).
+		Order("`id`").Limit(pg.PageSize + 1).Find(&settings).Error
 	return settings, err
+}
+
+// Count 计算 module settings 总数
+func (m *Setting) Count(ctx context.Context, moduleID int64) (int, error) {
+	count := 0
+	err := m.DB.Model(&schema.Setting{}).Where("module_id = ?", moduleID).Count(&count).Error
+	return count, err
 }
 
 // Create ...

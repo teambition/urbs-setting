@@ -11,30 +11,37 @@ import (
 	"github.com/teambition/urbs-setting/src/tpl"
 )
 
-func createSetting(appHost, productName, moduleName string) (*schema.Setting, error) {
+func createSetting(tt *TestTools, productName, moduleName string) (setting schema.Setting, err error) {
 	name := tpl.RandName()
-	res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings", appHost, productName, moduleName)).
+	_, err = request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings", tt.Host, productName, moduleName)).
 		Set("Content-Type", "application/json").
 		Send(tpl.NameDescBody{Name: name, Desc: name}).
 		End()
 
-	if err != nil {
-		return nil, err
+	var product schema.Product
+	var module schema.Module
+	if err == nil {
+		err = tt.DB.Where("name = ?", productName).First(&product).Error
 	}
 
-	json := tpl.SettingRes{}
-	res.JSON(&json)
-	return &json.Result, nil
+	if err == nil {
+		err = tt.DB.Where("product_id = ? and name = ?", product.ID, moduleName).First(&module).Error
+	}
+
+	if err == nil {
+		err = tt.DB.Where("module_id = ? and name = ?", module.ID, name).First(&setting).Error
+	}
+	return
 }
 
 func TestSettingAPIs(t *testing.T) {
 	tt, cleanup := SetUpTestTools()
 	defer cleanup()
 
-	product, err := createProduct(tt.Host)
+	product, err := createProduct(tt)
 	assert.Nil(t, err)
 
-	module, err := createModule(tt.Host, product.Name)
+	module, err := createModule(tt, product.Name)
 	assert.Nil(t, err)
 
 	n1 := tpl.RandName()
@@ -54,14 +61,14 @@ func TestSettingAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.True(strings.Contains(text, `"offline_at":null`))
 
-			json := tpl.SettingRes{}
+			json := tpl.SettingInfoRes{}
 			res.JSON(&json)
 			assert.NotNil(json.Result)
 			assert.Equal(n1, json.Result.Name)
 			assert.Equal("test", json.Result.Desc)
-			assert.Equal("", json.Result.Channels)
-			assert.Equal("", json.Result.Clients)
-			assert.Equal("", json.Result.Values)
+			assert.Equal([]string{}, json.Result.Channels)
+			assert.Equal([]string{}, json.Result.Clients)
+			assert.Equal([]string{}, json.Result.Values)
 			assert.True(json.Result.CreatedAt.UTC().Unix() > int64(0))
 			assert.True(json.Result.UpdatedAt.UTC().Unix() > int64(0))
 			assert.Nil(json.Result.OfflineAt)

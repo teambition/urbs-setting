@@ -43,12 +43,12 @@ func (m *User) FindByUID(ctx context.Context, uid string, selectStr string) (*sc
 const userCacheLabelsSQL = "(select t2.`id`, t1.`created_at`, t2.`name`, t3.`name` as `p`, t2.`channels`, t2.`clients` " +
 	"from `user_label` t1, `urbs_label` t2, `urbs_product` t3 " +
 	"where t1.`user_id` = ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.`id` " +
-	"order by t1.`created_at` desc limit 1000) " +
+	"order by t1.`id` desc limit 200) " +
 	"union all " + // 期望能基于 id distinct
 	"(select t3.`id`, t2.`created_at`, t3.`name`, t4.`name` as `p`, t3.`channels`, t3.`clients` " +
 	"from `user_group` t1, `group_label` t2, `urbs_label` t3, `urbs_product` t4 " +
 	"where t1.`user_id` = ? and t1.`group_id` = t2.`group_id` and t2.`label_id` = t3.`id` and t3.`product_id` = t4.`id` " +
-	"order by t2.`created_at` desc limit 1000)" +
+	"order by t2.`id` desc limit 200)" +
 	"order by `created_at` desc"
 
 // RefreshLabels 更新 user 上的 labels 缓存，包括通过 group 关系获得的 labels
@@ -78,15 +78,19 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (*schema.
 		for rows.Next() {
 			var ignoreID int64
 			var product string
+			var clients string
+			var channels string
 			label := schema.UserCacheLabel{}
 			// ScanRows 扫描一行记录到 user
-			if err := rows.Scan(&ignoreID, &ignoreTime, &label.Label, &product, &label.Channels, &label.Clients); err != nil {
+			if err := rows.Scan(&ignoreID, &ignoreTime, &label.Label, &product, &channels, &clients); err != nil {
 				return err
 			}
 			if _, ok := set[ignoreID]; ok {
 				continue // 去重
 			}
 
+			label.Channels = tpl.StringToSlice(channels)
+			label.Clients = tpl.StringToSlice(clients)
 			set[ignoreID] = struct{}{}
 			arr, ok := data[product]
 			if !ok {
@@ -94,7 +98,7 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (*schema.
 			}
 			data[product] = append(arr, label)
 		}
-		user.PutLabels(data)
+		_ = user.PutLabels(data)
 		user.ActiveAt = time.Now().UTC().Unix()
 
 		return tx.Model(&schema.User{ID: id}).Updates(map[string]interface{}{
@@ -104,16 +108,19 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (*schema.
 	return user, err
 }
 
-const userLabelsSQL = "select t2.`id`, t2.`name`, t2.`description`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
+const userLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`offline_at`, t2.`name`, " +
+	"t2.`description`, t2.`status`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
 	"from `user_label` t1, `urbs_label` t2, `urbs_product` t3 " +
-	"where t1.`user_id` = ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.id " +
-	"order by t1.`created_at` desc " +
-	"limit 1000"
+	"where t1.`user_id` = ? and t1.`id` >= ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.id " +
+	"order by t1.`id` asc " +
+	"limit ?"
 
-// FindLables 根据用户 ID 返回其 labels 数据。TODO：支持更多筛选条件和分页
-func (m *User) FindLables(ctx context.Context, userID int64, product string) ([]tpl.LabelInfo, error) {
+// FindLables 根据用户 ID 返回其 labels 数据。
+func (m *User) FindLables(ctx context.Context, userID int64, pg tpl.Pagination) ([]tpl.LabelInfo, error) {
 	data := []tpl.LabelInfo{}
-	rows, err := m.DB.Raw(userLabelsSQL, userID).Rows()
+	pageToken := pg.TokenToID()
+
+	rows, err := m.DB.Raw(userLabelsSQL, userID, pageToken, pg.PageSize+1).Rows()
 	defer rows.Close()
 
 	if err != nil {
@@ -121,16 +128,28 @@ func (m *User) FindLables(ctx context.Context, userID int64, product string) ([]
 	}
 
 	for rows.Next() {
-		label := schema.Label{}
 		labelInfo := tpl.LabelInfo{}
-		if err := rows.Scan(&label.ID, &labelInfo.Name, &labelInfo.Desc, &labelInfo.Channels, &labelInfo.Clients, &labelInfo.Product); err != nil {
+		var clients string
+		var channels string
+		if err := rows.Scan(&labelInfo.ID, &labelInfo.CreatedAt, &labelInfo.UpdatedAt, &labelInfo.OfflineAt,
+			&labelInfo.Name, &labelInfo.Desc, &labelInfo.Status, &channels, &clients, &labelInfo.Product); err != nil {
 			return nil, err
 		}
-		labelInfo.HID = service.HIDer.HID(label)
+		labelInfo.Channels = tpl.StringToSlice(channels)
+		labelInfo.Clients = tpl.StringToSlice(clients)
+		labelInfo.HID = service.IDToHID(labelInfo.ID, "label")
 		data = append(data, labelInfo)
 	}
 
 	return data, nil
+}
+
+// CountLabels 计算 user labels 总数
+func (m *User) CountLabels(ctx context.Context, userID int64) (int, error) {
+
+	count := 0
+	err := m.DB.Model(&schema.UserLabel{}).Where("user_id = ?", userID).Count(&count).Error
+	return count, err
 }
 
 // BatchAdd 批量添加用户

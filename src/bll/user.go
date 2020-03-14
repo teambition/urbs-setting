@@ -37,16 +37,16 @@ func (b *User) ListLablesInCache(ctx context.Context, uid, product string) (*tpl
 		}
 	}
 
-	labels := user.GetLabels()
-	if result, ok := labels[product]; ok {
-		res.Result = result
+	labels := user.GetLabels(product)
+	if len(labels) > 0 {
+		res.Result = labels
 		res.Timestamp = user.ActiveAt
 	}
 	return res, nil
 }
 
 // ListLables ...
-func (b *User) ListLables(ctx context.Context, uid, product string) (*tpl.LabelsInfoRes, error) {
+func (b *User) ListLables(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.LabelsInfoRes, error) {
 	user, err := b.ms.User.FindByUID(ctx, uid, "id")
 	if err != nil {
 		return nil, err
@@ -55,11 +55,21 @@ func (b *User) ListLables(ctx context.Context, uid, product string) (*tpl.Labels
 		return nil, gear.ErrNotFound.WithMsgf("user %s not found", uid)
 	}
 
-	labels, err := b.ms.User.FindLables(ctx, user.ID, product)
+	labels, err := b.ms.User.FindLables(ctx, user.ID, pg)
 	if err != nil {
 		return nil, err
 	}
+	total, err := b.ms.User.CountLabels(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	res := &tpl.LabelsInfoRes{Result: labels}
+	res.TotalSize = total
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
 	return res, nil
 }
 

@@ -8,50 +8,54 @@ import (
 
 	"github.com/DavidCai1993/request"
 	"github.com/stretchr/testify/assert"
+	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/tpl"
 )
 
-func createGroup(appHost string) (string, error) {
-	groupUID := tpl.RandUID()
-
-	_, err := request.Post(fmt.Sprintf("%s/v1/groups:batch", appHost)).
+func createGroup(tt *TestTools) (group schema.Group, err error) {
+	uid := tpl.RandUID()
+	_, err = request.Post(fmt.Sprintf("%s/v1/groups:batch", tt.Host)).
 		Set("Content-Type", "application/json").
 		Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
-			tpl.GroupBody{UID: groupUID, Desc: groupUID},
+			tpl.GroupBody{UID: uid, Kind: "org", Desc: uid},
 		}}).
 		End()
 
-	if err != nil {
-		return "", err
+	if err == nil {
+		err = tt.DB.Where("uid= ?", uid).First(&group).Error
 	}
-	return groupUID, nil
+	return
 }
 
-func createGroupWithUsers(appHost string, count int) (group string, users []string, err error) {
-	group = tpl.RandUID()
-
-	users = make([]string, count)
+func createGroupWithUsers(tt *TestTools, count int) (group schema.Group, users []schema.User, err error) {
+	groupUID := tpl.RandUID()
+	userUIDs := make([]string, count)
 	for i := 0; i < count; i++ {
-		users[i] = tpl.RandUID()
+		userUIDs[i] = tpl.RandUID()
 	}
 
-	_, err = request.Post(fmt.Sprintf("%s/v1/groups:batch", appHost)).
+	_, err = request.Post(fmt.Sprintf("%s/v1/groups:batch", tt.Host)).
 		Set("Content-Type", "application/json").
 		Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
-			tpl.GroupBody{UID: group, Desc: group},
+			tpl.GroupBody{UID: groupUID, Kind: "org", Desc: groupUID},
 		}}).
 		End()
 
-	if err != nil {
-		return "", nil, err
+	if err == nil {
+		_, err = request.Post(fmt.Sprintf("%s/v1/groups/%s/members:batch", tt.Host, groupUID)).
+			Set("Content-Type", "application/json").
+			Send(tpl.UsersBody{Users: userUIDs}).
+			End()
 	}
 
-	_, err = request.Post(fmt.Sprintf("%s/v1/groups/%s/members:batch", appHost, group)).
-		Set("Content-Type", "application/json").
-		Send(tpl.UsersBody{Users: users}).
-		End()
+	if err == nil {
+		err = tt.DB.Where("uid= ?", groupUID).First(&group).Error
+	}
 
-	return group, users, nil
+	if err == nil {
+		err = tt.DB.Where("uid in ( ? )", userUIDs).Find(&users).Error
+	}
+	return
 }
 
 func TestGroupAPIs(t *testing.T) {
@@ -62,7 +66,7 @@ func TestGroupAPIs(t *testing.T) {
 	uid2 := tpl.RandUID()
 
 	user := tpl.RandUID()
-	users, err := createUsers(tt.Host, 5)
+	users, err := createUsers(tt, 5)
 	assert.Nil(t, err)
 
 	t.Run(`"POST /v1/groups:batch"`, func(t *testing.T) {
@@ -72,7 +76,7 @@ func TestGroupAPIs(t *testing.T) {
 			res, err := request.Post(fmt.Sprintf("%s/v1/groups:batch", tt.Host)).
 				Set("Content-Type", "application/json").
 				Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
-					tpl.GroupBody{UID: uid1, Desc: "test"},
+					tpl.GroupBody{UID: uid1, Kind: "org", Desc: "test"},
 				}}).
 				End()
 			assert.Nil(err)
@@ -90,8 +94,8 @@ func TestGroupAPIs(t *testing.T) {
 			res, err := request.Post(fmt.Sprintf("%s/v1/groups:batch", tt.Host)).
 				Set("Content-Type", "application/json").
 				Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
-					tpl.GroupBody{UID: uid1, Desc: "test"},
-					tpl.GroupBody{UID: uid2, Desc: "test"},
+					tpl.GroupBody{UID: uid1, Kind: "org", Desc: "test"},
+					tpl.GroupBody{UID: uid2, Kind: "org", Desc: "test"},
 				}}).
 				End()
 			assert.Nil(err)
@@ -136,6 +140,7 @@ func TestGroupAPIs(t *testing.T) {
 			res.JSON(&json)
 			assert.NotNil(json.Result)
 			assert.True(len(json.Result) > 0)
+			assert.Equal("org", json.Result[0].Kind)
 		})
 	})
 
@@ -173,7 +178,7 @@ func TestGroupAPIs(t *testing.T) {
 
 			res, err := request.Post(fmt.Sprintf("%s/v1/groups/%s/members:batch", tt.Host, uid1)).
 				Set("Content-Type", "application/json").
-				Send(tpl.UsersBody{Users: users}).
+				Send(tpl.UsersBody{Users: schema.GetUsersUID(users)}).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -188,7 +193,7 @@ func TestGroupAPIs(t *testing.T) {
 
 			res, err := request.Post(fmt.Sprintf("%s/v1/groups/%s/members:batch", tt.Host, uid1)).
 				Set("Content-Type", "application/json").
-				Send(tpl.UsersBody{Users: append(users, user)}).
+				Send(tpl.UsersBody{Users: append(schema.GetUsersUID(users), user)}).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -211,7 +216,7 @@ func TestGroupAPIs(t *testing.T) {
 
 			text, err := res.Text()
 			assert.Nil(err)
-			assert.True(strings.Contains(text, users[0]))
+			assert.True(strings.Contains(text, users[0].UID))
 			assert.True(strings.Contains(text, user))
 
 			json := tpl.GroupMembersRes{}

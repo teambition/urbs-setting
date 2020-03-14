@@ -14,17 +14,26 @@ type Group struct {
 }
 
 // List 返回群组列表，TODO：支持分页
-func (b *Group) List(ctx context.Context) (*tpl.GroupsRes, error) {
-	groups, err := b.ms.Group.Find(ctx)
+func (b *Group) List(ctx context.Context, pg tpl.Pagination) (*tpl.GroupsRes, error) {
+	groups, err := b.ms.Group.Find(ctx, pg)
+	if err != nil {
+		return nil, err
+	}
+	total, err := b.ms.Group.Count(ctx)
 	if err != nil {
 		return nil, err
 	}
 	res := &tpl.GroupsRes{Result: groups}
+	res.TotalSize = total
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
 	return res, nil
 }
 
 // ListLables ...
-func (b *Group) ListLables(ctx context.Context, uid, product string) (*tpl.LabelsInfoRes, error) {
+func (b *Group) ListLables(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.LabelsInfoRes, error) {
 	group, err := b.ms.Group.FindByUID(ctx, uid, "id")
 	if err != nil {
 		return nil, err
@@ -33,16 +42,26 @@ func (b *Group) ListLables(ctx context.Context, uid, product string) (*tpl.Label
 		return nil, gear.ErrNotFound.WithMsgf("group %s not found", uid)
 	}
 
-	labels, err := b.ms.Group.FindLables(ctx, group.ID, product)
+	labels, err := b.ms.Group.FindLables(ctx, group.ID, pg)
 	if err != nil {
 		return nil, err
 	}
+	total, err := b.ms.Group.CountLabels(ctx, group.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	res := &tpl.LabelsInfoRes{Result: labels}
+	res.TotalSize = total
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
 	return res, nil
 }
 
 // ListMembers ...
-func (b *Group) ListMembers(ctx context.Context, uid string) (*tpl.GroupMembersRes, error) {
+func (b *Group) ListMembers(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.GroupMembersRes, error) {
 	group, err := b.ms.Group.FindByUID(ctx, uid, "id")
 	if err != nil {
 		return nil, err
@@ -51,11 +70,20 @@ func (b *Group) ListMembers(ctx context.Context, uid string) (*tpl.GroupMembersR
 		return nil, gear.ErrNotFound.WithMsgf("group %s not found", uid)
 	}
 
-	members, err := b.ms.Group.FindMembers(ctx, group.ID)
+	members, err := b.ms.Group.FindMembers(ctx, group.ID, pg)
+	if err != nil {
+		return nil, err
+	}
+	total, err := b.ms.Group.CountMembers(ctx, group.ID)
 	if err != nil {
 		return nil, err
 	}
 	res := &tpl.GroupMembersRes{Result: members}
+	res.TotalSize = total
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
 	return res, nil
 }
 

@@ -8,25 +8,28 @@ import (
 	"github.com/DavidCai1993/request"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
+	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
 )
 
-func createUsers(appHost string, count int) ([]string, error) {
+var time2020 = time.Unix(1577836800, 0)
+
+func createUsers(tt *TestTools, count int) (users []schema.User, err error) {
 	uids := make([]string, count)
 	for i := 0; i < count; i++ {
 		uids[i] = tpl.RandUID()
 	}
 
-	_, err := request.Post(fmt.Sprintf("%s/v1/users:batch", appHost)).
+	_, err = request.Post(fmt.Sprintf("%s/v1/users:batch", tt.Host)).
 		Set("Content-Type", "application/json").
 		Send(tpl.UsersBody{Users: uids}).
 		End()
 
-	if err != nil {
-		return nil, err
+	if err == nil {
+		err = tt.DB.Where("uid in ( ? )", uids).Find(&users).Error
 	}
-	return uids, nil
+	return
 }
 
 func cleanupUserLabels(db *gorm.DB, uid string) error {
@@ -118,16 +121,16 @@ func TestUserAPIs(t *testing.T) {
 	})
 
 	t.Run("user, group, label", func(t *testing.T) {
-		group, users, err := createGroupWithUsers(tt.Host, 4)
+		group, users, err := createGroupWithUsers(tt, 4)
 		assert.Nil(t, err)
 
-		product, err := createProduct(tt.Host)
+		product, err := createProduct(tt)
 		assert.Nil(t, err)
 
-		label, err := createLabel(tt.Host, product.Name)
+		label, err := createLabel(tt, product.Name)
 		assert.Nil(t, err)
 
-		label1, err := createLabel(tt.Host, product.Name)
+		label1, err := createLabel(tt, product.Name)
 		assert.Nil(t, err)
 
 		t.Run(`"GET /users/:uid/labels:cache" for invalid user`, func(t *testing.T) {
@@ -148,7 +151,7 @@ func TestUserAPIs(t *testing.T) {
 		t.Run(`"GET /users/:uid/labels:cache" when no label`, func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[0], product.Name)).
+			res, err := request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[0].UID, product.Name)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -166,13 +169,13 @@ func TestUserAPIs(t *testing.T) {
 			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s:assign", tt.Host, product.Name, label.Name)).
 				Set("Content-Type", "application/json").
 				Send(tpl.UsersGroupsBody{
-					Users: users,
+					Users: schema.GetUsersUID(users),
 				}).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
 
-			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[1], product.Name)).
+			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[1].UID, product.Name)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -183,8 +186,8 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(1, len(json.Result))
 			assert.True(json.Timestamp > 0)
 			assert.Equal(label.Name, json.Result[0].Label)
-			assert.Equal("", json.Result[0].Clients)
-			assert.Equal("", json.Result[0].Channels)
+			assert.Equal(0, len(json.Result[0].Clients))
+			assert.Equal(0, len(json.Result[0].Channels))
 		})
 
 		t.Run(`"GET /users/:uid/labels:cache" when group label exists`, func(t *testing.T) {
@@ -194,14 +197,14 @@ func TestUserAPIs(t *testing.T) {
 			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s:assign", tt.Host, product.Name, label1.Name)).
 				Set("Content-Type", "application/json").
 				Send(tpl.UsersGroupsBody{
-					Groups: []string{group},
+					Groups: []string{group.UID},
 				}).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
 
 			// users[1] lables from cache
-			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[1], product.Name)).
+			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[1].UID, product.Name)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -212,11 +215,11 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(1, len(json.Result))
 			assert.True(json.Timestamp > 0)
 			assert.Equal(label.Name, json.Result[0].Label)
-			assert.Equal("", json.Result[0].Clients)
-			assert.Equal("", json.Result[0].Channels)
+			assert.Equal(0, len(json.Result[0].Clients))
+			assert.Equal(0, len(json.Result[0].Channels))
 
 			// users[2] get all lables
-			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[2], product.Name)).
+			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[2].UID, product.Name)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -227,8 +230,8 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(2, len(json.Result))
 			assert.True(json.Timestamp > 0)
 			assert.Equal(label1.Name, json.Result[0].Label)
-			assert.Equal("", json.Result[0].Clients)
-			assert.Equal("", json.Result[0].Channels)
+			assert.Equal(0, len(json.Result[0].Clients))
+			assert.Equal(0, len(json.Result[0].Channels))
 
 			assert.Equal(label.Name, json.Result[1].Label)
 
@@ -236,14 +239,14 @@ func TestUserAPIs(t *testing.T) {
 			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s:assign", tt.Host, product.Name, label.Name)).
 				Set("Content-Type", "application/json").
 				Send(tpl.UsersGroupsBody{
-					Groups: []string{group},
+					Groups: []string{group.UID},
 				}).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
 
 			// users[2] get all lables
-			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[3], product.Name)).
+			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[3].UID, product.Name)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -254,8 +257,8 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(2, len(json.Result))
 			assert.True(json.Timestamp > 0)
 			assert.Equal(label.Name, json.Result[0].Label)
-			assert.Equal("", json.Result[0].Clients)
-			assert.Equal("", json.Result[0].Channels)
+			assert.Equal(0, len(json.Result[0].Clients))
+			assert.Equal(0, len(json.Result[0].Channels))
 
 			assert.Equal(label1.Name, json.Result[1].Label)
 		})
@@ -263,26 +266,30 @@ func TestUserAPIs(t *testing.T) {
 		t.Run(`"GET /users/:uid/labels"`, func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Get(fmt.Sprintf("%s/v1/users/%s/labels", tt.Host, users[3])).
+			res, err := request.Get(fmt.Sprintf("%s/v1/users/%s/labels", tt.Host, users[3].UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
 
 			json := tpl.LabelsInfoRes{}
 			_, err = res.JSON(&json)
+
 			assert.Nil(err)
 			assert.Equal(1, len(json.Result))
-			assert.Equal(service.HIDer.HID(label), json.Result[0].HID)
+			assert.Equal(1, json.TotalSize)
+			assert.Equal("", json.NextPageToken)
+			assert.Equal(service.IDToHID(label.ID, "label"), json.Result[0].HID)
 			assert.Equal(product.Name, json.Result[0].Product)
 			assert.Equal(label.Name, json.Result[0].Name)
-			assert.Equal("", json.Result[0].Clients)
-			assert.Equal("", json.Result[0].Channels)
+			assert.Equal(0, len(json.Result[0].Clients))
+			assert.Equal(0, len(json.Result[0].Channels))
+			assert.True(json.Result[0].CreatedAt.After(time2020))
 		})
 
 		t.Run(`Delete label should work`, func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Delete(fmt.Sprintf("%s/v1/users/%s/labels/%s", tt.Host, users[3], service.HIDer.HID(label))).
+			res, err := request.Delete(fmt.Sprintf("%s/v1/users/%s/labels/%s", tt.Host, users[3].UID, service.IDToHID(label.ID, "label"))).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -292,7 +299,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.True(json.Result)
 
-			res, err = request.Delete(fmt.Sprintf("%s/v1/groups/%s/labels/%s", tt.Host, group, service.HIDer.HID(label))).
+			res, err = request.Delete(fmt.Sprintf("%s/v1/groups/%s/labels/%s", tt.Host, group.UID, service.IDToHID(label.ID, "label"))).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -302,8 +309,8 @@ func TestUserAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.True(json.Result)
 
-			assert.Nil(cleanupUserLabels(tt.DB, users[3]))
-			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[3], product.Name)).
+			assert.Nil(cleanupUserLabels(tt.DB, users[3].UID))
+			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[3].UID, product.Name)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
