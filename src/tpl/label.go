@@ -8,27 +8,6 @@ import (
 	"github.com/teambition/urbs-setting/src/service"
 )
 
-// LabelsURL ...
-type LabelsURL struct {
-	Pagination
-	UID     string `json:"uid" param:"uid"`
-	Product string `json:"product" query:"product"`
-}
-
-// Validate 实现 gear.BodyTemplate。
-func (t *LabelsURL) Validate() error {
-	if !validIDNameReg.MatchString(t.UID) {
-		return gear.ErrBadRequest.WithMsgf("invalid user: %s", t.UID)
-	}
-	if t.Product != "" && !validIDNameReg.MatchString(t.Product) {
-		return gear.ErrBadRequest.WithMsgf("invalid product name: %s", t.Product)
-	}
-	if err := t.Pagination.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
 // LabelBody ...
 type LabelBody struct {
 	Name string `json:"name"`
@@ -78,8 +57,8 @@ func LabelInfoFrom(label schema.Label, product string) LabelInfo {
 	}
 }
 
-// LabelInfosFrom create a slice of LabelInfo from a slice of schema.Label
-func LabelInfosFrom(labels []schema.Label, product string) []LabelInfo {
+// LabelsInfoFrom create a slice of LabelInfo from a slice of schema.Label
+func LabelsInfoFrom(labels []schema.Label, product string) []LabelInfo {
 	res := make([]LabelInfo, len(labels))
 	for i, l := range labels {
 		res[i] = LabelInfoFrom(l, product)

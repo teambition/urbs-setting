@@ -43,8 +43,8 @@ func SettingInfoFrom(setting schema.Setting, product, module string) SettingInfo
 	}
 }
 
-// SettingInfosFrom create a slice of SettingInfo from a slice of schema.Setting
-func SettingInfosFrom(settings []schema.Setting, product, module string) []SettingInfo {
+// SettingsInfoFrom create a slice of SettingInfo from a slice of schema.Setting
+func SettingsInfoFrom(settings []schema.Setting, product, module string) []SettingInfo {
 	res := make([]SettingInfo, len(settings))
 	for i, l := range settings {
 		res[i] = SettingInfoFrom(l, product, module)
@@ -62,4 +62,22 @@ type SettingsInfoRes struct {
 type SettingInfoRes struct {
 	SuccessResponseType
 	Result SettingInfo `json:"result"` // 空数组也保留
+}
+
+// MySetting ...
+type MySetting struct {
+	ID        int64     `json:"-"`
+	HID       string    `json:"hid"`
+	Module    string    `json:"module"`
+	Name      string    `json:"name"`
+	Value     string    `json:"value"`
+	LastValue string    `json:"last_value"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// MySettingsRes ...
+type MySettingsRes struct {
+	SuccessResponseType
+	Result []MySetting `json:"result"` // 空数组也保留
 }

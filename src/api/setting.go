@@ -44,6 +44,19 @@ func (a *Setting) Create(ctx *gear.Context) error {
 	return ctx.OkJSON(res)
 }
 
+// Get ..
+func (a *Setting) Get(ctx *gear.Context) error {
+	req := tpl.ProductModuleSettingURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+	res, err := a.blls.Setting.Get(ctx, req.Product, req.Module, req.Setting)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
 // Update ..
 func (a *Setting) Update(ctx *gear.Context) error {
 	// TODO

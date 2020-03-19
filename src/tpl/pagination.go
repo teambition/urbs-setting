@@ -1,8 +1,7 @@
 package tpl
 
 import (
-	"fmt"
-	"strconv"
+	"net/url"
 	"strings"
 	"time"
 
@@ -40,8 +39,8 @@ func (pg *Pagination) TokenToID() int64 {
 }
 
 // TokenToTime 把 pageToken 转换为 time
-func (pg *Pagination) TokenToTime() time.Time {
-	return PageTokenToTime(pg.PageToken)
+func (pg *Pagination) TokenToTime(defaultTime ...time.Time) time.Time {
+	return PageTokenToTime(pg.PageToken, defaultTime...)
 }
 
 // PageTokenToID 把 pageToken 转换为 int64
@@ -61,25 +60,20 @@ func IDToPageToken(id int64) string {
 }
 
 // PageTokenToTime 把 pageToken 转换为 time
-func PageTokenToTime(pageToken string) time.Time {
+func PageTokenToTime(pageToken string, defaultTime ...time.Time) time.Time {
 	t := time.Unix(0, 0)
+	if len(defaultTime) > 0 {
+		t = defaultTime[0]
+	}
 	if pageToken == "" {
 		return t
 	}
-	strs := strings.Split(pageToken, ".")
-	if len(strs) != 3 || strs[0] != "unix" {
+
+	t2, err := time.Parse(time.RFC3339, pageToken)
+	if err != nil || t2.Before(t) {
 		return t
 	}
-	var err error
-	var sec int64
-	var nsec int64
-	if sec, err = strconv.ParseInt(strs[1], 10, 64); err != nil || sec <= 0 {
-		return t
-	}
-	if nsec, err = strconv.ParseInt(strs[2], 10, 64); err != nil || nsec <= 0 {
-		return t
-	}
-	return time.Unix(sec, nsec)
+	return t2
 }
 
 // TimeToPageToken 把 time 转换成 pageToken
@@ -88,5 +82,5 @@ func TimeToPageToken(t time.Time) string {
 	if t.Unix() <= 0 {
 		return ""
 	}
-	return fmt.Sprintf("unix.%d.%d", t.Unix(), t.Nanosecond())
+	return url.QueryEscape(t.Format(time.RFC3339))
 }

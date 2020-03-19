@@ -35,7 +35,7 @@ func (b *Label) List(ctx context.Context, productName string, pg tpl.Pagination)
 		return nil, err
 	}
 
-	labelInfos := tpl.LabelInfosFrom(labels, productName)
+	labelInfos := tpl.LabelsInfoFrom(labels, productName)
 	res := &tpl.LabelsInfoRes{Result: labelInfos}
 	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {

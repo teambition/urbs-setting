@@ -52,7 +52,7 @@ const userCacheLabelsSQL = "(select t2.`id`, t1.`created_at`, t2.`name`, t3.`nam
 	"order by `created_at` desc"
 
 // RefreshLabels 更新 user 上的 labels 缓存，包括通过 group 关系获得的 labels
-func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (*schema.User, error) {
+func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force bool) (*schema.User, error) {
 	user := &schema.User{ID: id}
 	err := m.DB.Transaction(func(tx *gorm.DB) error {
 		// 指定 id 的记录被锁住，如果表中无符合记录的数据则排他锁不生效
@@ -60,7 +60,7 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (*schema.
 			return err
 		}
 
-		if !conf.Config.IsCacheLabelExpired(now, user.ActiveAt) {
+		if !force && !conf.Config.IsCacheLabelExpired(now, user.ActiveAt) {
 			// 已被其它请求更新
 			return nil
 		}
@@ -88,10 +88,10 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (*schema.
 			if _, ok := set[ignoreID]; ok {
 				continue // 去重
 			}
+			set[ignoreID] = struct{}{}
 
 			label.Channels = tpl.StringToSlice(channels)
 			label.Clients = tpl.StringToSlice(clients)
-			set[ignoreID] = struct{}{}
 			arr, ok := data[product]
 			if !ok {
 				arr = make([]schema.UserCacheLabel, 0)
@@ -106,6 +106,51 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64) (*schema.
 	})
 
 	return user, err
+}
+
+const userSettingsWithGroupSQL = "(select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
+	"t2.`id`, t2.`name`, t3.`name` as `module` " +
+	"from `user_setting` t1, `urbs_setting` t2, `urbs_module` t3 " +
+	"where t1.`user_id` = ? and t1.`updated_at` <= ? and t1.`setting_id` = t2.`id` and t2.`module_id` in ( ? ) and t2.`module_id` = t3.`id` " +
+	"order by t1.`updated_at` desc limit ? ) " +
+	"union all " +
+	"(select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
+	"t2.`id`, t2.`name`, t3.`name` as `module` " +
+	"from `group_setting` t1, `urbs_setting` t2, `urbs_module` t3 " +
+	"where t1.`group_id` in ( ? ) and t1.`updated_at` <= ? and t1.`setting_id` = t2.`id` and t2.`module_id` in ( ? ) and t2.`module_id` = t3.`id` " +
+	"order by t1.`updated_at` desc limit ? ) " +
+	"order by `updated_at` desc"
+
+// FindSettingsWithGroup 根据用户 ID, updateGt, productName 返回其 settings 数据。
+func (m *User) FindSettingsWithGroup(ctx context.Context, userID int64, groupIDs []int64, moduleIDs []int64, pg tpl.Pagination) ([]tpl.MySetting, error) {
+	data := []tpl.MySetting{}
+	updatedAt := pg.TokenToTime(time.Now())
+	size := pg.PageSize + 1
+
+	rows, err := m.DB.Raw(userSettingsWithGroupSQL, userID, updatedAt, moduleIDs, size,
+		groupIDs, updatedAt, moduleIDs, size).Rows()
+	defer rows.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	set := make(map[int64]struct{})
+	for rows.Next() {
+		mySetting := tpl.MySetting{}
+		if err := rows.Scan(&mySetting.CreatedAt, &mySetting.UpdatedAt, &mySetting.Value, &mySetting.LastValue,
+			&mySetting.ID, &mySetting.Name, &mySetting.Module); err != nil {
+			return nil, err
+		}
+		if _, ok := set[mySetting.ID]; ok {
+			continue // 去重
+		}
+		set[mySetting.ID] = struct{}{}
+
+		mySetting.HID = service.IDToHID(mySetting.ID, "setting")
+		data = append(data, mySetting)
+	}
+	return data, nil
 }
 
 const userLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`offline_at`, t2.`name`, " +
@@ -146,10 +191,41 @@ func (m *User) FindLables(ctx context.Context, userID int64, pg tpl.Pagination) 
 
 // CountLabels 计算 user labels 总数
 func (m *User) CountLabels(ctx context.Context, userID int64) (int, error) {
-
 	count := 0
 	err := m.DB.Model(&schema.UserLabel{}).Where("user_id = ?", userID).Count(&count).Error
 	return count, err
+}
+
+const userSettingsSQL = "select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
+	"t2.`id`, t2.`name`, t3.`name` as `module` " +
+	"from `user_setting` t1, `urbs_setting` t2, `urbs_module` t3 " +
+	"where t1.`user_id` = ? and t1.`updated_at` >= ? and t1.`setting_id` = t2.`id` and t2.`module_id` in ( ? ) and t2.`module_id` = t3.`id` " +
+	"order by t1.`updated_at` asc " +
+	"limit ?"
+
+// FindSettings 根据用户 ID, moduleIDs 返回 settings 数据。
+func (m *User) FindSettings(ctx context.Context, userID int64, moduleIDs []int64, pg tpl.Pagination) ([]tpl.MySetting, error) {
+	data := []tpl.MySetting{}
+	updatedAt := pg.TokenToTime()
+
+	rows, err := m.DB.Raw(userSettingsSQL, userID, updatedAt, moduleIDs, pg.PageSize+1).Rows()
+	defer rows.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		mySetting := tpl.MySetting{}
+		if err := rows.Scan(&mySetting.CreatedAt, &mySetting.UpdatedAt, &mySetting.Value, &mySetting.LastValue,
+			&mySetting.ID, &mySetting.Name, &mySetting.Module); err != nil {
+			return nil, err
+		}
+		mySetting.HID = service.IDToHID(mySetting.ID, "setting")
+		data = append(data, mySetting)
+	}
+
+	return data, nil
 }
 
 // BatchAdd 批量添加用户
@@ -176,4 +252,12 @@ func (m *User) RemoveLable(ctx context.Context, userID, lableID int64) error {
 // RemoveSetting 删除用户的 setting
 func (m *User) RemoveSetting(ctx context.Context, userID, settingID int64) error {
 	return m.DB.Where("user_id = ? and setting_id = ?", userID, settingID).Delete(&schema.UserSetting{}).Error
+}
+
+const rollbackSettingSQL = "update `user_setting` set `value` = `user_setting`.`last_value` where user_id = ? and setting_id = ?"
+
+// RollbackSetting 回滚用户的 setting
+func (m *User) RollbackSetting(ctx context.Context, userID, settingID int64) error {
+	err := m.DB.Exec(rollbackSettingSQL, userID, settingID).Error
+	return err
 }

@@ -95,7 +95,7 @@ func TestGroupAPIs(t *testing.T) {
 				Set("Content-Type", "application/json").
 				Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
 					tpl.GroupBody{UID: uid1, Kind: "org", Desc: "test"},
-					tpl.GroupBody{UID: uid2, Kind: "org", Desc: "test"},
+					tpl.GroupBody{UID: uid2, Kind: "project", Desc: "test"},
 				}}).
 				End()
 			assert.Nil(err)
@@ -135,6 +135,8 @@ func TestGroupAPIs(t *testing.T) {
 			text, err := res.Text()
 			assert.Nil(err)
 			assert.True(strings.Contains(text, uid1))
+			assert.True(strings.Contains(text, `"kind":"org"`))
+			assert.True(strings.Contains(text, `"kind":"project"`))
 			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.GroupsRes{}
@@ -142,6 +144,23 @@ func TestGroupAPIs(t *testing.T) {
 			assert.NotNil(json.Result)
 			assert.True(len(json.Result) > 0)
 			assert.Equal("org", json.Result[0].Kind)
+
+			res, err = request.Get(fmt.Sprintf("%s/v1/groups?kind=org", tt.Host)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err = res.Text()
+			assert.Nil(err)
+			assert.True(strings.Contains(text, uid1))
+			assert.True(strings.Contains(text, `"kind":"org"`))
+			assert.False(strings.Contains(text, `"kind":"project"`))
+			assert.False(strings.Contains(text, `"id"`))
+
+			json2 := tpl.GroupsRes{}
+			res.JSON(&json2)
+			assert.True(json2.TotalSize < json.TotalSize)
+			assert.True(len(json2.Result) > 0)
 		})
 	})
 

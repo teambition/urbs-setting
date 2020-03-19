@@ -25,7 +25,7 @@ func (t *GroupsBody) Validate() error {
 		return gear.ErrBadRequest.WithMsg("groups emtpy")
 	}
 	for _, g := range t.Groups {
-		if !validIDNameReg.MatchString(g.UID) {
+		if !validIDReg.MatchString(g.UID) {
 			return gear.ErrBadRequest.WithMsgf("invalid group uid: %s", g.UID)
 		}
 		if !validLabelReg.MatchString(g.Kind) {
@@ -38,6 +38,12 @@ func (t *GroupsBody) Validate() error {
 	return nil
 }
 
+// GroupsURL ...
+type GroupsURL struct {
+	Pagination
+	Kind string `json:"kind" query:"kind"`
+}
+
 // GroupMembersURL ...
 type GroupMembersURL struct {
 	UID    string `json:"uid" param:"uid"`
@@ -47,12 +53,12 @@ type GroupMembersURL struct {
 
 // Validate 实现 gear.BodyTemplate。
 func (t *GroupMembersURL) Validate() error {
-	if !validIDNameReg.MatchString(t.UID) {
+	if !validIDReg.MatchString(t.UID) {
 		return gear.ErrBadRequest.WithMsgf("invalid group uid: %s", t.UID)
 	}
 
 	if t.User != "" {
-		if !validIDNameReg.MatchString(t.User) {
+		if !validIDReg.MatchString(t.User) {
 			return gear.ErrBadRequest.WithMsgf("invalid user uid: %s", t.User)
 		}
 	} else if t.SyncLt != 0 {

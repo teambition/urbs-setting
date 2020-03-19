@@ -14,12 +14,12 @@ type Group struct {
 }
 
 // List 返回群组列表，TODO：支持分页
-func (b *Group) List(ctx context.Context, pg tpl.Pagination) (*tpl.GroupsRes, error) {
-	groups, err := b.ms.Group.Find(ctx, pg)
+func (b *Group) List(ctx context.Context, kind string, pg tpl.Pagination) (*tpl.GroupsRes, error) {
+	groups, err := b.ms.Group.Find(ctx, kind, pg)
 	if err != nil {
 		return nil, err
 	}
-	total, err := b.ms.Group.Count(ctx)
+	total, err := b.ms.Group.Count(ctx, kind)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +82,47 @@ func (b *Group) ListMembers(ctx context.Context, uid string, pg tpl.Pagination) 
 	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
+	return res, nil
+}
+
+// ListSettings ...
+func (b *Group) ListSettings(ctx context.Context, uid, productName string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
+	group, err := b.ms.Group.FindByUID(ctx, uid, "id")
+	if err != nil {
+		return nil, err
+	}
+	if group == nil {
+		return nil, gear.ErrNotFound.WithMsgf("group %s not found", uid)
+	}
+
+	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	if err != nil {
+		return nil, err
+	}
+	if product == nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
+	}
+	if product.DeletedAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
+	}
+	if product.OfflineAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
+	}
+
+	moduleIDs, err := b.ms.Module.FindIDsByProductID(ctx, product.ID)
+	if err != nil {
+		return nil, err
+	}
+	settings, err := b.ms.User.FindSettings(ctx, group.ID, moduleIDs, pg)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &tpl.MySettingsRes{Result: settings}
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.TimeToPageToken(res.Result[pg.PageSize].UpdatedAt)
 		res.Result = res.Result[:pg.PageSize]
 	}
 	return res, nil

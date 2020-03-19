@@ -15,12 +15,12 @@ type Group struct {
 
 // List ..
 func (a *Group) List(ctx *gear.Context) error {
-	req := tpl.Pagination{}
+	req := tpl.GroupsURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res, err := a.blls.Group.List(ctx, req)
+	res, err := a.blls.Group.List(ctx, req.Kind, req.Pagination)
 	if err != nil {
 		return err
 	}
@@ -60,8 +60,17 @@ func (a *Group) ListMembers(ctx *gear.Context) error {
 
 // ListSettings ..
 func (a *Group) ListSettings(ctx *gear.Context) error {
-	// TODO
-	return nil
+	req := tpl.UIDProductURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Group.ListSettings(ctx, req.UID, req.Product, req.Pagination)
+	if err != nil {
+		return err
+	}
+
+	return ctx.OkJSON(res)
 }
 
 // CheckExists ..

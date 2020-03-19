@@ -92,7 +92,7 @@ func TestSettingAPIs(t *testing.T) {
 
 			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings", tt.Host, product.Name, module.Name)).
 				Set("Content-Type", "application/json").
-				Send(tpl.NameDescBody{Name: "ab", Desc: "test"}).
+				Send(tpl.NameDescBody{Name: "aB", Desc: "test"}).
 				End()
 			assert.Nil(err)
 			assert.Equal(400, res.StatusCode)
@@ -113,10 +113,55 @@ func TestSettingAPIs(t *testing.T) {
 			assert.True(strings.Contains(text, n1))
 			assert.False(strings.Contains(text, `"id"`))
 
-			json := tpl.ModulesRes{}
+			json := tpl.SettingsInfoRes{}
 			res.JSON(&json)
 			assert.NotNil(json.Result)
-			assert.True(len(json.Result) > 0)
+			assert.True(json.TotalSize > 0)
+			data := json.Result[0]
+			assert.NotEqual("", data.HID)
+			assert.NotEqual("", data.Name)
+			assert.NotEqual("", data.Product)
+			assert.NotEqual("", data.Module)
+			assert.Equal([]string{}, data.Channels)
+			assert.Equal([]string{}, data.Clients)
+			assert.Equal([]string{}, data.Values)
+			assert.True(data.CreatedAt.UTC().Unix() > int64(0))
+			assert.True(data.UpdatedAt.UTC().Unix() > int64(0))
+			assert.Nil(data.OfflineAt)
+			assert.Equal(int64(0), data.Status)
+		})
+	})
+
+	t.Run(`"GET /products/:product/modules/:module/settings/:setting"`, func(t *testing.T) {
+		t.Run("should work", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Get(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s",
+				tt.Host, product.Name, module.Name, n1)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.True(strings.Contains(text, n1))
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.SettingInfoRes{}
+			res.JSON(&json)
+			assert.NotNil(json.Result)
+			data := json.Result
+			assert.NotEqual("", data.HID)
+			assert.Equal(n1, data.Name)
+			assert.Equal(product.Name, data.Product)
+			assert.Equal(module.Name, data.Module)
+			assert.Equal([]string{}, data.Channels)
+			assert.Equal([]string{}, data.Clients)
+			assert.Equal([]string{}, data.Values)
+			assert.True(data.CreatedAt.UTC().Unix() > int64(0))
+			assert.True(data.UpdatedAt.UTC().Unix() > int64(0))
+			assert.Nil(data.OfflineAt)
+			assert.Equal(int64(0), data.Status)
 		})
 	})
 }
