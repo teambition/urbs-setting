@@ -38,20 +38,27 @@ func (m *Group) FindByUID(ctx context.Context, uid string, selectStr string) (*s
 }
 
 // Find 根据条件查找 groups
-func (m *Group) Find(ctx context.Context, pg tpl.Pagination) ([]schema.Group, error) {
+func (m *Group) Find(ctx context.Context, kind string, pg tpl.Pagination) ([]schema.Group, error) {
 	groups := make([]schema.Group, 0)
 	pageToken := pg.TokenToID()
+	db := m.DB.Where("`id` >= ?", pageToken)
+	if kind != "" {
+		db = m.DB.Where("`id` >= ? and kind = ?", pageToken, kind)
+	}
 
-	err := m.DB.Where("`id` >= ?", pageToken).
-		Order("`id`").Limit(pg.PageSize + 1).Find(&groups).Error
+	err := db.Order("`id`").Limit(pg.PageSize + 1).Find(&groups).Error
 	return groups, err
 }
 
 // Count 计算 group 总数
-func (m *Group) Count(ctx context.Context) (int, error) {
+func (m *Group) Count(ctx context.Context, kind string) (int, error) {
 
 	count := 0
-	err := m.DB.Model(&schema.Group{}).Count(&count).Error
+	db := m.DB.Model(&schema.Group{})
+	if kind != "" {
+		db = db.Where("kind = ?", kind)
+	}
+	err := db.Count(&count).Error
 	return count, err
 }
 
@@ -97,6 +104,38 @@ func (m *Group) CountLabels(ctx context.Context, groupID int64) (int, error) {
 	count := 0
 	err := m.DB.Model(&schema.GroupLabel{}).Where("group_id = ?", groupID).Count(&count).Error
 	return count, err
+}
+
+const groupSettingsSQL = "select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
+	"t2.`id`, t2.`name`, t3.`name` as `module` " +
+	"from `group_setting` t1, `urbs_setting` t2, `urbs_module` t3 " +
+	"where t1.`group_id` = ? and t1.`updated_at` >= ? and t1.`setting_id` = t2.`id` and t2.`module_id` in ( ? ) and t2.`module_id` = t3.`id` " +
+	"order by t1.`updated_at` asc " +
+	"limit ?"
+
+// FindSettings 根据 Group ID, updateGt, productName 返回其 settings 数据。
+func (m *Group) FindSettings(ctx context.Context, groupID int64, moduleIDs []int64, pg tpl.Pagination) ([]tpl.MySetting, error) {
+	data := []tpl.MySetting{}
+	updatedAt := pg.TokenToTime()
+
+	rows, err := m.DB.Raw(groupSettingsSQL, groupID, updatedAt, moduleIDs, pg.PageSize+1).Rows()
+	defer rows.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		mySetting := tpl.MySetting{}
+		if err := rows.Scan(&mySetting.CreatedAt, &mySetting.UpdatedAt, &mySetting.Value, &mySetting.LastValue,
+			&mySetting.ID, &mySetting.Name, &mySetting.Module); err != nil {
+			return nil, err
+		}
+		mySetting.HID = service.IDToHID(mySetting.ID, "setting")
+		data = append(data, mySetting)
+	}
+
+	return data, nil
 }
 
 // BatchAdd 批量添加群组
@@ -168,6 +207,20 @@ func (m *Group) FindMembers(ctx context.Context, groupID int64, pg tpl.Paginatio
 	}
 
 	return data, nil
+}
+
+// FindIDsByUserID 根据 userID 查找加入的 Group ID 数组
+func (m *Group) FindIDsByUserID(ctx context.Context, userID int64) ([]int64, error) {
+	userGroups := make([]schema.UserGroup, 0)
+	err := m.DB.Where("`user_id` = ?", userID).Select("`group_id`").
+		Limit(1000).Find(&userGroups).Error
+	ids := make([]int64, len(userGroups))
+	if err == nil {
+		for i, u := range userGroups {
+			ids[i] = u.GroupID
+		}
+	}
+	return ids, err
 }
 
 // RemoveMembers 删除群组的成员

@@ -12,8 +12,30 @@ type ProductURL struct {
 
 // Validate 实现 gear.BodyTemplate。
 func (t *ProductURL) Validate() error {
-	if !validIDNameReg.MatchString(t.Product) {
+	if !validNameReg.MatchString(t.Product) {
 		return gear.ErrBadRequest.WithMsgf("invalid product name: %s", t.Product)
+	}
+	return nil
+}
+
+// UIDProductURL ...
+type UIDProductURL struct {
+	Pagination
+	UID     string `json:"uid" param:"uid"`
+	Product string `json:"product" query:"product"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *UIDProductURL) Validate() error {
+	if !validIDReg.MatchString(t.UID) {
+		return gear.ErrBadRequest.WithMsgf("invalid user: %s", t.UID)
+	}
+	if !validNameReg.MatchString(t.Product) {
+		return gear.ErrBadRequest.WithMsgf("invalid product name: %s", t.Product)
+	}
+
+	if err := t.Pagination.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -26,7 +48,7 @@ type ProductPaginationURL struct {
 
 // Validate 实现 gear.BodyTemplate。
 func (t *ProductPaginationURL) Validate() error {
-	if !validIDNameReg.MatchString(t.Product) {
+	if !validNameReg.MatchString(t.Product) {
 		return gear.ErrBadRequest.WithMsgf("invalid product name: %s", t.Product)
 	}
 	if err := t.Pagination.Validate(); err != nil {
@@ -61,7 +83,7 @@ type ProductModuleURL struct {
 
 // Validate 实现 gear.BodyTemplate。
 func (t *ProductModuleURL) Validate() error {
-	if !validIDNameReg.MatchString(t.Module) {
+	if !validNameReg.MatchString(t.Module) {
 		return gear.ErrBadRequest.WithMsgf("invalid module name: %s", t.Module)
 	}
 	if err := t.ProductURL.Validate(); err != nil {
@@ -84,7 +106,7 @@ func (t *ProductModuleSettingURL) Validate() error {
 	if err := t.ProductModuleURL.Validate(); err != nil {
 		return err
 	}
-	if !validIDNameReg.MatchString(t.Setting) {
+	if !validNameReg.MatchString(t.Setting) {
 		return gear.ErrBadRequest.WithMsgf("invalid setting name: %s", t.Setting)
 	}
 	return nil

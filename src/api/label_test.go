@@ -52,19 +52,23 @@ func TestLabelAPIs(t *testing.T) {
 			text, err := res.Text()
 			assert.Nil(err)
 			assert.True(strings.Contains(text, `"offline_at":null`))
+			assert.True(strings.Contains(text, `"hid"`))
 			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.LabelInfoRes{}
 			res.JSON(&json)
 			assert.NotNil(json.Result)
-			assert.Equal(n1, json.Result.Name)
-			assert.Equal("test", json.Result.Desc)
-			assert.Equal([]string{}, json.Result.Channels)
-			assert.Equal([]string{}, json.Result.Clients)
-			assert.True(json.Result.CreatedAt.UTC().Unix() > int64(0))
-			assert.True(json.Result.UpdatedAt.UTC().Unix() > int64(0))
-			assert.Nil(json.Result.OfflineAt)
-			assert.Equal(int64(0), json.Result.Status)
+			data := json.Result
+			assert.NotEqual("", data.HID)
+			assert.Equal(n1, data.Name)
+			assert.Equal("test", data.Desc)
+			assert.Equal(product.Name, data.Product)
+			assert.Equal([]string{}, data.Channels)
+			assert.Equal([]string{}, data.Clients)
+			assert.True(data.CreatedAt.UTC().Unix() > int64(0))
+			assert.True(data.UpdatedAt.UTC().Unix() > int64(0))
+			assert.Nil(data.OfflineAt)
+			assert.Equal(int64(0), data.Status)
 		})
 
 		t.Run(`should return 409`, func(t *testing.T) {
@@ -83,7 +87,7 @@ func TestLabelAPIs(t *testing.T) {
 
 			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels", tt.Host, product.Name)).
 				Set("Content-Type", "application/json").
-				Send(tpl.LabelBody{Name: "1abc", Desc: "test"}).
+				Send(tpl.LabelBody{Name: "_abc", Desc: "test"}).
 				End()
 			assert.Nil(err)
 			assert.Equal(400, res.StatusCode)
@@ -107,7 +111,17 @@ func TestLabelAPIs(t *testing.T) {
 			json := tpl.LabelsInfoRes{}
 			res.JSON(&json)
 			assert.NotNil(json.Result)
-			assert.True(len(json.Result) > 0)
+			assert.True(json.TotalSize > 0)
+			data := json.Result[0]
+			assert.NotEqual("", data.HID)
+			assert.NotEqual("", data.Name)
+			assert.NotEqual("", data.Product)
+			assert.Equal([]string{}, data.Channels)
+			assert.Equal([]string{}, data.Clients)
+			assert.True(data.CreatedAt.UTC().Unix() > int64(0))
+			assert.True(data.UpdatedAt.UTC().Unix() > int64(0))
+			assert.Nil(data.OfflineAt)
+			assert.Equal(int64(0), data.Status)
 		})
 	})
 

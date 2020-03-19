@@ -52,6 +52,20 @@ func (m *Module) Count(ctx context.Context, productID int64) (int, error) {
 	return count, err
 }
 
+// FindIDsByProductID 根据 productID 查找未下线模块 ID 数组
+func (m *Module) FindIDsByProductID(ctx context.Context, productID int64) ([]int64, error) {
+	modules := make([]schema.Module, 0)
+	err := m.DB.Where("`product_id` = ? and `offline_at` is null", productID).Select("`id`").
+		Limit(10000).Find(&modules).Error
+	ids := make([]int64, len(modules))
+	if err == nil {
+		for i, m := range modules {
+			ids[i] = m.ID
+		}
+	}
+	return ids, err
+}
+
 // Create ...
 func (m *Module) Create(ctx context.Context, module *schema.Module) error {
 	return m.DB.Create(module).Error

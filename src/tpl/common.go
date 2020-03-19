@@ -2,7 +2,6 @@ package tpl
 
 import (
 	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"regexp"
 	"strings"
@@ -10,38 +9,37 @@ import (
 	"github.com/teambition/gear"
 )
 
-var validIDNameReg = regexp.MustCompile(`^[0-9A-Za-z._-]{3,63}$`)
+var validIDReg = regexp.MustCompile(`^[0-9A-Za-z._=-]{3,63}$`)
 var validHIDReg = regexp.MustCompile(`^[0-9A-Za-z_=-]{24}$`)
 
+// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
+var validNameReg = regexp.MustCompile(`^[0-9a-z][0-9a-z.-]{0,61}[0-9a-z]$`)
+
 // Should be subset of DNS-1035 label
-// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
-var validLabelReg = regexp.MustCompile(`^[a-z][0-9a-z-]{1,62}$`)
+// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
+var validLabelReg = regexp.MustCompile(`^[0-9a-z][0-9a-z-]{0,61}[0-9a-z]$`)
 
 // RandUID for testing
 func RandUID() string {
-	b := make([]byte, 12)
-	if _, err := rand.Read(b); err != nil {
-		panic("crypto-go: rand.Read() failed, " + err.Error())
-	}
-	return fmt.Sprintf("uid-%x", b)
+	return fmt.Sprintf("uid-%x", randBytes(8))
 }
 
 // RandName for testing
 func RandName() string {
-	b := make([]byte, 12)
-	if _, err := rand.Read(b); err != nil {
-		panic("crypto-go: rand.Read() failed, " + err.Error())
-	}
-	return base64.RawURLEncoding.EncodeToString(b)
+	return fmt.Sprintf("name-%x", randBytes(8))
 }
 
 // RandLabel for testing
 func RandLabel() string {
-	b := make([]byte, 8)
+	return fmt.Sprintf("label-%x", randBytes(8))
+}
+
+func randBytes(size int) []byte {
+	b := make([]byte, size)
 	if _, err := rand.Read(b); err != nil {
 		panic("crypto-go: rand.Read() failed, " + err.Error())
 	}
-	return fmt.Sprintf("label-%x", b)
+	return b
 }
 
 // ErrorResponseType 定义了标准的 API 接口错误时返回数据模型
@@ -76,7 +74,7 @@ type UIDURL struct {
 
 // Validate 实现 gear.BodyTemplate。
 func (t *UIDURL) Validate() error {
-	if !validIDNameReg.MatchString(t.UID) {
+	if !validIDReg.MatchString(t.UID) {
 		return gear.ErrBadRequest.WithMsgf("invalid uid: %s", t.UID)
 	}
 	return nil
@@ -107,7 +105,7 @@ type UIDPaginationURL struct {
 
 // Validate 实现 gear.BodyTemplate。
 func (t *UIDPaginationURL) Validate() error {
-	if !validIDNameReg.MatchString(t.UID) {
+	if !validIDReg.MatchString(t.UID) {
 		return gear.ErrBadRequest.WithMsgf("invalid uid: %s", t.UID)
 	}
 	if err := t.Pagination.Validate(); err != nil {
@@ -124,7 +122,7 @@ type NameDescBody struct {
 
 // Validate 实现 gear.BodyTemplate。
 func (t *NameDescBody) Validate() error {
-	if !validIDNameReg.MatchString(t.Name) {
+	if !validNameReg.MatchString(t.Name) {
 		return gear.ErrBadRequest.WithMsgf("invalid name: %s", t.Name)
 	}
 	if len(t.Desc) > 1022 {
@@ -147,12 +145,12 @@ func (t *UsersGroupsBody) Validate() error {
 	}
 
 	for _, uid := range t.Users {
-		if !validIDNameReg.MatchString(uid) {
+		if !validIDReg.MatchString(uid) {
 			return gear.ErrBadRequest.WithMsgf("invalid user: %s", uid)
 		}
 	}
 	for _, uid := range t.Groups {
-		if !validIDNameReg.MatchString(uid) {
+		if !validIDReg.MatchString(uid) {
 			return gear.ErrBadRequest.WithMsgf("invalid group: %s", uid)
 		}
 	}
@@ -168,4 +166,14 @@ func StringToSlice(s string) []string {
 		return make([]string, 0)
 	}
 	return strings.Split(s, ",")
+}
+
+// StringSliceHas ...
+func StringSliceHas(sl []string, v string) bool {
+	for _, s := range sl {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }

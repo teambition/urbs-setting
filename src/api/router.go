@@ -43,7 +43,7 @@ func newRouters(apis *APIs) []*gear.Router {
 	// health check
 	router.Get("/healthz", apis.Healthz.Get)
 	// 读取指定用户的灰度标签，包括继承自群组的标签，返回轻量级 labels，无身份验证，用于网关
-	router.Get("/users/:uid/labels:cache", tracing.New(), apis.User.ListLablesInCache)
+	router.Get("/users/:uid/labels:cache", tracing.New(), apis.User.ListCachedLables)
 
 	routerV1 := gear.NewRouter(gear.RouterOptions{
 		Root: "/v1",
@@ -54,8 +54,12 @@ func newRouters(apis *APIs) []*gear.Router {
 	// ***** user ******
 	// 读取指定用户的灰度标签，支持条件筛选
 	routerV1.Get("/users/:uid/labels", apis.User.ListLables)
+	// 读取指定用户的灰度标签，支持条件筛选
+	routerV1.Put("/users/:uid/labels:cache", apis.User.RefreshCachedLables)
 	// 读取指定用户的功能配置项，支持条件筛选
 	routerV1.Get("/users/:uid/settings", apis.User.ListSettings)
+	// 读取指定用户的功能配置项，支持条件筛选
+	routerV1.Get("/users/:uid/settings:withGroup", apis.User.ListSettingsWithGroup)
 	// 查询指定用户是否存在
 	routerV1.Get("/users/:uid+:exists", apis.User.CheckExists)
 	// 批量添加用户
@@ -63,7 +67,7 @@ func newRouters(apis *APIs) []*gear.Router {
 	// 删除指定用户的指定灰度标签
 	routerV1.Delete("/users/:uid/labels/:hid", apis.User.RemoveLable)
 	// 更新指定用户的指定配置项
-	routerV1.Put("/users/:uid/settings/:hid", apis.User.UpdateSetting)
+	routerV1.Put("/users/:uid/settings/:hid+:rollback", apis.User.RollbackSetting)
 	// 删除指定用户的指定配置项
 	routerV1.Delete("/users/:uid/settings/:hid", apis.User.RemoveSetting)
 
@@ -126,6 +130,8 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Get("/products/:product/modules/:module/settings", apis.Setting.List)
 	// 创建指定产品功能模块配置项
 	routerV1.Post("/products/:product/modules/:module/settings", apis.Setting.Create)
+	// 读取指定产品功能模块配置项
+	routerV1.Get("/products/:product/modules/:module/settings/:setting", apis.Setting.Get)
 	// 更新指定产品功能模块配置项
 	routerV1.Put("/products/:product/modules/:module/settings/:setting", apis.Setting.Update)
 	// 下线指定产品功能模块配置项

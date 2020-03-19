@@ -44,12 +44,42 @@ func (b *Setting) List(ctx context.Context, productName, moduleName string, pg t
 		return nil, err
 	}
 
-	res := &tpl.SettingsInfoRes{Result: tpl.SettingInfosFrom(settings, productName, moduleName)}
+	res := &tpl.SettingsInfoRes{Result: tpl.SettingsInfoFrom(settings, productName, moduleName)}
 	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]
 	}
+	return res, nil
+}
+
+// Get 返回产品下指定功能模块配置项
+func (b *Setting) Get(ctx context.Context, productName, moduleName, settingName string) (*tpl.SettingInfoRes, error) {
+	product, err := b.ms.Product.FindByName(ctx, productName, "id, `deleted_at`")
+	if err != nil {
+		return nil, err
+	}
+	if product == nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
+	}
+	if product.DeletedAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
+	}
+
+	module, err := b.ms.Module.FindByName(ctx, product.ID, moduleName, "id")
+	if err != nil {
+		return nil, err
+	}
+	if module == nil {
+		return nil, gear.ErrNotFound.WithMsgf("module %s not found", moduleName)
+	}
+
+	setting, err := b.ms.Setting.FindByName(ctx, module.ID, settingName, "")
+	if err != nil {
+		return nil, err
+	}
+
+	res := &tpl.SettingInfoRes{Result: tpl.SettingInfoFrom(*setting, productName, moduleName)}
 	return res, nil
 }
 
@@ -155,7 +185,7 @@ func (b *Setting) Assign(ctx context.Context, productName, moduleName, settingNa
 		return gear.ErrNotFound.WithMsgf("module %s was offline", moduleName)
 	}
 
-	setting, err := b.ms.Setting.FindByName(ctx, module.ID, settingName, "id, `offline_at`")
+	setting, err := b.ms.Setting.FindByName(ctx, module.ID, settingName, "id, `vals`, `offline_at`")
 	if err != nil {
 		return err
 	}
@@ -164,6 +194,10 @@ func (b *Setting) Assign(ctx context.Context, productName, moduleName, settingNa
 	}
 	if setting.OfflineAt != nil {
 		return gear.ErrNotFound.WithMsgf("setting %s was offline", settingName)
+	}
+	vals := tpl.StringToSlice(setting.Values)
+	if !tpl.StringSliceHas(vals, value) {
+		return gear.ErrBadRequest.WithMsgf("value %s is not in setting", value)
 	}
 	return b.ms.Setting.Assign(ctx, setting.ID, value, users, groups)
 }

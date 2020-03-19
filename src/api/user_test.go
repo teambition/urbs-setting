@@ -191,6 +191,43 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(0, len(json.Result[0].Channels))
 		})
 
+		t.Run(`"PUT /users/:uid/labels:cache"`, func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[1].UID, product.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.CacheLabelsInfoRes{}
+			_, err = res.JSON(&json)
+			assert.Nil(err)
+			assert.Equal(1, len(json.Result))
+			assert.True(json.Timestamp > 0)
+			t1 := json.Timestamp
+
+			time.Sleep(time.Millisecond * 1100)
+			res, err = request.Put(fmt.Sprintf("%s/v1/users/%s/labels:cache", tt.Host, users[1].UID)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json2 := tpl.BoolRes{}
+			_, err = res.JSON(&json2)
+			assert.Nil(err)
+			assert.True(json2.Result)
+
+			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[1].UID, product.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json = tpl.CacheLabelsInfoRes{}
+			_, err = res.JSON(&json)
+			assert.Nil(err)
+			assert.True(json.Timestamp >= (t1 + 1))
+		})
+
 		t.Run(`"GET /users/:uid/labels:cache" when group label exists`, func(t *testing.T) {
 			assert := assert.New(t)
 

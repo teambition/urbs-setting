@@ -81,7 +81,7 @@ func TestModuleAPIs(t *testing.T) {
 
 			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/modules", tt.Host, product.Name)).
 				Set("Content-Type", "application/json").
-				Send(tpl.NameDescBody{Name: "ab", Desc: "test"}).
+				Send(tpl.NameDescBody{Name: ".ab", Desc: "test"}).
 				End()
 			assert.Nil(err)
 			assert.Equal(400, res.StatusCode)

@@ -15,7 +15,7 @@ func (t *UsersBody) Validate() error {
 		return gear.ErrBadRequest.WithMsg("users emtpy")
 	}
 	for _, uid := range t.Users {
-		if !validIDNameReg.MatchString(uid) {
+		if !validIDReg.MatchString(uid) {
 			return gear.ErrBadRequest.WithMsgf("invalid user: %s", uid)
 		}
 	}

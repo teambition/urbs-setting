@@ -76,7 +76,7 @@ func TestProductAPIs(t *testing.T) {
 
 			res, err := request.Post(fmt.Sprintf("%s/v1/products", tt.Host)).
 				Set("Content-Type", "application/json").
-				Send(tpl.NameDescBody{Name: "ab", Desc: "test"}).
+				Send(tpl.NameDescBody{Name: "a", Desc: "test"}).
 				End()
 			assert.Nil(err)
 			assert.Equal(400, res.StatusCode)
