@@ -8,7 +8,7 @@ import (
 // Module 详见 ./sql/schema.sql table `urbs_module`
 // 产品线的功能模块
 type Module struct {
-	ID        int64      `gorm:"column:id"`
+	ID        int64      `gorm:"column:id" json:"-"`
 	CreatedAt time.Time  `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time  `gorm:"column:updated_at" json:"updated_at"`
 	OfflineAt *time.Time `gorm:"column:offline_at" json:"offline_at"` // 计划下线时间，用于灰度管理

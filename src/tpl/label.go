@@ -31,7 +31,7 @@ func (t *LabelsURL) Validate() error {
 
 // LabelBody ...
 type LabelBody struct {
-	Name string `json:"Name"`
+	Name string `json:"name"`
 	Desc string `json:"desc"`
 }
 
@@ -48,7 +48,7 @@ func (t *LabelBody) Validate() error {
 
 // LabelInfo ...
 type LabelInfo struct {
-	ID        int64
+	ID        int64      `json:"-"`
 	HID       string     `json:"hid"`
 	Product   string     `json:"product"`
 	Name      string     `json:"name"`

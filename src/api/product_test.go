@@ -46,6 +46,7 @@ func TestProductAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.True(strings.Contains(text, `"offline_at":null`))
 			assert.True(strings.Contains(text, `"deleted_at":null`))
+			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.ProductRes{}
 			res.JSON(&json)
@@ -94,6 +95,7 @@ func TestProductAPIs(t *testing.T) {
 			text, err := res.Text()
 			assert.Nil(err)
 			assert.True(strings.Contains(text, n1))
+			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.ProductsRes{}
 			res.JSON(&json)

@@ -11,7 +11,7 @@ import (
 // 缓存用户当前全部 label，根据 active_at 和 cache_label_expire 刷新
 // labels 格式：TODO
 type User struct {
-	ID        int64     `gorm:"column:id"`
+	ID        int64     `gorm:"column:id" json:"-"`
 	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
 	UID       string    `gorm:"column:uid" json:"uid"`             // varchar(63)，用户外部ID，表内唯一， 如 Teambition user id
 	ActiveAt  int64     `gorm:"column:active_at" json:"active_at"` // 最近活跃时间戳，1970 以来的秒数，但不及时更新

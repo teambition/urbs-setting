@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -270,6 +271,10 @@ func TestUserAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.LabelsInfoRes{}
 			_, err = res.JSON(&json)

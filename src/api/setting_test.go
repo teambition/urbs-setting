@@ -60,6 +60,7 @@ func TestSettingAPIs(t *testing.T) {
 			text, err := res.Text()
 			assert.Nil(err)
 			assert.True(strings.Contains(text, `"offline_at":null`))
+			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.SettingInfoRes{}
 			res.JSON(&json)
@@ -110,6 +111,7 @@ func TestSettingAPIs(t *testing.T) {
 			text, err := res.Text()
 			assert.Nil(err)
 			assert.True(strings.Contains(text, n1))
+			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.ModulesRes{}
 			res.JSON(&json)
