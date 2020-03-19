@@ -5,6 +5,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 -----
 
+## [1.1.2] - 2020-03-19
+
+**Fixed:**
+
+- API should not response `id` field.
+- Fixed request body template.
+
 ## [1.1.0] - 2020-03-14
 
 **Changed:**

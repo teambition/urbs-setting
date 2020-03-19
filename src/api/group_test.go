@@ -135,6 +135,7 @@ func TestGroupAPIs(t *testing.T) {
 			text, err := res.Text()
 			assert.Nil(err)
 			assert.True(strings.Contains(text, uid1))
+			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.GroupsRes{}
 			res.JSON(&json)
@@ -218,6 +219,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.True(strings.Contains(text, users[0].UID))
 			assert.True(strings.Contains(text, user))
+			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.GroupMembersRes{}
 			res.JSON(&json)

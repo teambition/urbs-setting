@@ -118,7 +118,7 @@ func (t *UIDPaginationURL) Validate() error {
 
 // NameDescBody ...
 type NameDescBody struct {
-	Name string `json:"Name"`
+	Name string `json:"name"`
 	Desc string `json:"desc"`
 }
 

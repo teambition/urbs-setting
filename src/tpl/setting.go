@@ -9,7 +9,7 @@ import (
 
 // SettingInfo ...
 type SettingInfo struct {
-	ID        int64
+	ID        int64      `json:"-"`
 	HID       string     `json:"hid"`
 	Product   string     `json:"product"`
 	Module    string     `json:"module"`

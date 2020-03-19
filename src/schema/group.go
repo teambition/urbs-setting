@@ -8,7 +8,7 @@ import (
 // Group 详见 ./sql/schema.sql table `urbs_group`
 // 用户群组
 type Group struct {
-	ID        int64     `gorm:"column:id"`
+	ID        int64     `gorm:"column:id" json:"-"`
 	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
 	SyncAt    int64     `gorm:"column:sync_at" json:"sync_at"`  // 群组成员同步时间点，1970 以来的秒数
