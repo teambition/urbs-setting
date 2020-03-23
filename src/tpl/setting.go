@@ -60,8 +60,8 @@ func (t *SettingUpdateBody) Validate() error {
 			return gear.ErrBadRequest.WithMsgf("invalid values: %v", *t.Values)
 		}
 		for _, value := range *t.Values {
-			if value == "" {
-				return gear.ErrBadRequest.WithMsgf("invalid value: empty value")
+			if !validValueReg1.MatchString(value) && !validValueReg2.MatchString(value) {
+				return gear.ErrBadRequest.WithMsgf("invalid value: %s", value)
 			}
 		}
 	}

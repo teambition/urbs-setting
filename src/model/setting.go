@@ -99,7 +99,7 @@ func (m *Setting) Assign(ctx context.Context, settingID int64, value string, use
 		err = m.DB.Exec(batchAddUserSettingSQL, settingID, value, users, value).Error
 	}
 	if err == nil && len(groups) > 0 {
-		err = m.DB.Exec(batchAddUserSettingSQL, settingID, value, groups, value).Error
+		err = m.DB.Exec(batchAddGroupSettingSQL, settingID, value, groups, value).Error
 	}
 
 	return err
