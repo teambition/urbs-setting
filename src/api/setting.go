@@ -59,8 +59,21 @@ func (a *Setting) Get(ctx *gear.Context) error {
 
 // Update ..
 func (a *Setting) Update(ctx *gear.Context) error {
-	// TODO
-	return nil
+	req := tpl.ProductModuleSettingURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	body := tpl.SettingUpdateBody{}
+	if err := ctx.ParseBody(&body); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Setting.Update(ctx, req.Product, req.Module, req.Setting, body)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
 }
 
 // Offline ..
@@ -74,12 +87,6 @@ func (a *Setting) Offline(ctx *gear.Context) error {
 		return err
 	}
 	return ctx.OkJSON(res)
-}
-
-// Online ..
-func (a *Setting) Online(ctx *gear.Context) error {
-	// TODO
-	return nil
 }
 
 // Assign ..

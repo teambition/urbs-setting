@@ -36,8 +36,8 @@ func (h *HID) ToHex(i int64) string {
 	h.hs.Write(data)
 	sum := h.hs.Sum(nil)
 	h.hs.Reset()
-	copy(sum[8:16], data)
-	return base64.URLEncoding.EncodeToString(sum[0:16])
+	copy(sum[:8], data)
+	return base64.URLEncoding.EncodeToString(sum[0:18])
 }
 
 // ToInt64 将合法的24位 base64 URL 字符串转换成内部 ID（大于0的 int64）。
@@ -47,18 +47,18 @@ func (h *HID) ToInt64(s string) int64 {
 		return 0
 	}
 	data, err := base64.URLEncoding.DecodeString(s)
-	if len(data) != 16 || err != nil {
+	if len(data) != 18 || err != nil {
 		return 0
 	}
-	x := binary.LittleEndian.Uint64(data[8:])
+	x := binary.LittleEndian.Uint64(data[:8])
 	if x > maxInt64u {
 		return 0
 	}
 
-	h.hs.Write(data[8:])
+	h.hs.Write(data[:8])
 	sum := h.hs.Sum(nil)
 	h.hs.Reset()
-	if !bytes.Equal(data[0:8], sum[0:8]) {
+	if !bytes.Equal(data[8:18], sum[8:18]) {
 		return 0
 	}
 	return int64(x)

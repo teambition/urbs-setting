@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/teambition/gear"
@@ -176,4 +177,22 @@ func StringSliceHas(sl []string, v string) bool {
 		}
 	}
 	return false
+}
+
+// SortStringsAndCheck sort string slice and check empty or duplicate value.
+func SortStringsAndCheck(sl []string) (ok bool) {
+	if len(sl) == 0 {
+		return true
+	}
+	if len(sl) == 1 {
+		return sl[0] != ""
+	}
+
+	sort.Strings(sl)
+	for i := 1; i < len(sl); i++ {
+		if sl[i] == "" || sl[i] == sl[i-1] {
+			return false
+		}
+	}
+	return true
 }

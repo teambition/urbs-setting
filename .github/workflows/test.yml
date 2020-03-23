@@ -28,6 +28,7 @@ jobs:
     # https://github.com/actions/virtual-environments/issues/576
     - name: Try connect to MySQL and init datebase
       run: |
+        export TZ=UTC
         sudo systemctl enable mysql.service
         sudo systemctl start mysql.service
         mysql -hlocalhost -uroot -proot < ./sql/schema.sql

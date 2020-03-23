@@ -19,8 +19,8 @@ func TestHealthzAPIs(t *testing.T) {
 		assert.Nil(err)
 		assert.Equal(200, res.StatusCode)
 
-		json := map[string]string{}
+		json := map[string]interface{}{}
 		res.JSON(&json)
-		assert.NotNil(json["sql_db"])
+		assert.True(json["db_connect"].(bool))
 	})
 }

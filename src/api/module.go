@@ -46,8 +46,21 @@ func (a *Module) Create(ctx *gear.Context) error {
 
 // Update ..
 func (a *Module) Update(ctx *gear.Context) error {
-	// TODO
-	return nil
+	req := tpl.ProductModuleURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	body := tpl.ModuleUpdateBody{}
+	if err := ctx.ParseBody(&body); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Module.Update(ctx, req.Product, req.Module, body)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
 }
 
 // Offline ..
@@ -61,10 +74,4 @@ func (a *Module) Offline(ctx *gear.Context) error {
 		return err
 	}
 	return ctx.OkJSON(res)
-}
-
-// Online ..
-func (a *Module) Online(ctx *gear.Context) error {
-	// TODO
-	return nil
 }

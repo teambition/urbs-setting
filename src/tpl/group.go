@@ -38,6 +38,49 @@ func (t *GroupsBody) Validate() error {
 	return nil
 }
 
+// GroupUpdateBody ...
+type GroupUpdateBody struct {
+	Kind   *string `json:"kind"`
+	Desc   *string `json:"desc"`
+	SyncAt *int64  `json:"sync_at"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *GroupUpdateBody) Validate() error {
+	if t.Kind == nil && t.Desc == nil && t.SyncAt == nil {
+		return gear.ErrBadRequest.WithMsgf("desc or kind or sync_at required")
+	}
+	if t.Kind != nil && !validLabelReg.MatchString(*t.Kind) {
+		return gear.ErrBadRequest.WithMsgf("invalid group kind: %s", *t.Kind)
+	}
+	if t.Desc != nil && len(*t.Desc) > 1022 {
+		return gear.ErrBadRequest.WithMsgf("desc too long: %d", len(*t.Desc))
+	}
+	if t.SyncAt != nil {
+		now := time.Now().Unix()
+		if *t.SyncAt < (now-3600) || *t.SyncAt > (now+3600) {
+			// SyncAt 应该在当前时刻前后范围内
+			return gear.ErrBadRequest.WithMsgf("invalid sync_at: %d", *t.SyncAt)
+		}
+	}
+	return nil
+}
+
+// ToMap ...
+func (t *GroupUpdateBody) ToMap() map[string]interface{} {
+	changed := make(map[string]interface{})
+	if t.Kind != nil {
+		changed["kind"] = *t.Kind
+	}
+	if t.Desc != nil {
+		changed["description"] = *t.Desc
+	}
+	if t.SyncAt != nil {
+		changed["sync_at"] = *t.SyncAt
+	}
+	return changed
+}
+
 // GroupsURL ...
 type GroupsURL struct {
 	Pagination
@@ -90,4 +133,10 @@ type GroupMember struct {
 type GroupMembersRes struct {
 	SuccessResponseType
 	Result []GroupMember `json:"result"`
+}
+
+// GroupRes ...
+type GroupRes struct {
+	SuccessResponseType
+	Result schema.Group `json:"result"`
 }

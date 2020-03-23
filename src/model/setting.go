@@ -57,6 +57,21 @@ func (m *Setting) Create(ctx context.Context, setting *schema.Setting) error {
 	return m.DB.Create(setting).Error
 }
 
+// Update 更新指定功能模块配置项
+func (m *Setting) Update(ctx context.Context, settingID int64, changed map[string]interface{}) (*schema.Setting, error) {
+	setting := &schema.Setting{ID: settingID}
+	if len(changed) > 0 {
+		if err := m.DB.Model(setting).Updates(changed).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	if err := m.DB.First(setting).Error; err != nil {
+		return nil, err
+	}
+	return setting, nil
+}
+
 // Offline 标记配置项下线，同时真删除用户和群组的配置项值
 func (m *Setting) Offline(ctx context.Context, settingID int64) error {
 	now := time.Now().UTC()

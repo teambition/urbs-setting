@@ -44,6 +44,29 @@ func (b *Product) Create(ctx context.Context, name, desc string) (*tpl.ProductRe
 	return res, nil
 }
 
+// Update ...
+func (b *Product) Update(ctx context.Context, productName string, body tpl.ProductUpdateBody) (*tpl.ProductRes, error) {
+	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	if err != nil {
+		return nil, err
+	}
+	if product == nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
+	}
+	if product.DeletedAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
+	}
+	if product.OfflineAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
+	}
+
+	product, err = b.ms.Product.Update(ctx, product.ID, body.ToMap())
+	if err != nil {
+		return nil, err
+	}
+	return &tpl.ProductRes{Result: *product}, nil
+}
+
 // Offline 下线产品
 func (b *Product) Offline(ctx context.Context, productName string) (*tpl.BoolRes, error) {
 	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")

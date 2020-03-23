@@ -73,15 +73,15 @@ func (a *User) ListSettings(ctx *gear.Context) error {
 	return ctx.OkJSON(res)
 }
 
-// ListSettingsWithGroup 返回 user 的 settings，按照 setting 设置时间反序，支持分页
+// ListSettingsUnionAll 返回 user 的 settings，按照 setting 设置时间反序，支持分页
 // 包含了 user 从属的 group 的 settings
-func (a *User) ListSettingsWithGroup(ctx *gear.Context) error {
+func (a *User) ListSettingsUnionAll(ctx *gear.Context) error {
 	req := tpl.UIDProductURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res, err := a.blls.User.ListSettingsWithGroup(ctx, req.UID, req.Product, req.Pagination)
+	res, err := a.blls.User.ListSettingsUnionAll(ctx, req.UID, req.Product, req.Pagination)
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func (a *User) RollbackSetting(ctx *gear.Context) error {
 	setting := &schema.Setting{}
 	setting.ID = service.HIDToID(req.HID, "setting")
 	if setting.ID == 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", req.HID)
+		return gear.ErrBadRequest.WithMsgf("invalid setting hid: %s", req.HID)
 	}
 	if err := a.blls.User.RollbackSetting(ctx, req.UID, setting.ID); err != nil {
 		return err

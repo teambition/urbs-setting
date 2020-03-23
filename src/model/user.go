@@ -121,8 +121,8 @@ const userSettingsWithGroupSQL = "(select t1.`created_at`, t1.`updated_at`, t1.`
 	"order by t1.`updated_at` desc limit ? ) " +
 	"order by `updated_at` desc"
 
-// FindSettingsWithGroup 根据用户 ID, updateGt, productName 返回其 settings 数据。
-func (m *User) FindSettingsWithGroup(ctx context.Context, userID int64, groupIDs []int64, moduleIDs []int64, pg tpl.Pagination) ([]tpl.MySetting, error) {
+// FindSettingsUnionAll 根据用户 ID, updateGt, productName 返回其 settings 数据。
+func (m *User) FindSettingsUnionAll(ctx context.Context, userID int64, groupIDs []int64, moduleIDs []int64, pg tpl.Pagination) ([]tpl.MySetting, error) {
 	data := []tpl.MySetting{}
 	updatedAt := pg.TokenToTime(time.Now())
 	size := pg.PageSize + 1
@@ -254,10 +254,10 @@ func (m *User) RemoveSetting(ctx context.Context, userID, settingID int64) error
 	return m.DB.Where("user_id = ? and setting_id = ?", userID, settingID).Delete(&schema.UserSetting{}).Error
 }
 
-const rollbackSettingSQL = "update `user_setting` set `value` = `user_setting`.`last_value` where user_id = ? and setting_id = ?"
+const rollbackUserSettingSQL = "update `user_setting` set `value` = `user_setting`.`last_value` where user_id = ? and setting_id = ?"
 
 // RollbackSetting 回滚用户的 setting
 func (m *User) RollbackSetting(ctx context.Context, userID, settingID int64) error {
-	err := m.DB.Exec(rollbackSettingSQL, userID, settingID).Error
+	err := m.DB.Exec(rollbackUserSettingSQL, userID, settingID).Error
 	return err
 }

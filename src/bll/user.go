@@ -128,8 +128,8 @@ func (b *User) ListSettings(ctx context.Context, uid, productName string, pg tpl
 	return res, nil
 }
 
-// ListSettingsWithGroup ...
-func (b *User) ListSettingsWithGroup(ctx context.Context, uid, productName string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
+// ListSettingsUnionAll ...
+func (b *User) ListSettingsUnionAll(ctx context.Context, uid, productName string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
 	user, err := b.ms.User.FindByUID(ctx, uid, "id")
 	if err != nil {
 		return nil, err
@@ -162,7 +162,7 @@ func (b *User) ListSettingsWithGroup(ctx context.Context, uid, productName strin
 		return nil, err
 	}
 
-	settings, err := b.ms.User.FindSettingsWithGroup(ctx, user.ID, groupIDs, moduleIDs, pg)
+	settings, err := b.ms.User.FindSettingsUnionAll(ctx, user.ID, groupIDs, moduleIDs, pg)
 	if err != nil {
 		return nil, err
 	}

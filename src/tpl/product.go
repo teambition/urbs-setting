@@ -5,6 +5,32 @@ import (
 	"github.com/teambition/urbs-setting/src/schema"
 )
 
+// ProductUpdateBody ...
+type ProductUpdateBody struct {
+	Desc *string `json:"desc"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *ProductUpdateBody) Validate() error {
+	if t.Desc == nil {
+		return gear.ErrBadRequest.WithMsgf("desc required")
+	}
+
+	if len(*t.Desc) > 1022 {
+		return gear.ErrBadRequest.WithMsgf("desc too long: %d", len(*t.Desc))
+	}
+	return nil
+}
+
+// ToMap ...
+func (t *ProductUpdateBody) ToMap() map[string]interface{} {
+	changed := make(map[string]interface{})
+	if t.Desc != nil {
+		changed["description"] = *t.Desc
+	}
+	return changed
+}
+
 // ProductURL ...
 type ProductURL struct {
 	Product string `json:"product" param:"product"`
