@@ -11,12 +11,19 @@ import (
 	"github.com/teambition/urbs-setting/src/tpl"
 )
 
-func createSetting(tt *TestTools, productName, moduleName string) (setting schema.Setting, err error) {
+func createSetting(tt *TestTools, productName, moduleName string, values ...string) (setting schema.Setting, err error) {
 	name := tpl.RandName()
 	_, err = request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings", tt.Host, productName, moduleName)).
 		Set("Content-Type", "application/json").
 		Send(tpl.NameDescBody{Name: name, Desc: name}).
 		End()
+
+	if err == nil && len(values) > 0 {
+		_, err = request.Put(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s", tt.Host, productName, moduleName, name)).
+			Set("Content-Type", "application/json").
+			Send(tpl.SettingUpdateBody{Values: &values}).
+			End()
+	}
 
 	var product schema.Product
 	var module schema.Module

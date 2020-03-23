@@ -13,8 +13,14 @@ import (
 var validIDReg = regexp.MustCompile(`^[0-9A-Za-z._=-]{3,63}$`)
 var validHIDReg = regexp.MustCompile(`^[0-9A-Za-z_=-]{24}$`)
 
+// Should be subset of
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
 var validNameReg = regexp.MustCompile(`^[0-9a-z][0-9a-z.-]{0,61}[0-9a-z]$`)
+
+// Should be subset of
+// https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
+var validValueReg1 = regexp.MustCompile(`^[0-9A-Za-z]*$`)
+var validValueReg2 = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z._-]{0,61}[0-9A-Za-z]$`)
 
 // Should be subset of DNS-1035 label
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
@@ -155,8 +161,8 @@ func (t *UsersGroupsBody) Validate() error {
 			return gear.ErrBadRequest.WithMsgf("invalid group: %s", uid)
 		}
 	}
-	if len(t.Value) > 255 {
-		return gear.ErrBadRequest.WithMsgf("value too long: %d (<= 255)", len(t.Value))
+	if !validValueReg1.MatchString(t.Value) && !validValueReg2.MatchString(t.Value) {
+		return gear.ErrBadRequest.WithMsgf("invalid value: %s", t.Value)
 	}
 	return nil
 }
@@ -190,7 +196,7 @@ func SortStringsAndCheck(sl []string) (ok bool) {
 
 	sort.Strings(sl)
 	for i := 1; i < len(sl); i++ {
-		if sl[i] == "" || sl[i] == sl[i-1] {
+		if sl[i-1] == "" || sl[i] == sl[i-1] {
 			return false
 		}
 	}

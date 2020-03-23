@@ -241,7 +241,7 @@ func (b *Setting) Assign(ctx context.Context, productName, moduleName, settingNa
 		return gear.ErrNotFound.WithMsgf("setting %s was offline", settingName)
 	}
 	vals := tpl.StringToSlice(setting.Values)
-	if !tpl.StringSliceHas(vals, value) {
+	if value != "" && !tpl.StringSliceHas(vals, value) {
 		return gear.ErrBadRequest.WithMsgf("value %s is not in setting", value)
 	}
 	return b.ms.Setting.Assign(ctx, setting.ID, value, users, groups)
