@@ -159,6 +159,36 @@ func (m *Group) BatchAdd(ctx context.Context, groups []tpl.GroupBody) error {
 	return nil
 }
 
+// Update 更新指定群组
+func (m *Group) Update(ctx context.Context, groupID int64, changed map[string]interface{}) (*schema.Group, error) {
+	group := &schema.Group{ID: groupID}
+	if len(changed) > 0 {
+		if err := m.DB.Model(group).Updates(changed).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	if err := m.DB.First(group).Error; err != nil {
+		return nil, err
+	}
+	return group, nil
+}
+
+// Delete 更新指定群组
+func (m *Group) Delete(ctx context.Context, groupID int64) error {
+	err := m.DB.Where("group_id = ?", groupID).Delete(&schema.GroupLabel{}).Error
+	if err == nil {
+		err = m.DB.Where("group_id = ?", groupID).Delete(&schema.GroupSetting{}).Error
+	}
+	if err == nil {
+		err = m.DB.Where("group_id = ?", groupID).Delete(&schema.UserGroup{}).Error
+	}
+	if err == nil {
+		err = m.DB.Where("id = ?", groupID).Delete(&schema.Group{}).Error
+	}
+	return err
+}
+
 const batchAddGroupMemberSQL = "insert ignore into `user_group` (`user_id`, `group_id`, `sync_at`) " +
 	"select `urbs_user`.id, ?, ? from `urbs_user` where `urbs_user`.uid in ( ? ) " +
 	"on duplicate key update `sync_at` = values(`sync_at`)"
@@ -243,4 +273,12 @@ func (m *Group) RemoveLable(ctx context.Context, groupID, lableID int64) error {
 // RemoveSetting 删除群组的 setting
 func (m *Group) RemoveSetting(ctx context.Context, groupID, settingID int64) error {
 	return m.DB.Where("group_id = ? and setting_id = ?", groupID, settingID).Delete(&schema.GroupSetting{}).Error
+}
+
+const rollbackGroupSettingSQL = "update `group_setting` set `value` = `group_setting`.`last_value` where group_id = ? and setting_id = ?"
+
+// RollbackSetting 回滚群组的 setting
+func (m *Group) RollbackSetting(ctx context.Context, groupID, settingID int64) error {
+	err := m.DB.Exec(rollbackGroupSettingSQL, groupID, settingID).Error
+	return err
 }

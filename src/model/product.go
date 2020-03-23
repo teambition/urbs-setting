@@ -57,6 +57,21 @@ func (m *Product) Create(ctx context.Context, product *schema.Product) error {
 	return m.DB.Create(product).Error
 }
 
+// Update 更新指定功能模块
+func (m *Product) Update(ctx context.Context, productID int64, changed map[string]interface{}) (*schema.Product, error) {
+	product := &schema.Product{ID: productID}
+	if len(changed) > 0 {
+		if err := m.DB.Model(product).Updates(changed).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	if err := m.DB.First(product).Error; err != nil {
+		return nil, err
+	}
+	return product, nil
+}
+
 // Offline 下线产品
 func (m *Product) Offline(ctx context.Context, productID int64) error {
 	now := time.Now().UTC()

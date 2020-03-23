@@ -68,6 +68,40 @@ func (b *Label) Create(ctx context.Context, productName, labelName, desc string)
 	return &tpl.LabelInfoRes{Result: tpl.LabelInfoFrom(label, productName)}, nil
 }
 
+// Update ...
+func (b *Label) Update(ctx context.Context, productName, labelName string, body tpl.LabelUpdateBody) (*tpl.LabelInfoRes, error) {
+	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	if err != nil {
+		return nil, err
+	}
+	if product == nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
+	}
+	if product.DeletedAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
+	}
+	if product.OfflineAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
+	}
+
+	label, err := b.ms.Label.FindByName(ctx, product.ID, labelName, "id, `offline_at`")
+	if err != nil {
+		return nil, err
+	}
+	if label == nil {
+		return nil, gear.ErrNotFound.WithMsgf("label %s not found", labelName)
+	}
+	if label.OfflineAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("label %s was offline", labelName)
+	}
+
+	label, err = b.ms.Label.Update(ctx, label.ID, body.ToMap())
+	if err != nil {
+		return nil, err
+	}
+	return &tpl.LabelInfoRes{Result: tpl.LabelInfoFrom(*label, productName)}, nil
+}
+
 // Offline 下线标签
 func (b *Label) Offline(ctx context.Context, productName, labelName string) (*tpl.BoolRes, error) {
 	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")

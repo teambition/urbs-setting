@@ -68,6 +68,40 @@ func (b *Module) Create(ctx context.Context, productName, moduleName, desc strin
 	return &tpl.ModuleRes{Result: *module}, nil
 }
 
+// Update ...
+func (b *Module) Update(ctx context.Context, productName, moduleName string, body tpl.ModuleUpdateBody) (*tpl.ModuleRes, error) {
+	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	if err != nil {
+		return nil, err
+	}
+	if product == nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
+	}
+	if product.DeletedAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
+	}
+	if product.OfflineAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
+	}
+
+	module, err := b.ms.Module.FindByName(ctx, product.ID, moduleName, "id, `offline_at`")
+	if err != nil {
+		return nil, err
+	}
+	if module == nil {
+		return nil, gear.ErrNotFound.WithMsgf("label %s not found", moduleName)
+	}
+	if module.OfflineAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("label %s was offline", moduleName)
+	}
+
+	module, err = b.ms.Module.Update(ctx, module.ID, body.ToMap())
+	if err != nil {
+		return nil, err
+	}
+	return &tpl.ModuleRes{Result: *module}, nil
+}
+
 // Offline 下线功能模块
 func (b *Module) Offline(ctx context.Context, productName, moduleName string) (*tpl.BoolRes, error) {
 	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")

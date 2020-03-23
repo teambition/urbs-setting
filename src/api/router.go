@@ -59,14 +59,14 @@ func newRouters(apis *APIs) []*gear.Router {
 	// 读取指定用户的功能配置项，支持条件筛选
 	routerV1.Get("/users/:uid/settings", apis.User.ListSettings)
 	// 读取指定用户的功能配置项，支持条件筛选
-	routerV1.Get("/users/:uid/settings:withGroup", apis.User.ListSettingsWithGroup)
+	routerV1.Get("/users/:uid/settings:unionAll", apis.User.ListSettingsUnionAll)
 	// 查询指定用户是否存在
 	routerV1.Get("/users/:uid+:exists", apis.User.CheckExists)
 	// 批量添加用户
 	routerV1.Post("/users:batch", apis.User.BatchAdd)
 	// 删除指定用户的指定灰度标签
 	routerV1.Delete("/users/:uid/labels/:hid", apis.User.RemoveLable)
-	// 更新指定用户的指定配置项
+	// 回滚指定用户的指定配置项
 	routerV1.Put("/users/:uid/settings/:hid+:rollback", apis.User.RollbackSetting)
 	// 删除指定用户的指定配置项
 	routerV1.Delete("/users/:uid/settings/:hid", apis.User.RemoveSetting)
@@ -94,8 +94,8 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Delete("/groups/:uid/members", apis.Group.RemoveMembers)
 	// 删除指定群组的指定灰度标签
 	routerV1.Delete("/groups/:uid/labels/:hid", apis.Group.RemoveLable)
-	// 更新指定用户的指定配置项
-	routerV1.Put("/groups/:uid/settings/:hid", apis.Group.UpdateSetting)
+	// 回滚指定群组的指定配置项
+	routerV1.Put("/groups/:uid/settings/:hid+:rollback", apis.Group.RollbackSetting)
 	// 删除指定群组的指定配置项
 	routerV1.Delete("/groups/:uid/settings/:hid", apis.Group.RemoveSetting)
 
@@ -109,7 +109,7 @@ func newRouters(apis *APIs) []*gear.Router {
 	// 下线指定产品功能模块
 	routerV1.Put("/products/:product+:offline", apis.Product.Offline)
 	// 重新上线指定产品功能模块
-	routerV1.Put("/products/:product+:online", apis.Product.Online)
+	// routerV1.Put("/products/:product+:online", apis.Product.Online)
 	// 删除指定产品
 	routerV1.Delete("/products/:product", apis.Product.Delete)
 
@@ -123,7 +123,7 @@ func newRouters(apis *APIs) []*gear.Router {
 	// 下线指定产品功能模块
 	routerV1.Put("/products/:product/modules/:module+:offline", apis.Module.Offline)
 	// 重新上线指定产品功能模块
-	routerV1.Put("/products/:product/modules/:module+:online", apis.Module.Online)
+	// routerV1.Put("/products/:product/modules/:module+:online", apis.Module.Online)
 
 	// ***** setting ******
 	// 读取指定产品功能模块的配置项
@@ -137,7 +137,7 @@ func newRouters(apis *APIs) []*gear.Router {
 	// 下线指定产品功能模块配置项
 	routerV1.Put("/products/:product/modules/:module/settings/:setting+:offline", apis.Setting.Offline)
 	// 重新上线指定产品功能模块配置项
-	routerV1.Put("/products/:product/modules/:module/settings/:setting+:online", apis.Setting.Online)
+	// routerV1.Put("/products/:product/modules/:module/settings/:setting+:online", apis.Setting.Online)
 	// 批量为用户或群组设置产品功能模块配置项
 	routerV1.Post("/products/:product/modules/:module/settings/:setting+:assign", apis.Setting.Assign)
 
@@ -153,9 +153,9 @@ func newRouters(apis *APIs) []*gear.Router {
 	// 下线指定产品灰度标签
 	routerV1.Put("/products/:product/labels/:label+:offline", apis.Label.Offline)
 	// 重新上线指定产品灰度标签
-	routerV1.Put("/products/:product/labels/:label+:online", apis.Label.Online)
+	// routerV1.Put("/products/:product/labels/:label+:online", apis.Label.Online)
 	// 批量为用户或群组设置产品灰度标签
 	routerV1.Post("/products/:product/labels/:label+:assign", apis.Label.Assign)
 
-	return []*gear.Router{routerV1, router}
+	return []*gear.Router{router, routerV1}
 }

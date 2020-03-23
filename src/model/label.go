@@ -58,6 +58,21 @@ func (m *Label) Create(ctx context.Context, label *schema.Label) error {
 	return m.DB.Create(label).Error
 }
 
+// Update 更新指定灰度标签
+func (m *Label) Update(ctx context.Context, labelID int64, changed map[string]interface{}) (*schema.Label, error) {
+	label := &schema.Label{ID: labelID}
+	if len(changed) > 0 {
+		if err := m.DB.Model(label).Updates(changed).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	if err := m.DB.First(label).Error; err != nil {
+		return nil, err
+	}
+	return label, nil
+}
+
 // Offline 标记 label 下线，同时真删除用户和群组的 labels
 func (m *Label) Offline(ctx context.Context, labelID int64) error {
 	now := time.Now().UTC()

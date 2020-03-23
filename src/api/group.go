@@ -100,14 +100,34 @@ func (a *Group) BatchAdd(ctx *gear.Context) error {
 
 // Update ..
 func (a *Group) Update(ctx *gear.Context) error {
-	// TODO
-	return nil
+	req := tpl.UIDURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	body := tpl.GroupUpdateBody{}
+	if err := ctx.ParseBody(&body); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Group.Update(ctx, req.UID, body)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
 }
 
 // Delete ..
 func (a *Group) Delete(ctx *gear.Context) error {
-	// TODO
-	return nil
+	req := tpl.UIDURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+	if err := a.blls.Group.Delete(ctx, req.UID); err != nil {
+		return err
+	}
+
+	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }
 
 // BatchAddMembers ..
@@ -159,10 +179,22 @@ func (a *Group) RemoveLable(ctx *gear.Context) error {
 	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }
 
-// UpdateSetting ..
-func (a *Group) UpdateSetting(ctx *gear.Context) error {
-	// TODO
-	return nil
+// RollbackSetting 回退当前设置值到上一个值
+// 更新值请用 POST /products/:product/modules/:module/settings/:setting+:assign 接口
+func (a *Group) RollbackSetting(ctx *gear.Context) error {
+	req := tpl.UIDHIDURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+	setting := &schema.Setting{}
+	setting.ID = service.HIDToID(req.HID, "setting")
+	if setting.ID == 0 {
+		return gear.ErrBadRequest.WithMsgf("invalid setting hid: %s", req.HID)
+	}
+	if err := a.blls.Group.RollbackSetting(ctx, req.UID, setting.ID); err != nil {
+		return err
+	}
+	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }
 
 // RemoveSetting ..

@@ -43,8 +43,21 @@ func (a *Product) Create(ctx *gear.Context) error {
 
 // Update ..
 func (a *Product) Update(ctx *gear.Context) error {
-	// TODO
-	return nil
+	req := tpl.ProductURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	body := tpl.ProductUpdateBody{}
+	if err := ctx.ParseBody(&body); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Product.Update(ctx, req.Product, body)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
 }
 
 // Offline ..
@@ -58,12 +71,6 @@ func (a *Product) Offline(ctx *gear.Context) error {
 		return err
 	}
 	return ctx.OkJSON(res)
-}
-
-// Online ..
-func (a *Product) Online(ctx *gear.Context) error {
-	// TODO
-	return nil
 }
 
 // Delete ..

@@ -117,6 +117,51 @@ func (b *Setting) Create(ctx context.Context, productName, moduleName, settingNa
 	return &tpl.SettingInfoRes{Result: tpl.SettingInfoFrom(*setting, productName, moduleName)}, nil
 }
 
+// Update ...
+func (b *Setting) Update(ctx context.Context, productName, moduleName, settingName string, body tpl.SettingUpdateBody) (*tpl.SettingInfoRes, error) {
+	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	if err != nil {
+		return nil, err
+	}
+	if product == nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
+	}
+	if product.DeletedAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
+	}
+	if product.OfflineAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
+	}
+
+	module, err := b.ms.Module.FindByName(ctx, product.ID, moduleName, "id, `offline_at`")
+	if err != nil {
+		return nil, err
+	}
+	if module == nil {
+		return nil, gear.ErrNotFound.WithMsgf("label %s not found", moduleName)
+	}
+	if module.OfflineAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("label %s was offline", moduleName)
+	}
+
+	setting, err := b.ms.Setting.FindByName(ctx, module.ID, settingName, "id, `offline_at`")
+	if err != nil {
+		return nil, err
+	}
+	if setting == nil {
+		return nil, gear.ErrNotFound.WithMsgf("setting %s not found", settingName)
+	}
+	if setting.OfflineAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("setting %s was offline", settingName)
+	}
+
+	setting, err = b.ms.Setting.Update(ctx, setting.ID, body.ToMap())
+	if err != nil {
+		return nil, err
+	}
+	return &tpl.SettingInfoRes{Result: tpl.SettingInfoFrom(*setting, productName, moduleName)}, nil
+}
+
 // Offline 下线功能模块配置项
 func (b *Setting) Offline(ctx context.Context, productName, moduleName, settingName string) (*tpl.BoolRes, error) {
 	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")

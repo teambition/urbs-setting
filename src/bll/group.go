@@ -179,6 +179,16 @@ func (b *Group) RemoveLable(ctx context.Context, uid string, lableID int64) erro
 	return b.ms.Group.RemoveLable(ctx, group.ID, lableID)
 }
 
+// RollbackSetting ...
+func (b *Group) RollbackSetting(ctx context.Context, uid string, settingID int64) error {
+	group, _ := b.ms.Group.FindByUID(ctx, uid, "id")
+	if group == nil {
+		return gear.ErrNotFound.WithMsgf("Group not found: %s", uid)
+	}
+
+	return b.ms.Group.RollbackSetting(ctx, group.ID, settingID)
+}
+
 // RemoveSetting ...
 func (b *Group) RemoveSetting(ctx context.Context, uid string, settingID int64) error {
 	group, _ := b.ms.Group.FindByUID(ctx, uid, "id")
@@ -187,4 +197,26 @@ func (b *Group) RemoveSetting(ctx context.Context, uid string, settingID int64) 
 	}
 
 	return b.ms.Group.RemoveSetting(ctx, group.ID, settingID)
+}
+
+// Update ...
+func (b *Group) Update(ctx context.Context, uid string, body tpl.GroupUpdateBody) (*tpl.GroupRes, error) {
+	group, _ := b.ms.Group.FindByUID(ctx, uid, "id")
+	if group == nil {
+		return nil, gear.ErrNotFound.WithMsgf("Group not found: %s", uid)
+	}
+	group, err := b.ms.Group.Update(ctx, group.ID, body.ToMap())
+	if err != nil {
+		return nil, err
+	}
+	return &tpl.GroupRes{Result: *group}, nil
+}
+
+// Delete ...
+func (b *Group) Delete(ctx context.Context, uid string) error {
+	group, _ := b.ms.Group.FindByUID(ctx, uid, "id")
+	if group == nil {
+		return nil
+	}
+	return b.ms.Group.Delete(ctx, group.ID)
 }

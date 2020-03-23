@@ -71,6 +71,21 @@ func (m *Module) Create(ctx context.Context, module *schema.Module) error {
 	return m.DB.Create(module).Error
 }
 
+// Update 更新指定功能模块
+func (m *Module) Update(ctx context.Context, moduleID int64, changed map[string]interface{}) (*schema.Module, error) {
+	module := &schema.Module{ID: moduleID}
+	if len(changed) > 0 {
+		if err := m.DB.Model(module).Updates(changed).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	if err := m.DB.First(module).Error; err != nil {
+		return nil, err
+	}
+	return module, nil
+}
+
 // Offline 标记模块下线
 func (m *Module) Offline(ctx context.Context, moduleID int64) error {
 	now := time.Now().UTC()

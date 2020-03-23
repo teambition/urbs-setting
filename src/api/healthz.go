@@ -12,7 +12,8 @@ type Healthz struct {
 
 // Get ..
 func (a *Healthz) Get(ctx *gear.Context) error {
+	stats := a.blls.Models.Healthz.DBStats(ctx)
 	return ctx.OkJSON(map[string]interface{}{
-		"sql_db": a.blls.Models.Healthz.DBStats(ctx),
+		"db_connect": stats.OpenConnections > 0,
 	})
 }

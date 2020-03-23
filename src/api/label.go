@@ -46,8 +46,21 @@ func (a *Label) Create(ctx *gear.Context) error {
 
 // Update ..
 func (a *Label) Update(ctx *gear.Context) error {
-	// TODO
-	return nil
+	req := tpl.ProductLabelURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	body := tpl.LabelUpdateBody{}
+	if err := ctx.ParseBody(&body); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Label.Update(ctx, req.Product, req.Label, body)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
 }
 
 // Offline ..
@@ -61,12 +74,6 @@ func (a *Label) Offline(ctx *gear.Context) error {
 		return err
 	}
 	return ctx.OkJSON(res)
-}
-
-// Online ..
-func (a *Label) Online(ctx *gear.Context) error {
-	// TODO
-	return nil
 }
 
 // Assign ..
