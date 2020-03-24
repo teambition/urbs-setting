@@ -301,7 +301,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(label1.Name, json.Result[1].Label)
 		})
 
-		t.Run(`"GET /users/:uid/labels"`, func(t *testing.T) {
+		t.Run(`"GET /v1/users/:uid/labels"`, func(t *testing.T) {
 			assert := assert.New(t)
 
 			res, err := request.Get(fmt.Sprintf("%s/v1/users/%s/labels", tt.Host, users[3].UID)).
@@ -328,7 +328,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.True(json.Result[0].CreatedAt.After(time2020))
 		})
 
-		t.Run(`"DELETE /users/:uid/labels/:hid" should work`, func(t *testing.T) {
+		t.Run(`"DELETE /v1/users/:uid/labels/:hid" should work`, func(t *testing.T) {
 			assert := assert.New(t)
 
 			res, err := request.Delete(fmt.Sprintf("%s/v1/users/%s/labels/%s", tt.Host, users[3].UID, service.IDToHID(label.ID, "label"))).
@@ -382,7 +382,7 @@ func TestUserAPIs(t *testing.T) {
 		setting1, err := createSetting(tt, product.Name, module.Name, "true", "false")
 		assert.Nil(t, err)
 
-		t.Run(`"GET /users/:uid/settings" for invalid user`, func(t *testing.T) {
+		t.Run(`"GET /v1/users/:uid/settings" for invalid user`, func(t *testing.T) {
 			assert := assert.New(t)
 
 			res, _ := request.Get(fmt.Sprintf("%s/v1/users/%s/settings?product=%s", tt.Host, tpl.RandUID(), product.Name)).
@@ -390,7 +390,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(404, res.StatusCode)
 		})
 
-		t.Run(`"GET /users/:uid/settings" when without settings`, func(t *testing.T) {
+		t.Run(`"GET /v1/users/:uid/settings" when without settings`, func(t *testing.T) {
 			assert := assert.New(t)
 
 			res, err := request.Get(fmt.Sprintf("%s/v1/users/%s/settings?product=%s", tt.Host, users[0].UID, product.Name)).
@@ -411,7 +411,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal("", json.NextPageToken)
 		})
 
-		t.Run(`"GET /users/:uid/settings" should work`, func(t *testing.T) {
+		t.Run(`"GET /v1/users/:uid/settings" should work`, func(t *testing.T) {
 			assert := assert.New(t)
 
 			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:assign", tt.Host, product.Name, module.Name, setting0.Name)).
@@ -424,6 +424,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
 
+			time.Sleep(time.Millisecond * 10)
 			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings?product=%s", tt.Host, users[0].UID, product.Name)).
 				End()
 			assert.Nil(err)
@@ -449,7 +450,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.True(data.CreatedAt.After(time2020))
 		})
 
-		t.Run(`"GET /users/:uid/settings:unionAll" should work`, func(t *testing.T) {
+		t.Run(`"GET /v1/users/:uid/settings:unionAll" should work`, func(t *testing.T) {
 			assert := assert.New(t)
 
 			res, err := request.Get(fmt.Sprintf("%s/v1/users/%s/settings:unionAll?product=%s", tt.Host, users[0].UID, product.Name)).
@@ -530,7 +531,63 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(service.IDToHID(setting0.ID, "setting"), json.Result[1].HID)
 		})
 
-		t.Run(`"PUT /users/:uid/settings/:hid+:rollback" should work`, func(t *testing.T) {
+		t.Run(`"GET /v1/users/:uid/settings:unionAll" with channel or client query should work`, func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Put(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s",
+				tt.Host, product.Name, module.Name, setting1.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.SettingUpdateBody{Channels: &[]string{"stable", "beta"}, Clients: &[]string{"ios"}}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings:unionAll?product=%s&channel=beta", tt.Host, users[0].UID, product.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.MySettingsRes{}
+			_, err = res.JSON(&json)
+
+			assert.Nil(err)
+			assert.Equal(2, len(json.Result))
+
+			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings:unionAll?product=%s&channel=beta&client=ios", tt.Host, users[0].UID, product.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json = tpl.MySettingsRes{}
+			_, err = res.JSON(&json)
+
+			assert.Nil(err)
+			assert.Equal(2, len(json.Result))
+
+			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings:unionAll?product=%s&channel=beta&client=android", tt.Host, users[0].UID, product.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json = tpl.MySettingsRes{}
+			_, err = res.JSON(&json)
+
+			assert.Nil(err)
+			assert.Equal(1, len(json.Result))
+
+			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings:unionAll?product=%s&channel=dev", tt.Host, users[0].UID, product.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json = tpl.MySettingsRes{}
+			_, err = res.JSON(&json)
+
+			assert.Nil(err)
+			assert.Equal(1, len(json.Result))
+		})
+
+		t.Run(`"PUT /v1/users/:uid/settings/:hid+:rollback" should work`, func(t *testing.T) {
 			assert := assert.New(t)
 
 			res, err := request.Put(fmt.Sprintf("%s/v1/users/%s/settings/%s:rollback", tt.Host, users[0].UID, service.IDToHID(setting0.ID, "setting"))).
@@ -560,7 +617,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal("", data.LastValue)
 		})
 
-		t.Run(`"DELETE /users/:uid/settings/:hid" should work`, func(t *testing.T) {
+		t.Run(`"DELETE /v1/users/:uid/settings/:hid" should work`, func(t *testing.T) {
 			assert := assert.New(t)
 
 			res, err := request.Delete(fmt.Sprintf("%s/v1/users/%s/settings/%s", tt.Host, users[0].UID, service.IDToHID(setting0.ID, "setting"))).

@@ -75,7 +75,7 @@ func (m *Module) Create(ctx context.Context, module *schema.Module) error {
 func (m *Module) Update(ctx context.Context, moduleID int64, changed map[string]interface{}) (*schema.Module, error) {
 	module := &schema.Module{ID: moduleID}
 	if len(changed) > 0 {
-		if err := m.DB.Model(module).Updates(changed).Error; err != nil {
+		if err := m.DB.Model(module).UpdateColumns(changed).Error; err != nil {
 			return nil, err
 		}
 	}
@@ -89,14 +89,14 @@ func (m *Module) Update(ctx context.Context, moduleID int64, changed map[string]
 // Offline 标记模块下线
 func (m *Module) Offline(ctx context.Context, moduleID int64) error {
 	now := time.Now().UTC()
-	db := m.DB.Model(&schema.Module{ID: moduleID}).Update(schema.Module{
+	db := m.DB.Model(&schema.Module{ID: moduleID}).UpdateColumns(schema.Module{
 		OfflineAt: &now,
 		Status:    -1,
 	})
 	if db.Error == nil {
 		var settingIDs []int64
 		if err := db.Model(&schema.Setting{}).Where("module_id = ?", moduleID).Pluck("id", &settingIDs).Error; err == nil {
-			db.Model(&schema.Setting{}).Where("`id` in ( ? )", settingIDs).Update(schema.Setting{
+			db.Model(&schema.Setting{}).Where("`id` in ( ? )", settingIDs).UpdateColumns(schema.Setting{
 				OfflineAt: &now,
 				Status:    -1,
 			})

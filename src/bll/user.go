@@ -129,7 +129,7 @@ func (b *User) ListSettings(ctx context.Context, uid, productName string, pg tpl
 }
 
 // ListSettingsUnionAll ...
-func (b *User) ListSettingsUnionAll(ctx context.Context, uid, productName string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
+func (b *User) ListSettingsUnionAll(ctx context.Context, uid, productName, channel, client string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
 	user, err := b.ms.User.FindByUID(ctx, uid, "id")
 	if err != nil {
 		return nil, err
@@ -162,7 +162,7 @@ func (b *User) ListSettingsUnionAll(ctx context.Context, uid, productName string
 		return nil, err
 	}
 
-	settings, err := b.ms.User.FindSettingsUnionAll(ctx, user.ID, groupIDs, moduleIDs, pg)
+	settings, err := b.ms.User.FindSettingsUnionAll(ctx, user.ID, groupIDs, moduleIDs, pg, channel, client)
 	if err != nil {
 		return nil, err
 	}

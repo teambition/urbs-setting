@@ -70,7 +70,7 @@ func PageTokenToTime(pageToken string, defaultTime ...time.Time) time.Time {
 	}
 
 	t2, err := time.Parse(time.RFC3339, pageToken)
-	if err != nil || t2.Before(t) {
+	if err != nil {
 		return t
 	}
 	return t2

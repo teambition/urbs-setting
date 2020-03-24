@@ -163,7 +163,7 @@ func (m *Group) BatchAdd(ctx context.Context, groups []tpl.GroupBody) error {
 func (m *Group) Update(ctx context.Context, groupID int64, changed map[string]interface{}) (*schema.Group, error) {
 	group := &schema.Group{ID: groupID}
 	if len(changed) > 0 {
-		if err := m.DB.Model(group).Updates(changed).Error; err != nil {
+		if err := m.DB.Model(group).UpdateColumns(changed).Error; err != nil {
 			return nil, err
 		}
 	}

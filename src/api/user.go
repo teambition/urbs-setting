@@ -76,12 +76,12 @@ func (a *User) ListSettings(ctx *gear.Context) error {
 // ListSettingsUnionAll 返回 user 的 settings，按照 setting 设置时间反序，支持分页
 // 包含了 user 从属的 group 的 settings
 func (a *User) ListSettingsUnionAll(ctx *gear.Context) error {
-	req := tpl.UIDProductURL{}
+	req := tpl.MySettingsQueryURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res, err := a.blls.User.ListSettingsUnionAll(ctx, req.UID, req.Product, req.Pagination)
+	res, err := a.blls.User.ListSettingsUnionAll(ctx, req.UID, req.Product, req.Channel, req.Client, req.Pagination)
 	if err != nil {
 		return err
 	}
