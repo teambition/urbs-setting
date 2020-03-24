@@ -101,7 +101,7 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force boo
 		_ = user.PutLabels(data)
 		user.ActiveAt = time.Now().UTC().Unix()
 
-		return tx.Model(&schema.User{ID: id}).Updates(map[string]interface{}{
+		return tx.Model(&schema.User{ID: id}).UpdateColumns(map[string]interface{}{
 			"labels": user.Labels, "active_at": user.ActiveAt}).Error // 返回 nil 提交事务，否则回滚
 	})
 
@@ -109,47 +109,77 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force boo
 }
 
 const userSettingsWithGroupSQL = "(select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
-	"t2.`id`, t2.`name`, t3.`name` as `module` " +
+	"t2.`id`, t2.`name`, t3.`name` as `module`, t2.`channels`, t2.`clients` " +
 	"from `user_setting` t1, `urbs_setting` t2, `urbs_module` t3 " +
 	"where t1.`user_id` = ? and t1.`updated_at` <= ? and t1.`setting_id` = t2.`id` and t2.`module_id` in ( ? ) and t2.`module_id` = t3.`id` " +
 	"order by t1.`updated_at` desc limit ? ) " +
 	"union all " +
 	"(select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
-	"t2.`id`, t2.`name`, t3.`name` as `module` " +
+	"t2.`id`, t2.`name`, t3.`name` as `module`, t2.`channels`, t2.`clients` " +
 	"from `group_setting` t1, `urbs_setting` t2, `urbs_module` t3 " +
 	"where t1.`group_id` in ( ? ) and t1.`updated_at` <= ? and t1.`setting_id` = t2.`id` and t2.`module_id` in ( ? ) and t2.`module_id` = t3.`id` " +
 	"order by t1.`updated_at` desc limit ? ) " +
 	"order by `updated_at` desc"
 
 // FindSettingsUnionAll 根据用户 ID, updateGt, productName 返回其 settings 数据。
-func (m *User) FindSettingsUnionAll(ctx context.Context, userID int64, groupIDs []int64, moduleIDs []int64, pg tpl.Pagination) ([]tpl.MySetting, error) {
+func (m *User) FindSettingsUnionAll(ctx context.Context, userID int64, groupIDs []int64, moduleIDs []int64, pg tpl.Pagination, channel, client string) ([]tpl.MySetting, error) {
 	data := []tpl.MySetting{}
-	updatedAt := pg.TokenToTime(time.Now())
+	updatedAt := pg.TokenToTime(time.Now().Add(time.Minute * 10))
 	size := pg.PageSize + 1
 
-	rows, err := m.DB.Raw(userSettingsWithGroupSQL, userID, updatedAt, moduleIDs, size,
-		groupIDs, updatedAt, moduleIDs, size).Rows()
-	defer rows.Close()
+	for {
+		rows, err := m.DB.Raw(userSettingsWithGroupSQL, userID, updatedAt, moduleIDs, size,
+			groupIDs, updatedAt, moduleIDs, size).Rows()
 
-	if err != nil {
-		return nil, err
-	}
-
-	set := make(map[int64]struct{})
-	for rows.Next() {
-		mySetting := tpl.MySetting{}
-		if err := rows.Scan(&mySetting.CreatedAt, &mySetting.UpdatedAt, &mySetting.Value, &mySetting.LastValue,
-			&mySetting.ID, &mySetting.Name, &mySetting.Module); err != nil {
+		if err != nil {
+			rows.Close()
 			return nil, err
 		}
-		if _, ok := set[mySetting.ID]; ok {
-			continue // 去重
-		}
-		set[mySetting.ID] = struct{}{}
 
-		mySetting.HID = service.IDToHID(mySetting.ID, "setting")
-		data = append(data, mySetting)
+		set := make(map[int64]struct{})
+		count := 0
+		for rows.Next() {
+			count++
+			var clients string
+			var channels string
+			mySetting := tpl.MySetting{}
+			if err := rows.Scan(&mySetting.CreatedAt, &mySetting.UpdatedAt, &mySetting.Value, &mySetting.LastValue,
+				&mySetting.ID, &mySetting.Name, &mySetting.Module, &channels, &clients); err != nil {
+				rows.Close()
+				return nil, err
+			}
+
+			if _, ok := set[mySetting.ID]; ok {
+				continue // 去重
+			}
+			set[mySetting.ID] = struct{}{}
+
+			if channel != "" && channels != "" {
+				if !tpl.StringSliceHas(tpl.StringToSlice(channels), channel) {
+					continue // channel 不匹配
+				}
+			}
+			if client != "" && clients != "" {
+				if !tpl.StringSliceHas(tpl.StringToSlice(clients), client) {
+					continue // client 不匹配
+				}
+			}
+
+			mySetting.HID = service.IDToHID(mySetting.ID, "setting")
+			data = append(data, mySetting)
+		}
+		rows.Close()
+
+		if count < size {
+			break // no data to select
+		}
+		if len(data) >= size {
+			break // get enough
+		}
+		// select next page
+		updatedAt = data[len(data)-1].UpdatedAt.Add(-time.Millisecond)
 	}
+
 	return data, nil
 }
 

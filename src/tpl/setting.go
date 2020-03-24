@@ -160,3 +160,35 @@ type MySettingsRes struct {
 	SuccessResponseType
 	Result []MySetting `json:"result"` // 空数组也保留
 }
+
+// MySettingsQueryURL ...
+type MySettingsQueryURL struct {
+	Pagination
+	UID     string `json:"uid" param:"uid"`
+	Product string `json:"product" query:"product"`
+	Channel string `json:"channel" query:"channel"`
+	Client  string `json:"client" query:"client"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *MySettingsQueryURL) Validate() error {
+	if !validIDReg.MatchString(t.UID) {
+		return gear.ErrBadRequest.WithMsgf("invalid user: %s", t.UID)
+	}
+	if !validNameReg.MatchString(t.Product) {
+		return gear.ErrBadRequest.WithMsgf("invalid product name: %s", t.Product)
+	}
+
+	if err := t.Pagination.Validate(); err != nil {
+		return err
+	}
+
+	if t.Channel != "" && !StringSliceHas(conf.Config.Channels, t.Channel) {
+		return gear.ErrBadRequest.WithMsgf("invalid channel: %s", t.Channel)
+	}
+
+	if t.Client != "" && !StringSliceHas(conf.Config.Clients, t.Client) {
+		return gear.ErrBadRequest.WithMsgf("invalid client: %s", t.Client)
+	}
+	return nil
+}

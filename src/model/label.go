@@ -62,7 +62,7 @@ func (m *Label) Create(ctx context.Context, label *schema.Label) error {
 func (m *Label) Update(ctx context.Context, labelID int64, changed map[string]interface{}) (*schema.Label, error) {
 	label := &schema.Label{ID: labelID}
 	if len(changed) > 0 {
-		if err := m.DB.Model(label).Updates(changed).Error; err != nil {
+		if err := m.DB.Model(label).UpdateColumns(changed).Error; err != nil {
 			return nil, err
 		}
 	}
@@ -76,7 +76,7 @@ func (m *Label) Update(ctx context.Context, labelID int64, changed map[string]in
 // Offline 标记 label 下线，同时真删除用户和群组的 labels
 func (m *Label) Offline(ctx context.Context, labelID int64) error {
 	now := time.Now().UTC()
-	db := m.DB.Model(&schema.Label{ID: labelID}).Update(schema.Label{
+	db := m.DB.Model(&schema.Label{ID: labelID}).UpdateColumns(schema.Label{
 		OfflineAt: &now,
 		Status:    -1,
 	})

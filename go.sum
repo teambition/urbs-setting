@@ -80,6 +80,10 @@ github.com/teambition/gear v1.18.0 h1:BHHY1xcxR8YAt7rtt1W3OAJTBdnTX5ABtEk1hU8zHu
 github.com/teambition/gear v1.18.0/go.mod h1:VDwKqDNiJm3bZqDQwlWnl76grJWq2/KUNWa15jLVYTI=
 github.com/teambition/gear v1.19.0 h1:tqEADK5AKeFbrO6kwMVAAZydBl6CimbpzZnMeP9nJqY=
 github.com/teambition/gear v1.19.0/go.mod h1:VDwKqDNiJm3bZqDQwlWnl76grJWq2/KUNWa15jLVYTI=
+github.com/teambition/gear v1.20.0 h1:ZXzdFwrb5vt78u3Nvv5abHJp5TO8UwK91MSpPhpPPQs=
+github.com/teambition/gear v1.20.0/go.mod h1:VDwKqDNiJm3bZqDQwlWnl76grJWq2/KUNWa15jLVYTI=
+github.com/teambition/gear v1.21.0 h1:/43aq7bbdwrPijVjsGZTiQNVVR6Ll55LKO3MEcv4wIk=
+github.com/teambition/gear v1.21.0/go.mod h1:VDwKqDNiJm3bZqDQwlWnl76grJWq2/KUNWa15jLVYTI=
 github.com/teambition/gear-auth v1.7.0 h1:8RYk2IwMYpnUCYf3YjGuOOwG9sj+NzQKYf3XJxQ1CRY=
 github.com/teambition/gear-auth v1.7.0/go.mod h1:U194Q5AX9BEHakk+tcabPVy2qDjv53i+hlbjdSIjR/0=
 github.com/teambition/gear-tracing v1.0.2 h1:Fc59uORQW3NqJMHVX2xQFdMTDOqSW8lKbJRzTnhkrbg=

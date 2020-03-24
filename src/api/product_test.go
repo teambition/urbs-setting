@@ -154,7 +154,69 @@ func TestProductAPIs(t *testing.T) {
 		})
 	})
 
-	t.Run(`"PUT /products/:product+:offline"`, func(t *testing.T) {
+	t.Run(`"PUT /v1/products/:product"`, func(t *testing.T) {
+		product, err := createProduct(tt)
+		assert.Nil(t, err)
+
+		t.Run("should work", func(t *testing.T) {
+			assert := assert.New(t)
+
+			desc := "abc"
+			res, err := request.Put(fmt.Sprintf("%s/v1/products/%s", tt.Host, product.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.ProductUpdateBody{
+					Desc: &desc,
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.True(strings.Contains(text, `"offline_at":null`))
+			assert.True(strings.Contains(text, `"deleted_at":null`))
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.ProductRes{}
+			res.JSON(&json)
+			assert.NotNil(json.Result)
+			assert.Equal(product.Name, json.Result.Name)
+			assert.Equal(desc, json.Result.Desc)
+			assert.True(json.Result.UpdatedAt.After(json.Result.CreatedAt))
+			assert.Nil(json.Result.OfflineAt)
+			assert.Nil(json.Result.DeletedAt)
+
+			// should work idempotent
+			time.Sleep(time.Millisecond * 100)
+			res, err = request.Put(fmt.Sprintf("%s/v1/products/%s", tt.Host, product.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.ProductUpdateBody{
+					Desc: &desc,
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json2 := tpl.ProductRes{}
+			res.JSON(&json2)
+			assert.NotNil(json.Result)
+			assert.True(json2.Result.UpdatedAt.Equal(json.Result.UpdatedAt))
+		})
+
+		t.Run("should 400", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, _ := request.Put(fmt.Sprintf("%s/v1/products/%s", tt.Host, product.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.ProductUpdateBody{
+					Desc: nil,
+				}).
+				End()
+			assert.Equal(400, res.StatusCode)
+		})
+	})
+
+	t.Run(`"PUT /v1/products/:product+:offline"`, func(t *testing.T) {
 		product, err := createProduct(tt)
 		assert.Nil(t, err)
 
@@ -210,7 +272,6 @@ func TestProductAPIs(t *testing.T) {
 			s := setting
 			assert.Nil(tt.DB.First(&s).Error)
 			assert.NotNil(s.OfflineAt)
-			assert.True(true)
 		})
 
 		t.Run("should not effect other data", func(t *testing.T) {

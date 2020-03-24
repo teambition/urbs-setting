@@ -61,7 +61,7 @@ func (m *Setting) Create(ctx context.Context, setting *schema.Setting) error {
 func (m *Setting) Update(ctx context.Context, settingID int64, changed map[string]interface{}) (*schema.Setting, error) {
 	setting := &schema.Setting{ID: settingID}
 	if len(changed) > 0 {
-		if err := m.DB.Model(setting).Updates(changed).Error; err != nil {
+		if err := m.DB.Model(setting).UpdateColumns(changed).Error; err != nil {
 			return nil, err
 		}
 	}
@@ -75,7 +75,7 @@ func (m *Setting) Update(ctx context.Context, settingID int64, changed map[strin
 // Offline 标记配置项下线，同时真删除用户和群组的配置项值
 func (m *Setting) Offline(ctx context.Context, settingID int64) error {
 	now := time.Now().UTC()
-	db := m.DB.Model(&schema.Setting{ID: settingID}).Update(schema.Setting{
+	db := m.DB.Model(&schema.Setting{ID: settingID}).UpdateColumns(schema.Setting{
 		OfflineAt: &now,
 		Status:    -1,
 	})

@@ -54,7 +54,7 @@ type UIDProductURL struct {
 // Validate 实现 gear.BodyTemplate。
 func (t *UIDProductURL) Validate() error {
 	if !validIDReg.MatchString(t.UID) {
-		return gear.ErrBadRequest.WithMsgf("invalid user: %s", t.UID)
+		return gear.ErrBadRequest.WithMsgf("invalid uid: %s", t.UID)
 	}
 	if !validNameReg.MatchString(t.Product) {
 		return gear.ErrBadRequest.WithMsgf("invalid product name: %s", t.Product)

@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/DavidCai1993/request"
 	"github.com/stretchr/testify/assert"
 	"github.com/teambition/urbs-setting/src/schema"
+	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
 )
 
@@ -38,7 +40,7 @@ func TestLabelAPIs(t *testing.T) {
 
 	n1 := tpl.RandLabel()
 
-	t.Run(`"POST /products/:product/labels"`, func(t *testing.T) {
+	t.Run(`"POST /v1/products/:product/labels"`, func(t *testing.T) {
 		t.Run("should work", func(t *testing.T) {
 			assert := assert.New(t)
 
@@ -94,7 +96,7 @@ func TestLabelAPIs(t *testing.T) {
 		})
 	})
 
-	t.Run(`"GET /products/:product/labels"`, func(t *testing.T) {
+	t.Run(`"GET /v1/products/:product/labels"`, func(t *testing.T) {
 		t.Run("should work", func(t *testing.T) {
 			assert := assert.New(t)
 
@@ -115,6 +117,7 @@ func TestLabelAPIs(t *testing.T) {
 			data := json.Result[0]
 			assert.NotEqual("", data.HID)
 			assert.NotEqual("", data.Name)
+			assert.NotEqual("", data.Desc)
 			assert.NotEqual("", data.Product)
 			assert.Equal([]string{}, data.Channels)
 			assert.Equal([]string{}, data.Clients)
@@ -122,6 +125,116 @@ func TestLabelAPIs(t *testing.T) {
 			assert.True(data.UpdatedAt.UTC().Unix() > int64(0))
 			assert.Nil(data.OfflineAt)
 			assert.Equal(int64(0), data.Status)
+		})
+	})
+
+	t.Run(`"PUT /v1/products/:product/labels/:label"`, func(t *testing.T) {
+		product, err := createProduct(tt)
+		assert.Nil(t, err)
+
+		label, err := createLabel(tt, product.Name)
+		assert.Nil(t, err)
+
+		t.Run("should work", func(t *testing.T) {
+			assert := assert.New(t)
+
+			desc := "abc"
+			res, err := request.Put(fmt.Sprintf("%s/v1/products/%s/labels/%s", tt.Host, product.Name, label.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.LabelUpdateBody{
+					Desc: &desc,
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.True(strings.Contains(text, `"offline_at":null`))
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.LabelInfoRes{}
+			res.JSON(&json)
+			assert.NotNil(json.Result)
+			data := json.Result
+			assert.Equal(service.IDToHID(label.ID, "label"), data.HID)
+			assert.Equal(label.Name, data.Name)
+			assert.Equal(desc, data.Desc)
+			assert.Equal(product.Name, data.Product)
+			assert.Equal([]string{}, data.Channels)
+			assert.Equal([]string{}, data.Clients)
+			assert.True(data.CreatedAt.UTC().Unix() > int64(0))
+			assert.True(data.UpdatedAt.UTC().Unix() > int64(0))
+			assert.Nil(data.OfflineAt)
+			assert.Equal(int64(0), data.Status)
+
+			// should work idempotent
+			time.Sleep(time.Millisecond * 100)
+			res, err = request.Put(fmt.Sprintf("%s/v1/products/%s/labels/%s", tt.Host, product.Name, label.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.LabelUpdateBody{
+					Desc: &desc,
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json2 := tpl.LabelInfoRes{}
+			res.JSON(&json2)
+			assert.NotNil(json.Result)
+			assert.True(json2.Result.UpdatedAt.Equal(json.Result.UpdatedAt))
+		})
+
+		t.Run("should work with Channels", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Put(fmt.Sprintf("%s/v1/products/%s/labels/%s", tt.Host, product.Name, label.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.LabelUpdateBody{
+					Channels: &[]string{"stable"},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.SettingInfoRes{}
+			res.JSON(&json)
+			assert.NotNil(json.Result)
+			assert.Equal(label.Name, json.Result.Name)
+			assert.Equal([]string{"stable"}, json.Result.Channels)
+		})
+
+		t.Run("should work with Clients", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Put(fmt.Sprintf("%s/v1/products/%s/labels/%s", tt.Host, product.Name, label.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.LabelUpdateBody{
+					Channels: &[]string{"stable", "beta"},
+					Clients:  &[]string{"ios"},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.SettingInfoRes{}
+			res.JSON(&json)
+			assert.NotNil(json.Result)
+			assert.Equal(label.Name, json.Result.Name)
+			assert.Equal([]string{"beta", "stable"}, json.Result.Channels)
+			assert.Equal([]string{"ios"}, json.Result.Clients)
+		})
+
+		t.Run("should 400", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, _ := request.Put(fmt.Sprintf("%s/v1/products/%s/labels/%s", tt.Host, product.Name, label.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.LabelUpdateBody{
+					Desc: nil,
+				}).
+				End()
+			assert.Equal(400, res.StatusCode)
 		})
 	})
 
@@ -175,7 +288,7 @@ func TestLabelAPIs(t *testing.T) {
 		})
 	})
 
-	t.Run(`"PUT /products/:product/labels/:label+:offline"`, func(t *testing.T) {
+	t.Run(`"PUT /v1/products/:product/labels/:label+:offline"`, func(t *testing.T) {
 		label, err := createLabel(tt, product.Name)
 		assert.Nil(t, err)
 
@@ -215,7 +328,7 @@ func TestLabelAPIs(t *testing.T) {
 		})
 	})
 
-	t.Run(`POST "/products/:product/labels/:label+:assign"`, func(t *testing.T) {
+	t.Run(`POST "/v1/products/:product/labels/:label+:assign"`, func(t *testing.T) {
 		label, err := createLabel(tt, product.Name)
 		assert.Nil(t, err)
 

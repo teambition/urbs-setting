@@ -61,7 +61,7 @@ func (m *Product) Create(ctx context.Context, product *schema.Product) error {
 func (m *Product) Update(ctx context.Context, productID int64, changed map[string]interface{}) (*schema.Product, error) {
 	product := &schema.Product{ID: productID}
 	if len(changed) > 0 {
-		if err := m.DB.Model(product).Updates(changed).Error; err != nil {
+		if err := m.DB.Model(product).UpdateColumns(changed).Error; err != nil {
 			return nil, err
 		}
 	}
@@ -75,14 +75,14 @@ func (m *Product) Update(ctx context.Context, productID int64, changed map[strin
 // Offline 下线产品
 func (m *Product) Offline(ctx context.Context, productID int64) error {
 	now := time.Now().UTC()
-	db := m.DB.Model(&schema.Product{ID: productID}).Update(schema.Product{
+	db := m.DB.Model(&schema.Product{ID: productID}).UpdateColumns(schema.Product{
 		OfflineAt: &now,
 		Status:    -1,
 	})
 	if db.Error == nil {
 		var labelIDs []int64
 		if err := db.Model(&schema.Label{}).Where("product_id = ?", productID).Pluck("id", &labelIDs).Error; err == nil {
-			db.Model(&schema.Label{}).Where("`id` in ( ? )", labelIDs).Update(schema.Label{
+			db.Model(&schema.Label{}).Where("`id` in ( ? )", labelIDs).UpdateColumns(schema.Label{
 				OfflineAt: &now,
 				Status:    -1,
 			})
@@ -91,7 +91,7 @@ func (m *Product) Offline(ctx context.Context, productID int64) error {
 
 		var moduleIDs []int64
 		if err := db.Model(&schema.Module{}).Where("product_id = ?", productID).Pluck("id", &moduleIDs).Error; err == nil {
-			db.Model(&schema.Module{}).Where("`id` in ( ? )", moduleIDs).Update(schema.Setting{
+			db.Model(&schema.Module{}).Where("`id` in ( ? )", moduleIDs).UpdateColumns(schema.Setting{
 				OfflineAt: &now,
 				Status:    -1,
 			})
@@ -100,7 +100,7 @@ func (m *Product) Offline(ctx context.Context, productID int64) error {
 			for _, moduleID := range moduleIDs {
 				var settingIDs []int64
 				if err := db.Model(&schema.Setting{}).Where("module_id = ?", moduleID).Pluck("id", &settingIDs).Error; err == nil {
-					db.Model(&schema.Setting{}).Where("`id` in ( ? )", settingIDs).Update(schema.Setting{
+					db.Model(&schema.Setting{}).Where("`id` in ( ? )", settingIDs).UpdateColumns(schema.Setting{
 						OfflineAt: &now,
 						Status:    -1,
 					})
@@ -115,7 +115,7 @@ func (m *Product) Offline(ctx context.Context, productID int64) error {
 // Delete 对产品进行逻辑删除
 func (m *Product) Delete(ctx context.Context, productID int64) error {
 	now := time.Now().UTC()
-	return m.DB.Model(&schema.Product{ID: productID}).Update(schema.Product{
+	return m.DB.Model(&schema.Product{ID: productID}).UpdateColumns(schema.Product{
 		DeletedAt: &now,
 	}).Error
 }

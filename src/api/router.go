@@ -58,7 +58,7 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Put("/users/:uid/labels:cache", apis.User.RefreshCachedLables)
 	// 读取指定用户的功能配置项，支持条件筛选
 	routerV1.Get("/users/:uid/settings", apis.User.ListSettings)
-	// 读取指定用户的功能配置项，支持条件筛选
+	// 读取指定用户的功能配置项，支持条件筛选，数据用于客户端
 	routerV1.Get("/users/:uid/settings:unionAll", apis.User.ListSettingsUnionAll)
 	// 查询指定用户是否存在
 	routerV1.Get("/users/:uid+:exists", apis.User.CheckExists)

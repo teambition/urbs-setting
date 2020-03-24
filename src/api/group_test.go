@@ -192,7 +192,7 @@ func TestGroupAPIs(t *testing.T) {
 		})
 	})
 
-	t.Run(`"POST /groups/:uid/members:batch"`, func(t *testing.T) {
+	t.Run(`"POST /v1/groups/:uid/members:batch"`, func(t *testing.T) {
 		t.Run("should work", func(t *testing.T) {
 			assert := assert.New(t)
 
