@@ -20,17 +20,13 @@ func (a *User) ListCachedLables(ctx *gear.Context) error {
 		return err
 	}
 
-	res, err := a.blls.User.ListCachedLables(ctx, req.UID, req.Product)
-	if err != nil {
-		return err
-	}
-
+	res := a.blls.User.ListCachedLables(ctx, req.UID, req.Product)
 	return ctx.OkJSON(res)
 }
 
 // RefreshCachedLables 强制更新 user 的 labels 缓存
 func (a *User) RefreshCachedLables(ctx *gear.Context) error {
-	req := tpl.UIDPaginationURL{}
+	req := tpl.UIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}

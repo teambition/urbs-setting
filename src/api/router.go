@@ -54,7 +54,7 @@ func newRouters(apis *APIs) []*gear.Router {
 	// ***** user ******
 	// 读取指定用户的灰度标签，支持条件筛选
 	routerV1.Get("/users/:uid/labels", apis.User.ListLables)
-	// 读取指定用户的灰度标签，支持条件筛选
+	// 强制刷新指定用户的灰度标签列表缓存
 	routerV1.Put("/users/:uid/labels:cache", apis.User.RefreshCachedLables)
 	// 读取指定用户的功能配置项，支持条件筛选
 	routerV1.Get("/users/:uid/settings", apis.User.ListSettings)
