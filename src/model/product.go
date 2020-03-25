@@ -39,8 +39,9 @@ func (m *Product) FindByName(ctx context.Context, name, selectStr string) (*sche
 // Find 根据条件查找 products
 func (m *Product) Find(ctx context.Context, pg tpl.Pagination) ([]schema.Product, error) {
 	products := make([]schema.Product, 0)
-	pageToken := pg.TokenToID()
-	err := m.DB.Where("`id` >= ? and `deleted_at` is null", pageToken).
+	cursor := pg.TokenToID()
+
+	err := m.DB.Where("`id` >= ? and `deleted_at` is null", cursor).
 		Order("`id`").Limit(pg.PageSize + 1).Find(&products).Error
 	return products, err
 }

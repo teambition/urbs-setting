@@ -22,12 +22,13 @@ func createUsers(tt *TestTools, count int) (users []schema.User, err error) {
 		uids[i] = tpl.RandUID()
 	}
 
-	_, err = request.Post(fmt.Sprintf("%s/v1/users:batch", tt.Host)).
+	res, err := request.Post(fmt.Sprintf("%s/v1/users:batch", tt.Host)).
 		Set("Content-Type", "application/json").
 		Send(tpl.UsersBody{Users: uids}).
 		End()
 
 	if err == nil {
+		res.Content() // close http client
 		err = tt.DB.Where("uid in ( ? )", uids).Find(&users).Error
 	}
 	return
@@ -175,6 +176,7 @@ func TestUserAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
+			res.Content() // close http client
 
 			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[1].UID, product.Name)).
 				End()
@@ -240,6 +242,7 @@ func TestUserAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
+			res.Content() // close http client
 
 			// users[1] lables from cache
 			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[1].UID, product.Name)).
@@ -282,6 +285,7 @@ func TestUserAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
+			res.Content() // close http client
 
 			// users[2] get all lables
 			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[3].UID, product.Name)).
@@ -388,6 +392,7 @@ func TestUserAPIs(t *testing.T) {
 			res, _ := request.Get(fmt.Sprintf("%s/v1/users/%s/settings?product=%s", tt.Host, tpl.RandUID(), product.Name)).
 				End()
 			assert.Equal(404, res.StatusCode)
+			res.Content() // close http client
 		})
 
 		t.Run(`"GET /v1/users/:uid/settings" when without settings`, func(t *testing.T) {
@@ -423,6 +428,7 @@ func TestUserAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
+			res.Content() // close http client
 
 			time.Sleep(time.Millisecond * 10)
 			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings?product=%s", tt.Host, users[0].UID, product.Name)).
@@ -487,6 +493,7 @@ func TestUserAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
+			res.Content() // close http client
 
 			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings?product=%s", tt.Host, users[0].UID, product.Name)).
 				End()
@@ -541,6 +548,7 @@ func TestUserAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
+			res.Content() // close http client
 
 			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings:unionAll?product=%s&channel=beta", tt.Host, users[0].UID, product.Name)).
 				End()
@@ -594,6 +602,7 @@ func TestUserAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
+			res.Content() // close http client
 
 			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings?product=%s", tt.Host, users[0].UID, product.Name)).
 				End()
@@ -624,6 +633,7 @@ func TestUserAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
+			res.Content() // close http client
 
 			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings?product=%s", tt.Host, users[0].UID, product.Name)).
 				End()

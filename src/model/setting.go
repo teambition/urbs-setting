@@ -39,8 +39,8 @@ func (m *Setting) FindByName(ctx context.Context, moduleID int64, name, selectSt
 // Find 根据条件查找 settings
 func (m *Setting) Find(ctx context.Context, moduleID int64, pg tpl.Pagination) ([]schema.Setting, error) {
 	settings := make([]schema.Setting, 0)
-	pageToken := pg.TokenToID()
-	err := m.DB.Where("`module_id` = ? and `id` >= ?", moduleID, pageToken).
+	cursor := pg.TokenToID()
+	err := m.DB.Where("`module_id` = ? and `id` >= ?", moduleID, cursor).
 		Order("`id`").Limit(pg.PageSize + 1).Find(&settings).Error
 	return settings, err
 }

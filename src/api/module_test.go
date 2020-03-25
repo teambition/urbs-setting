@@ -14,13 +14,14 @@ import (
 
 func createModule(tt *TestTools, productName string) (module schema.Module, err error) {
 	name := tpl.RandName()
-	_, err = request.Post(fmt.Sprintf("%s/v1/products/%s/modules", tt.Host, productName)).
+	res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/modules", tt.Host, productName)).
 		Set("Content-Type", "application/json").
 		Send(tpl.NameDescBody{Name: name, Desc: name}).
 		End()
 
 	var product schema.Product
 	if err == nil {
+		res.Content() // close http client
 		err = tt.DB.Where("name = ?", productName).First(&product).Error
 	}
 
@@ -75,6 +76,7 @@ func TestModuleAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(409, res.StatusCode)
+			res.Content() // close http client
 		})
 
 		t.Run(`should return 400`, func(t *testing.T) {
@@ -86,6 +88,7 @@ func TestModuleAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(400, res.StatusCode)
+			res.Content() // close http client
 		})
 	})
 
@@ -170,6 +173,7 @@ func TestModuleAPIs(t *testing.T) {
 				}).
 				End()
 			assert.Equal(400, res.StatusCode)
+			res.Content() // close http client
 		})
 	})
 

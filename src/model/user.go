@@ -124,12 +124,12 @@ const userSettingsWithGroupSQL = "(select t1.`created_at`, t1.`updated_at`, t1.`
 // FindSettingsUnionAll 根据用户 ID, updateGt, productName 返回其 settings 数据。
 func (m *User) FindSettingsUnionAll(ctx context.Context, userID int64, groupIDs []int64, moduleIDs []int64, pg tpl.Pagination, channel, client string) ([]tpl.MySetting, error) {
 	data := []tpl.MySetting{}
-	updatedAt := pg.TokenToTime(time.Now().Add(time.Minute * 10))
+	cursor := pg.TokenToTime(time.Now().Add(time.Minute * 10))
 	size := pg.PageSize + 1
 
 	for {
-		rows, err := m.DB.Raw(userSettingsWithGroupSQL, userID, updatedAt, moduleIDs, size,
-			groupIDs, updatedAt, moduleIDs, size).Rows()
+		rows, err := m.DB.Raw(userSettingsWithGroupSQL, userID, cursor, moduleIDs, size,
+			groupIDs, cursor, moduleIDs, size).Rows()
 
 		if err != nil {
 			rows.Close()
@@ -177,7 +177,7 @@ func (m *User) FindSettingsUnionAll(ctx context.Context, userID int64, groupIDs 
 			break // get enough
 		}
 		// select next page
-		updatedAt = data[len(data)-1].UpdatedAt.Add(-time.Millisecond)
+		cursor = data[len(data)-1].UpdatedAt.Add(-time.Millisecond)
 	}
 
 	return data, nil
@@ -193,9 +193,9 @@ const userLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`off
 // FindLables 根据用户 ID 返回其 labels 数据。
 func (m *User) FindLables(ctx context.Context, userID int64, pg tpl.Pagination) ([]tpl.LabelInfo, error) {
 	data := []tpl.LabelInfo{}
-	pageToken := pg.TokenToID()
+	cursor := pg.TokenToID()
 
-	rows, err := m.DB.Raw(userLabelsSQL, userID, pageToken, pg.PageSize+1).Rows()
+	rows, err := m.DB.Raw(userLabelsSQL, userID, cursor, pg.PageSize+1).Rows()
 	defer rows.Close()
 
 	if err != nil {
@@ -229,16 +229,16 @@ func (m *User) CountLabels(ctx context.Context, userID int64) (int, error) {
 const userSettingsSQL = "select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
 	"t2.`id`, t2.`name`, t3.`name` as `module` " +
 	"from `user_setting` t1, `urbs_setting` t2, `urbs_module` t3 " +
-	"where t1.`user_id` = ? and t1.`updated_at` >= ? and t1.`setting_id` = t2.`id` and t2.`module_id` in ( ? ) and t2.`module_id` = t3.`id` " +
-	"order by t1.`updated_at` asc " +
+	"where t1.`user_id` = ? and t1.`id` >= ? and t1.`setting_id` = t2.`id` and t2.`module_id` in ( ? ) and t2.`module_id` = t3.`id` " +
+	"order by t1.`id` asc " +
 	"limit ?"
 
 // FindSettings 根据用户 ID, moduleIDs 返回 settings 数据。
 func (m *User) FindSettings(ctx context.Context, userID int64, moduleIDs []int64, pg tpl.Pagination) ([]tpl.MySetting, error) {
 	data := []tpl.MySetting{}
-	updatedAt := pg.TokenToTime()
+	cursor := pg.TokenToID()
 
-	rows, err := m.DB.Raw(userSettingsSQL, userID, updatedAt, moduleIDs, pg.PageSize+1).Rows()
+	rows, err := m.DB.Raw(userSettingsSQL, userID, cursor, moduleIDs, pg.PageSize+1).Rows()
 	defer rows.Close()
 
 	if err != nil {

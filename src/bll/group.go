@@ -115,14 +115,14 @@ func (b *Group) ListSettings(ctx context.Context, uid, productName string, pg tp
 	if err != nil {
 		return nil, err
 	}
-	settings, err := b.ms.User.FindSettings(ctx, group.ID, moduleIDs, pg)
+	settings, err := b.ms.Group.FindSettings(ctx, group.ID, moduleIDs, pg)
 	if err != nil {
 		return nil, err
 	}
 
 	res := &tpl.MySettingsRes{Result: settings}
 	if len(res.Result) > pg.PageSize {
-		res.NextPageToken = tpl.TimeToPageToken(res.Result[pg.PageSize].UpdatedAt)
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]
 	}
 	return res, nil
@@ -149,7 +149,7 @@ func (b *Group) BatchAddMembers(ctx context.Context, uid string, users []string)
 		return gear.ErrNotFound.WithMsgf("group %s not found", uid)
 	}
 
-	if err := b.ms.User.BatchAdd(ctx, users); err != nil {
+	if err = b.ms.User.BatchAdd(ctx, users); err != nil {
 		return err
 	}
 
@@ -164,9 +164,12 @@ func (b *Group) RemoveMembers(ctx context.Context, uid, userUID string, syncLt i
 	}
 
 	var userID int64
-	if user, _ := b.ms.User.FindByUID(ctx, userUID, "id"); user != nil {
-		userID = user.ID
+	if userUID != "" {
+		if user, _ := b.ms.User.FindByUID(ctx, userUID, "id"); user != nil {
+			userID = user.ID
+		}
 	}
+
 	return b.ms.Group.RemoveMembers(ctx, group.ID, userID, syncLt)
 }
 

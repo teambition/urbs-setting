@@ -122,7 +122,7 @@ func (b *User) ListSettings(ctx context.Context, uid, productName string, pg tpl
 
 	res := &tpl.MySettingsRes{Result: settings}
 	if len(res.Result) > pg.PageSize {
-		res.NextPageToken = tpl.TimeToPageToken(res.Result[pg.PageSize].UpdatedAt)
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]
 	}
 	return res, nil
