@@ -40,18 +40,14 @@ func (t *GroupsBody) Validate() error {
 
 // GroupUpdateBody ...
 type GroupUpdateBody struct {
-	Kind   *string `json:"kind"`
 	Desc   *string `json:"desc"`
 	SyncAt *int64  `json:"sync_at"`
 }
 
 // Validate 实现 gear.BodyTemplate。
 func (t *GroupUpdateBody) Validate() error {
-	if t.Kind == nil && t.Desc == nil && t.SyncAt == nil {
+	if t.Desc == nil && t.SyncAt == nil {
 		return gear.ErrBadRequest.WithMsgf("desc or kind or sync_at required")
-	}
-	if t.Kind != nil && !validLabelReg.MatchString(*t.Kind) {
-		return gear.ErrBadRequest.WithMsgf("invalid group kind: %s", *t.Kind)
 	}
 	if t.Desc != nil && len(*t.Desc) > 1022 {
 		return gear.ErrBadRequest.WithMsgf("desc too long: %d", len(*t.Desc))
@@ -69,9 +65,6 @@ func (t *GroupUpdateBody) Validate() error {
 // ToMap ...
 func (t *GroupUpdateBody) ToMap() map[string]interface{} {
 	changed := make(map[string]interface{})
-	if t.Kind != nil {
-		changed["kind"] = *t.Kind
-	}
 	if t.Desc != nil {
 		changed["description"] = *t.Desc
 	}

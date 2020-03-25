@@ -39,8 +39,8 @@ func (m *Module) FindByName(ctx context.Context, productID int64, name, selectSt
 // Find 根据条件查找 modules
 func (m *Module) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Module, error) {
 	modules := make([]schema.Module, 0)
-	pageToken := pg.TokenToID()
-	err := m.DB.Where("`product_id` = ? and `id` >= ?", productID, pageToken).
+	cursor := pg.TokenToID()
+	err := m.DB.Where("`product_id` = ? and `id` >= ?", productID, cursor).
 		Order("`id`").Limit(pg.PageSize + 1).Find(&modules).Error
 	return modules, err
 }

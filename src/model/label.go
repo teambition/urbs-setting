@@ -40,8 +40,8 @@ func (m *Label) FindByName(ctx context.Context, productID int64, name, selectStr
 // Find 根据条件查找 labels
 func (m *Label) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Label, error) {
 	labels := make([]schema.Label, 0)
-	pageToken := pg.TokenToID()
-	err := m.DB.Where("`product_id` = ? and `id` >= ?", productID, pageToken).
+	cursor := pg.TokenToID()
+	err := m.DB.Where("`product_id` = ? and `id` >= ?", productID, cursor).
 		Order("`id`").Limit(pg.PageSize + 1).Find(&labels).Error
 	return labels, err
 }

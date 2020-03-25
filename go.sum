@@ -76,12 +76,6 @@ github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJy
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/teambition/compressible-go v1.0.1/go.mod h1:K91wjCUqzpuY2ZpSi039mt4WzzjMGxPFMZHHTEoTvak=
 github.com/teambition/gear v1.12.2/go.mod h1:VPFnRhfwYQiRDTzxEtzwfzAVDIcsbkX6i/AGOcRedy4=
-github.com/teambition/gear v1.18.0 h1:BHHY1xcxR8YAt7rtt1W3OAJTBdnTX5ABtEk1hU8zHu4=
-github.com/teambition/gear v1.18.0/go.mod h1:VDwKqDNiJm3bZqDQwlWnl76grJWq2/KUNWa15jLVYTI=
-github.com/teambition/gear v1.19.0 h1:tqEADK5AKeFbrO6kwMVAAZydBl6CimbpzZnMeP9nJqY=
-github.com/teambition/gear v1.19.0/go.mod h1:VDwKqDNiJm3bZqDQwlWnl76grJWq2/KUNWa15jLVYTI=
-github.com/teambition/gear v1.20.0 h1:ZXzdFwrb5vt78u3Nvv5abHJp5TO8UwK91MSpPhpPPQs=
-github.com/teambition/gear v1.20.0/go.mod h1:VDwKqDNiJm3bZqDQwlWnl76grJWq2/KUNWa15jLVYTI=
 github.com/teambition/gear v1.21.0 h1:/43aq7bbdwrPijVjsGZTiQNVVR6Ll55LKO3MEcv4wIk=
 github.com/teambition/gear v1.21.0/go.mod h1:VDwKqDNiJm3bZqDQwlWnl76grJWq2/KUNWa15jLVYTI=
 github.com/teambition/gear-auth v1.7.0 h1:8RYk2IwMYpnUCYf3YjGuOOwG9sj+NzQKYf3XJxQ1CRY=

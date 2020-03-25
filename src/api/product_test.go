@@ -14,12 +14,13 @@ import (
 
 func createProduct(tt *TestTools) (product schema.Product, err error) {
 	name := tpl.RandName()
-	_, err = request.Post(fmt.Sprintf("%s/v1/products", tt.Host)).
+	res, err := request.Post(fmt.Sprintf("%s/v1/products", tt.Host)).
 		Set("Content-Type", "application/json").
 		Send(tpl.NameDescBody{Name: name, Desc: name}).
 		End()
 
 	if err == nil {
+		res.Content() // close http client
 		err = tt.DB.Where("name = ?", name).First(&product).Error
 	}
 	return
@@ -29,9 +30,9 @@ func TestProductAPIs(t *testing.T) {
 	tt, cleanup := SetUpTestTools()
 	defer cleanup()
 
-	n1 := tpl.RandName()
-
 	t.Run(`"POST /v1/products"`, func(t *testing.T) {
+		n1 := tpl.RandName()
+
 		t.Run("should work", func(t *testing.T) {
 			assert := assert.New(t)
 
@@ -69,6 +70,7 @@ func TestProductAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(409, res.StatusCode)
+			res.Content() // close http client
 		})
 
 		t.Run(`should return 400`, func(t *testing.T) {
@@ -80,21 +82,25 @@ func TestProductAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(400, res.StatusCode)
+			res.Content() // close http client
 		})
 	})
 
 	t.Run(`"GET /v1/products"`, func(t *testing.T) {
+		product, err := createProduct(tt)
+		assert.Nil(t, err)
+
 		t.Run("should work", func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Get(fmt.Sprintf("%s/v1/products", tt.Host)).
+			res, err := request.Get(fmt.Sprintf("%s/v1/products?pageSize=1000", tt.Host)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
 
 			text, err := res.Text()
 			assert.Nil(err)
-			assert.True(strings.Contains(text, n1))
+			assert.True(strings.Contains(text, product.Name))
 			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.ProductsRes{}
@@ -105,19 +111,23 @@ func TestProductAPIs(t *testing.T) {
 	})
 
 	t.Run(`"DELETE /v1/products/:product"`, func(t *testing.T) {
+		product, err := createProduct(tt)
+		assert.Nil(t, err)
+
 		t.Run("should conflict before offline", func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s", tt.Host, n1)).
+			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s", tt.Host, product.Name)).
 				End()
 			assert.Nil(err)
 			assert.Equal(409, res.StatusCode)
+			res.Content() // close http client
 		})
 
 		t.Run("should offline", func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Put(fmt.Sprintf("%s/v1/products/%s:offline", tt.Host, n1)).
+			res, err := request.Put(fmt.Sprintf("%s/v1/products/%s:offline", tt.Host, product.Name)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -130,7 +140,7 @@ func TestProductAPIs(t *testing.T) {
 		t.Run("should work", func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s", tt.Host, n1)).
+			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s", tt.Host, product.Name)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -143,7 +153,7 @@ func TestProductAPIs(t *testing.T) {
 		t.Run(`should idempotent`, func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s", tt.Host, n1)).
+			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s", tt.Host, product.Name)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -213,6 +223,7 @@ func TestProductAPIs(t *testing.T) {
 				}).
 				End()
 			assert.Equal(400, res.StatusCode)
+			res.Content() // close http client
 		})
 	})
 
@@ -304,6 +315,7 @@ func TestProductAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
+			res.Content() // close http client
 
 			var count int64
 			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label1.ID).Count(&count).Error)
@@ -321,6 +333,7 @@ func TestProductAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
+			res.Content() // close http client
 
 			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label2.ID).Count(&count).Error)
 			assert.Equal(int64(10), count)
@@ -332,6 +345,7 @@ func TestProductAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
+			res.Content() // close http client
 
 			time.Sleep(time.Second * 2)
 

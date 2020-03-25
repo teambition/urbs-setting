@@ -15,13 +15,14 @@ import (
 
 func createLabel(tt *TestTools, productName string) (label schema.Label, err error) {
 	name := tpl.RandLabel()
-	_, err = request.Post(fmt.Sprintf("%s/v1/products/%s/labels", tt.Host, productName)).
+	res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels", tt.Host, productName)).
 		Set("Content-Type", "application/json").
 		Send(tpl.LabelBody{Name: name, Desc: name}).
 		End()
 
 	var product schema.Product
 	if err == nil {
+		res.Content() // close http client
 		err = tt.DB.Where("name = ?", productName).First(&product).Error
 	}
 
@@ -82,6 +83,7 @@ func TestLabelAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(409, res.StatusCode)
+			res.Content() // close http client
 		})
 
 		t.Run(`should return 400`, func(t *testing.T) {
@@ -93,6 +95,7 @@ func TestLabelAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(400, res.StatusCode)
+			res.Content() // close http client
 		})
 	})
 
@@ -235,6 +238,7 @@ func TestLabelAPIs(t *testing.T) {
 				}).
 				End()
 			assert.Equal(400, res.StatusCode)
+			res.Content() // close http client
 		})
 	})
 
@@ -246,6 +250,7 @@ func TestLabelAPIs(t *testing.T) {
 				End()
 			assert.Nil(err)
 			assert.Equal(409, res.StatusCode)
+			res.Content() // close http client
 		})
 
 		t.Run("should offline", func(t *testing.T) {
@@ -285,46 +290,6 @@ func TestLabelAPIs(t *testing.T) {
 			json := tpl.BoolRes{}
 			res.JSON(&json)
 			assert.False(json.Result)
-		})
-	})
-
-	t.Run(`"PUT /v1/products/:product/labels/:label+:offline"`, func(t *testing.T) {
-		label, err := createLabel(tt, product.Name)
-		assert.Nil(t, err)
-
-		t.Run("should work", func(t *testing.T) {
-			assert := assert.New(t)
-
-			res, err := request.Put(fmt.Sprintf("%s/v1/products/%s/labels/%s:offline", tt.Host, product.Name, label.Name)).
-				End()
-			assert.Nil(err)
-			assert.Equal(200, res.StatusCode)
-
-			json := tpl.BoolRes{}
-			res.JSON(&json)
-			assert.True(json.Result)
-
-			l := label
-			assert.Nil(tt.DB.First(&l).Error)
-			assert.NotNil(l.OfflineAt)
-		})
-
-		t.Run("should work idempotent", func(t *testing.T) {
-			assert := assert.New(t)
-
-			res, err := request.Put(fmt.Sprintf("%s/v1/products/%s/labels/%s:offline", tt.Host, product.Name, label.Name)).
-				End()
-			assert.Nil(err)
-
-			assert.Equal(200, res.StatusCode)
-
-			json := tpl.BoolRes{}
-			res.JSON(&json)
-			assert.False(json.Result)
-
-			l := label
-			assert.Nil(tt.DB.First(&l).Error)
-			assert.NotNil(l.OfflineAt)
 		})
 	})
 
@@ -385,6 +350,77 @@ func TestLabelAPIs(t *testing.T) {
 
 			assert.Nil(tt.DB.Table(`group_label`).Where("label_id = ?", label.ID).Count(&count).Error)
 			assert.Equal(int64(1), count)
+		})
+	})
+
+	t.Run(`"PUT /v1/products/:product/labels/:label+:offline"`, func(t *testing.T) {
+		label, err := createLabel(tt, product.Name)
+		assert.Nil(t, err)
+
+		users, err := createUsers(tt, 3)
+		assert.Nil(t, err)
+
+		group, err := createGroup(tt)
+		assert.Nil(t, err)
+
+		t.Run("should work", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s:assign", tt.Host, product.Name, label.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.UsersGroupsBody{
+					Users:  schema.GetUsersUID(users),
+					Groups: []string{group.UID},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+			res.Content() // close http client
+
+			var count int64
+			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label.ID).Count(&count).Error)
+			assert.Equal(int64(3), count)
+
+			assert.Nil(tt.DB.Table(`group_label`).Where("label_id = ?", label.ID).Count(&count).Error)
+			assert.Equal(int64(1), count)
+
+			res, err = request.Put(fmt.Sprintf("%s/v1/products/%s/labels/%s:offline", tt.Host, product.Name, label.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.BoolRes{}
+			res.JSON(&json)
+			assert.True(json.Result)
+
+			l := label
+			assert.Nil(tt.DB.First(&l).Error)
+			assert.NotNil(l.OfflineAt)
+
+			time.Sleep(time.Millisecond * 100)
+			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label.ID).Count(&count).Error)
+			assert.Equal(int64(0), count)
+
+			assert.Nil(tt.DB.Table(`group_label`).Where("label_id = ?", label.ID).Count(&count).Error)
+			assert.Equal(int64(0), count)
+		})
+
+		t.Run("should work idempotent", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Put(fmt.Sprintf("%s/v1/products/%s/labels/%s:offline", tt.Host, product.Name, label.Name)).
+				End()
+			assert.Nil(err)
+
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.BoolRes{}
+			res.JSON(&json)
+			assert.False(json.Result)
+
+			l := label
+			assert.Nil(tt.DB.First(&l).Error)
+			assert.NotNil(l.OfflineAt)
 		})
 	})
 }
