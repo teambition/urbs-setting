@@ -16,24 +16,21 @@ type User struct {
 	ms *model.Models
 }
 
-// ListCachedLables ...
-func (b *User) ListCachedLables(ctx context.Context, uid, product string) (*tpl.CacheLabelsInfoRes, error) {
-	user, err := b.ms.User.FindByUID(ctx, uid, "id, `uid`, `active_at`, `labels`")
-	if err != nil {
-		return nil, err
-	}
-
+// ListCachedLables ... 该接口不返回错误
+func (b *User) ListCachedLables(ctx context.Context, uid, product string) *tpl.CacheLabelsInfoRes {
 	now := time.Now().UTC().Unix()
 	res := &tpl.CacheLabelsInfoRes{Result: []schema.UserCacheLabel{}, Timestamp: now}
-	if user == nil {
-		return res, nil // user 不存在，返回空
+
+	user, err := b.ms.User.FindByUID(ctx, uid, "id, `uid`, `active_at`, `labels`")
+	if err != nil || user == nil {
+		return res
 	}
 
 	if conf.Config.IsCacheLabelExpired(now, user.ActiveAt) {
 		// user 上缓存的 labels 过期，则刷新获取最新，RefreshUser 要考虑并发场景
 		user, err = b.ms.User.RefreshLabels(ctx, user.ID, now, false)
 		if err != nil {
-			return res, nil
+			return res
 		}
 	}
 
@@ -42,7 +39,7 @@ func (b *User) ListCachedLables(ctx context.Context, uid, product string) (*tpl.
 		res.Result = labels
 		res.Timestamp = user.ActiveAt
 	}
-	return res, nil
+	return res
 }
 
 // RefreshCachedLables ...
