@@ -78,6 +78,9 @@ func (b *Setting) Get(ctx context.Context, productName, moduleName, settingName 
 	if err != nil {
 		return nil, err
 	}
+	if setting == nil {
+		return nil, gear.ErrNotFound.WithMsgf("setting %s not found", settingName)
+	}
 
 	res := &tpl.SettingInfoRes{Result: tpl.SettingInfoFrom(*setting, productName, moduleName)}
 	return res, nil
