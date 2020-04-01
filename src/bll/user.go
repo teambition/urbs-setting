@@ -127,12 +127,13 @@ func (b *User) ListSettings(ctx context.Context, uid, productName string, pg tpl
 
 // ListSettingsUnionAll ...
 func (b *User) ListSettingsUnionAll(ctx context.Context, uid, productName, channel, client string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
+	res := &tpl.MySettingsRes{Result: []tpl.MySetting{}}
 	user, err := b.ms.User.FindByUID(ctx, uid, "id")
 	if err != nil {
 		return nil, err
 	}
 	if user == nil {
-		return nil, gear.ErrNotFound.WithMsgf("user %s not found", uid)
+		return res, nil
 	}
 
 	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
@@ -140,7 +141,7 @@ func (b *User) ListSettingsUnionAll(ctx context.Context, uid, productName, chann
 		return nil, err
 	}
 	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
+		return res, gear.ErrNotFound.WithMsgf("product %s not found", productName)
 	}
 	if product.DeletedAt != nil {
 		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
@@ -164,7 +165,7 @@ func (b *User) ListSettingsUnionAll(ctx context.Context, uid, productName, chann
 		return nil, err
 	}
 
-	res := &tpl.MySettingsRes{Result: settings}
+	res.Result = settings
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.TimeToPageToken(res.Result[pg.PageSize].UpdatedAt)
 		res.Result = res.Result[:pg.PageSize]

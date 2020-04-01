@@ -1,0 +1,17 @@
+  /version:
+    get:
+      tags:
+        - Version
+      summary: 获取版本信息
+      responses:
+        '200':
+          $ref: '#/components/responses/Version'
+
+  /healthz:
+    get:
+      tags:
+        - Version
+      summary: 服务健康检查接口
+      responses:
+        '200':
+          $ref: '#/components/responses/Healthz'

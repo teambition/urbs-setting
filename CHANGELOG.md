@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file starting fro
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 -----
+## [1.2.2] - 2020-04-01
+
+**Change:**
+
+- Improve swagger document.
+- add user and group documents.
+
+**Fixed:**
+
+- Fix settings API.
+
+## [1.2.1] - 2020-03-29
+
+**Change:**
+
+- Update Gear version.
 
 ## [1.2.0] - 2020-03-25
 

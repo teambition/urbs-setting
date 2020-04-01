@@ -64,11 +64,11 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Get("/users/:uid+:exists", apis.User.CheckExists)
 	// 批量添加用户
 	routerV1.Post("/users:batch", apis.User.BatchAdd)
-	// 删除指定用户的指定灰度标签
+	// 移除指定用户的指定灰度标签
 	routerV1.Delete("/users/:uid/labels/:hid", apis.User.RemoveLable)
 	// 回滚指定用户的指定配置项
 	routerV1.Put("/users/:uid/settings/:hid+:rollback", apis.User.RollbackSetting)
-	// 删除指定用户的指定配置项
+	// 移除指定用户的指定配置项
 	routerV1.Delete("/users/:uid/settings/:hid", apis.User.RemoveSetting)
 
 	// ***** group ******
@@ -92,11 +92,11 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Post("/groups/:uid/members:batch", apis.Group.BatchAddMembers)
 	// 指定群组根据条件清理成员
 	routerV1.Delete("/groups/:uid/members", apis.Group.RemoveMembers)
-	// 删除指定群组的指定灰度标签
+	// 移除指定群组的指定灰度标签
 	routerV1.Delete("/groups/:uid/labels/:hid", apis.Group.RemoveLable)
 	// 回滚指定群组的指定配置项
 	routerV1.Put("/groups/:uid/settings/:hid+:rollback", apis.Group.RollbackSetting)
-	// 删除指定群组的指定配置项
+	// 移除指定群组的指定配置项
 	routerV1.Delete("/groups/:uid/settings/:hid", apis.Group.RemoveSetting)
 
 	// ***** product ******

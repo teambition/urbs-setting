@@ -1,0 +1,257 @@
+  # Group API
+  /v1/groups/{uid}/labels:
+    get:
+      tags:
+        - Group
+      summary: 获取指定 uid 群组灰度标签列表，支持分页，按照标签指派时间正序。考虑到灰度标签不会很多，暂未支持根据 product 过滤
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathUID"
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+      responses:
+        '200':
+          $ref: '#/components/responses/LabelsInfoRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/groups/{uid}/settings:
+    get:
+      tags:
+        - Group
+      summary: 获取指定 uid 群组在指定产品线下的功能模块配置项列表，支持分页，按照配置项指派时间正序
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathUID"
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+      responses:
+        '200':
+          $ref: '#/components/responses/MySettingsRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/groups:
+    get:
+      tags:
+        - Group
+      summary: 读取群组列表，支持分页，按照创建时间正序。
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - in: query
+          name: kind
+          description: 查询指定 kind 类型的群组，未提供则查询所有类型
+          required: false
+          schema:
+            type: string
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+      responses:
+        '200':
+          $ref: '#/components/responses/GroupsRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/groups/{uid}/exists:
+    get:
+      tags:
+        - Group
+      summary: 判断指定 uid 群组是否存在
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathUID"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/groups:batch:
+    post:
+      tags:
+        - Group
+      summary: 批量添加群组，忽略已存在的群组，群组 uid 必须唯一
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+      requestBody:
+        $ref: '#/components/requestBodies/GroupsBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/groups/{uid}:
+    put:
+      tags:
+        - Group
+      summary: 更新指定 uid 群组
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathUID"
+      requestBody:
+        $ref: '#/components/requestBodies/GroupUpdateBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/GroupRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+    delete:
+      tags:
+        - Group
+      summary: 删除指定 uid 群组
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathUID"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/groups/{uid}/labels/{hid}:
+    delete:
+      tags:
+        - Group
+      summary: 移除指定 uid 群组的指定 hid 灰度标签
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathUID"
+        - $ref: "#/components/parameters/PathHID"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/groups/{uid}/settings/{hid}:rollback:
+    put:
+      tags:
+        - Group
+      summary: 回滚指定 uid 群组的指定 hid 配置项值到上一个，只能回退到上一个值，不能到上上个值
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathUID"
+        - $ref: "#/components/parameters/PathHID"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/groups/{uid}/settings/{hid}:
+    delete:
+      tags:
+        - Group
+      summary: 移除指定 uid 群组的指定 hid 配置项
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathUID"
+        - $ref: "#/components/parameters/PathHID"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/groups/{uid}/members:batch:
+    post:
+      tags:
+        - Group
+      summary: 批量添加群组成员，如果群组成员已存在，则会更新成员的 sync_at 值为 group 的 sync_at 值
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+      requestBody:
+        $ref: '#/components/requestBodies/UsersBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/groups/{uid}/members:
+    get:
+      tags:
+        - Group
+      summary: 获取指定 uid 群组的成员列表，支持分页，按照成员添加时间正序
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathUID"
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+      responses:
+        '200':
+          $ref: '#/components/responses/GroupMembersRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+    delete:
+      tags:
+        - Group
+      summary: 移除群组指定 user 的成员或批量移除同步时间点小于 sync_lt 的成员
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathUID"
+        - in: query
+          name: user
+          description: 移除群组指定 user 的成员
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: sync_lt
+          description: 批量移除同步时间点小于 sync_lt 的成员
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'

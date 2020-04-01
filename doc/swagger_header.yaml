@@ -23,6 +23,13 @@ tags:
   - name: Setting
     description: Setting 产品模块配置项相关接口
 components:
+  securitySchemes:
+    HeaderAuthorizationJWT:
+      name: Authorization
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      in: header
   schemas:
     NextPageToken:
       title: nextPageToken
@@ -34,7 +41,7 @@ components:
       type: integer
       format: int64
       description: 当前分页查询的总数据量
-      example: 99
+      example: 1
     ErrorResponse:
       type: object
       properties:
@@ -115,7 +122,7 @@ components:
       properties:
         hid:
           type: string
-          description: 灰度标签的 HID
+          description: 灰度标签的 hid
           example: AwAAAAAAAAB25V_QnbhCuRwF
         product:
           type: string
@@ -161,7 +168,135 @@ components:
           description: 灰度标签下线时间
           default: null
           example: null
-
+    MySettingsRes:
+      type: object
+      properties:
+        nextPageToken:
+          $ref: "#/components/schemas/NextPageToken"
+        result:
+          type: array
+          items:
+            $ref: "#/components/schemas/MySetting"
+    MySetting:
+      type: object
+      properties:
+        hid:
+          type: string
+          description: 配置项的 hid
+          example: AwAAAAAAAAB25V_QnbhCuRwF
+        module:
+          type: string
+          description: 配置项所属的功能模块名称
+          example: task
+        name:
+          type: string
+          description: 配置项名称，同一产品功能模块下唯一（不能重名）
+          example: task-share
+        value:
+          type: string
+          description: 配置项值
+          example: disable
+        last_value:
+          type: string
+          description: 配置项值
+          example: ""
+        created_at:
+          type: string
+          format: date-time
+          description: 灰度标签创建时间
+          example: 2020-03-25T06:24:25Z
+        updated_at:
+          type: string
+          format: date-time
+          description: 灰度标签更新时间
+          example: 2020-03-25T06:24:25Z
+    UsersBody:
+      type: object
+      properties:
+        users:
+          type: array
+          description: 用户 uid 数组
+          items:
+            type: string
+          example: ["50c32afae8cf1439d35a87e6", "5e69a9bd6ac3cd00213ea969"]
+    GroupsRes:
+      type: object
+      properties:
+        totalSize:
+          $ref: "#/components/schemas/TotalSize"
+        nextPageToken:
+          $ref: "#/components/schemas/NextPageToken"
+        result:
+          type: array
+          items:
+            $ref: "#/components/schemas/Group"
+    Group:
+      type: object
+      properties:
+        uid:
+          type: string
+          description: 群组的 uid
+          example: 5e82d747fe02a50021d339f3
+        kind:
+          type: string
+          description: 群组类型
+          example: organization
+        desc:
+          type: string
+          description: 群组的描述
+        sync_at:
+          type: integer
+          format: int64
+          description: 群组成员同步时间点，1970 以来的秒数
+          example: 1585636012
+        created_at:
+          type: string
+          format: date-time
+          description: 灰度标签创建时间
+          example: 2020-03-25T06:24:25Z
+        updated_at:
+          type: string
+          format: date-time
+          description: 灰度标签更新时间
+          example: 2020-03-25T06:24:25Z
+    GroupsBody:
+      type: object
+      properties:
+        groups:
+          type: array
+          description: 用户 uid 数组
+          required: true
+          items:
+            type: object
+            properties:
+              uid:
+                type: string
+                description: 群组 uid
+                required: true
+              kind:
+                type: string
+                description: 群组类型
+                required: true
+              desc:
+                type: string
+                description: 群组描述
+                required: false
+          example: [{"uid": "50c32afae8cf1439d35a87e6", "kind": "organization"}]
+    GroupUpdateBody:
+      type: object
+      properties:
+        type: object
+        properties:
+          sync_at:
+            type: integer
+            title: sync_at
+            format: int64
+            description: 群组成员同步时间点，1970 以来的秒数
+          desc:
+            type: string
+            title: desc
+            description: 群组描述
+        example: {"sync_at": 1585638012}
 paths:
   /version:
     get:

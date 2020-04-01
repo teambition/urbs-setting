@@ -456,6 +456,26 @@ func TestUserAPIs(t *testing.T) {
 			assert.True(data.CreatedAt.After(time2020))
 		})
 
+		t.Run(`"GET /v1/users/:uid/settings:unionAll" for invalid user`, func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Get(fmt.Sprintf("%s/v1/users/%s/settings:unionAll?product=%s", tt.Host, tpl.RandUID(), product.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.MySettingsRes{}
+			_, err = res.JSON(&json)
+
+			assert.Nil(err)
+			assert.Equal(0, len(json.Result))
+			assert.Equal("", json.NextPageToken)
+		})
+
 		t.Run(`"GET /v1/users/:uid/settings:unionAll" should work`, func(t *testing.T) {
 			assert := assert.New(t)
 

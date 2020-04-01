@@ -10,4 +10,4 @@
 
 ## Documentation (WIP)
 
-[API 文档](https://github.com/teambition/urbs-setting/blob/master/doc/api.md)
+[API 文档](https://github.com/teambition/urbs-setting/blob/master/doc/openapi.md)
