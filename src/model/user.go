@@ -60,7 +60,7 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force boo
 			return err
 		}
 
-		if !force && !conf.Config.IsCacheLabelExpired(now, user.ActiveAt) {
+		if !force && !conf.Config.IsCacheLabelExpired(now-5, user.ActiveAt) {
 			// 已被其它请求更新
 			return nil
 		}

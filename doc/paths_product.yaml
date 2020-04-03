@@ -1,0 +1,86 @@
+  # Product API
+  /v1/products:
+    get:
+      tags:
+        - Product
+      summary: 读取产品列表，支持分页，按照创建时间正序
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductsRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags:
+        - Product
+      summary: 添加产品，产品 name 必须唯一
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+      requestBody:
+        $ref: '#/components/requestBodies/NameDescBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/products/{product}:
+    put:
+      tags:
+        - Product
+      summary: 更新指定 product name 的产品
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+      requestBody:
+        $ref: '#/components/requestBodies/ProductUpdateBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/GroupRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+    delete:
+      tags:
+        - Product
+      summary: 删除指定 product name 的产品，产品必须下线后才能被删除
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/products/{product}:offline:
+    put:
+      tags:
+        - Product
+      summary: 将指定 product name 的产品下线，此操作会将产品名下的所有功能模块和配置项都下线，所有设置给用户或群组的对应配置项和灰度标签也会被移除！
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'

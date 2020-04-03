@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   description: |-
     Urbs 灰度平台灰度策略服务
-  version: 1.2.0
+  version: 1.2.3
   title: urbs-setting
 servers:
   - url: https://urbs-setting:8443
@@ -19,9 +19,9 @@ tags:
   - name: Label
     description: Label 灰度标签相关接口
   - name: Module
-    description: Module 产品模块相关接口
+    description: Module 产品功能模块相关接口
   - name: Setting
-    description: Setting 产品模块配置项相关接口
+    description: Setting 产品功能模块配置项相关接口
 components:
   parameters:
     HeaderAuthorization:
@@ -42,6 +42,34 @@ components:
       in: path
       name: uid
       description: 标签/配置项 hid
+      required: true
+      schema:
+        type: string
+    PathProduct:
+      in: path
+      name: product
+      description: 产品名称
+      required: true
+      schema:
+        type: string
+    PathModule:
+      in: path
+      name: module
+      description: 功能模块名称
+      required: true
+      schema:
+        type: string
+    PathSetting:
+      in: path
+      name: setting
+      description: 配置项名称
+      required: true
+      schema:
+        type: string
+    PathLabel:
+      in: path
+      name: label
+      description: 灰度标签名称
       required: true
       schema:
         type: string
@@ -222,7 +250,7 @@ components:
           type: string
           description: 群组的 uid
           example: 5e82d747fe02a50021d339f3
-        user:
+        kind:
           type: string
           description: 群组类型
           example: organization
@@ -261,7 +289,131 @@ components:
           format: date-time
           description: 该群组成员添加时间
           example: 2020-03-25T06:24:25Z
-
+    Product:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 产品名称
+          example: urbs
+        desc:
+          type: string
+          description: 产品的描述
+        status:
+          type: integer
+          format: int64
+          description: 产品状态值
+        created_at:
+          type: string
+          format: date-time
+          description: 产品创建时间
+          example: 2020-03-25T06:24:25Z
+        updated_at:
+          type: string
+          format: date-time
+          description: 产品更新时间
+          example: 2020-03-25T06:24:25Z
+        deleted_at:
+          type: string
+          format: date-time
+          description: 产品删除时间
+          default: null
+        offline_at:
+          type: string
+          format: date-time
+          description: 产品下线时间
+          default: null
+    Module:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 功能模块名称
+          example: urbs
+        desc:
+          type: string
+          description: 功能模块的描述
+        status:
+          type: integer
+          format: int64
+          description: 功能模块状态值
+        created_at:
+          type: string
+          format: date-time
+          description: 功能模块创建时间
+          example: 2020-03-25T06:24:25Z
+        updated_at:
+          type: string
+          format: date-time
+          description: 功能模块更新时间
+          example: 2020-03-25T06:24:25Z
+        offline_at:
+          type: string
+          format: date-time
+          description: 功能模块下线时间
+          default: null
+    SettingInfo:
+      type: object
+      properties:
+        hid:
+          type: string
+          description: 配置项名称
+          example: urbs
+        product:
+          type: string
+          description: 配置项名称
+          example: urbs
+        module:
+          type: string
+          description: 配置项名称
+          example: urbs
+        name:
+          type: string
+          description: 配置项名称
+          example: urbs
+        desc:
+          type: string
+          description: 配置项的描述
+        status:
+          type: integer
+          format: int64
+          description: 配置项状态值
+        channels:
+          type: array
+          description: 该配置项适用的产品版本通道，是服务端配置的可用版本通道的子集，为空表示适用所有
+          required: true
+          example: ["beta"]
+          items:
+            type: string
+        clients:
+          type: array
+          description: 该配置项适用的客户端类型，是服务端配置的可用客户端类型的子集，为空表示适用所有
+          required: true
+          example: ["ios", "android"]
+          items:
+            type: string
+        values:
+          type: array
+          description: 该配置项可选值列表，配置项指派给用户或群组时只能从该列表中选择合法值
+          required: true
+          example: ["true", "false"]
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+          description: 配置项创建时间
+          example: 2020-03-25T06:24:25Z
+        updated_at:
+          type: string
+          format: date-time
+          description: 配置项更新时间
+          example: 2020-03-25T06:24:25Z
+        offline_at:
+          type: string
+          format: date-time
+          description: 配置项下线时间
+          default: null
   requestBodies:
     UsersBody:
       required: true
@@ -273,7 +425,7 @@ components:
             properties:
               users:
                 type: array
-                description: 用户 uid 数组
+                description: 用户 uid 数组，必须符合正则 /^[0-9A-Za-z._=-]{3,63}$/
                 required: true
                 example: ["50c32afae8cf1439d35a87e6", "5e69a9bd6ac3cd00213ea969"]
                 items:
@@ -296,7 +448,7 @@ components:
                   properties:
                     uid:
                       type: string
-                      description: 群组 uid
+                      description: 群组 uid，必须符合正则 /^[0-9A-Za-z._=-]{3,63}$/
                       required: true
                     kind:
                       type: string
@@ -324,7 +476,139 @@ components:
                 title: desc
                 description: 群组描述
             example: {"sync_at": 1585638012}
-
+    NameDescBody:
+      required: true
+      description: 创建产品、功能模块、配置项的请求数据
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                title: name
+                description: 名称，必须符合正则 /^[0-9a-z][0-9a-z.-]{0,61}[0-9a-z]$/
+              desc:
+                type: string
+                title: desc
+                description: 描述
+            example: {"name": "product or module or setting"}
+    ProductUpdateBody:
+      required: true
+      description: 更新产品请求数据
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              desc:
+                type: string
+                title: desc
+                description: 产品描述
+            example: {"desc": "Urbs 产品线，负责人：XXX"}
+    ModuleUpdateBody:
+      required: true
+      description: 更新功能模块请求数据
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              desc:
+                type: string
+                title: desc
+                description: 产品描述
+            example: {"desc": "Urbs 产品线 xxx 模块，负责人：XXX"}
+    SettingUpdateBody:
+      required: true
+      description: 更新配置项请求数据
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              desc:
+                type: string
+                title: desc
+                description: 产品描述
+                default: null
+              channels:
+                type: array
+                description: 该配置项适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有
+                example: ["beta"]
+                items:
+                  type: string
+                default: null
+              clients:
+                type: array
+                description: 该配置项适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有
+                example: ["ios", "android"]
+                items:
+                  type: string
+                default: null
+              values:
+                type: array
+                description: 该配置项可选值列表，配置项指派给用户或群组时只能从该列表中选择合法值
+                example: ["true", "false"]
+                items:
+                  type: string
+                default: null
+            example: {"values": ["a", "b"]}
+    UsersGroupsBody:
+      required: true
+      description: 批量为用户或群组设置灰度标签或配置项的请求数据
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              users:
+                type: array
+                description: 用户 uid 数组，可以不提供，最大长度受 HTTP 请求最大字节数限制
+                example: ["5c4057f0be825b390667abee"]
+                items:
+                  type: string
+                default: null
+              groups:
+                type: array
+                description: 群组 uid 数组，可以不提供，最大长度受 HTTP 请求最大字节数限制
+                example: ["5bdc1846cd57df001789c751", "5bdc1846cd57df001789c751"]
+                items:
+                  type: string
+                default: null
+              value:
+                type: string
+                title: value
+                description: 配置项值，设置灰度标签时不必提供
+                default: null
+                example: "beta"
+    LabelUpdateBody:
+      required: true
+      description: 更新灰度标签的请求数据
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              desc:
+                type: string
+                title: desc
+                description: 灰度标签描述
+                default: null
+              channels:
+                type: array
+                description: 该灰度标签适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有
+                example: ["beta"]
+                items:
+                  type: string
+                default: null
+              clients:
+                type: array
+                description: 该灰度标签适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有
+                example: ["ios", "android"]
+                items:
+                  type: string
+                default: null
   responses:
     ErrorResponse:
       description: 标准错误返回结果
@@ -387,7 +671,7 @@ components:
                 items:
                   $ref: "#/components/schemas/CacheLabelInfo"
     LabelsInfoRes:
-      description: 用户或群组被指派的标签列表返回结果
+      description: 灰度标签列表返回结果
       content:
         application/json:
           schema:
@@ -401,6 +685,15 @@ components:
                 type: array
                 items:
                   $ref: "#/components/schemas/LabelInfo"
+    LabelInfoRes:
+      description: 灰度标签列表返回结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/LabelInfo"
     MySettingsRes:
       description: 用户或群组被指派的配置项列表返回结果
       content:
@@ -453,4 +746,76 @@ components:
                 type: array
                 items:
                   $ref: "#/components/schemas/GroupMember"
+    ProductsRes:
+      description: 产品列表返回结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              totalSize:
+                $ref: "#/components/schemas/TotalSize"
+              nextPageToken:
+                $ref: "#/components/schemas/NextPageToken"
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    ProductRes:
+      description: 单个产品返回结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/Product"
+    ModulesRes:
+      description: 产品列表返回结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              totalSize:
+                $ref: "#/components/schemas/TotalSize"
+              nextPageToken:
+                $ref: "#/components/schemas/NextPageToken"
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Module"
+    ModuleRes:
+      description: 单个产品返回结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/Module"
+    SettingsInfoRes:
+      description: 产品列表返回结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              totalSize:
+                $ref: "#/components/schemas/TotalSize"
+              nextPageToken:
+                $ref: "#/components/schemas/NextPageToken"
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SettingInfo"
+    SettingInfoRes:
+      description: 单个产品返回结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/SettingInfo"
 paths:

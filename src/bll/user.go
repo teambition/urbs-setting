@@ -26,19 +26,18 @@ func (b *User) ListCachedLables(ctx context.Context, uid, product string) *tpl.C
 		return res
 	}
 
-	if conf.Config.IsCacheLabelExpired(now, user.ActiveAt) {
-		// user 上缓存的 labels 过期，则刷新获取最新，RefreshUser 要考虑并发场景
-		user, err = b.ms.User.RefreshLabels(ctx, user.ID, now, false)
-		if err != nil {
+	// user 上缓存的 labels 过期，则刷新获取最新，RefreshUser 要考虑并发场景
+	if user.ActiveAt == 0 {
+		if user, err = b.ms.User.RefreshLabels(ctx, user.ID, now, true); err != nil {
 			return res
 		}
+	} else if conf.Config.IsCacheLabelExpired(now-5, user.ActiveAt) {
+		// 提前 5s 异步处理
+		go b.ms.User.RefreshLabels(ctx, user.ID, now, false)
 	}
 
-	labels := user.GetLabels(product)
-	if len(labels) > 0 {
-		res.Result = labels
-		res.Timestamp = user.ActiveAt
-	}
+	res.Result = user.GetLabels(product)
+	res.Timestamp = user.ActiveAt
 	return res
 }
 

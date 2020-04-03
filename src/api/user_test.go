@@ -36,7 +36,7 @@ func createUsers(tt *TestTools, count int) (users []schema.User, err error) {
 
 func cleanupUserLabels(db *gorm.DB, uid string) error {
 	return db.Table("urbs_user").Where("uid = ?", uid).Updates(map[string]interface{}{
-		"labels": "", "active_at": 1}).Error
+		"labels": "", "active_at": 0}).Error
 }
 
 func TestUserAPIs(t *testing.T) {

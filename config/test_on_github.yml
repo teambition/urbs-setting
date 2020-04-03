@@ -20,6 +20,6 @@ clients:
   - android
   - windows
   - macos
-cache_label_expire: 5s # 用于测试
+cache_label_expire: 10s # 用于测试
 auth_keys:
 hid_key: q7FltzZWfvGIrdEdHYY # 一旦设定，尽量不要改变，否则派生出去的 HID 无法识别

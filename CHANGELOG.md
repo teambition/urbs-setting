@@ -4,12 +4,19 @@ All notable changes to this project will be documented in this file starting fro
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 -----
+## [1.2.3] - 2020-04-03
+
+**Change:**
+
+- Improve cached labels API.
+- Add module, setting, label documents.
+
 ## [1.2.2] - 2020-04-01
 
 **Change:**
 
 - Improve swagger document.
-- add user and group documents.
+- Add user and group documents.
 
 **Fixed:**
 

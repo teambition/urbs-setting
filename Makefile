@@ -18,6 +18,10 @@ doc:
 	cat doc/paths_version.yaml >> doc/openapi.yaml
 	cat doc/paths_user.yaml >> doc/openapi.yaml
 	cat doc/paths_group.yaml >> doc/openapi.yaml
+	cat doc/paths_product.yaml >> doc/openapi.yaml
+	cat doc/paths_label.yaml >> doc/openapi.yaml
+	cat doc/paths_module.yaml >> doc/openapi.yaml
+	cat doc/paths_setting.yaml >> doc/openapi.yaml
 	widdershins --language_tabs 'shell:Shell' 'http:HTTP' --summary doc/openapi.yaml -o doc/openapi.md
 
 BUILD_TIME := $(shell date -u +"%FT%TZ")

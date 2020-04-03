@@ -1,0 +1,94 @@
+  # Module API
+  /v1/products/{product}/labels:
+    get:
+      tags:
+        - Label
+      summary: 读取产品下灰度标签列表，支持分页，按照创建时间正序
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+      responses:
+        '200':
+          $ref: '#/components/responses/LabelsInfoRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags:
+        - Label
+      summary: 添加产品灰度标签，灰度标签 name 在产品下必须唯一
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+      requestBody:
+        $ref: '#/components/requestBodies/NameDescBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/LabelInfoRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/products/{product}/labels/{label}:
+    put:
+      tags:
+        - Label
+      summary: 更新指定 product name 的产品
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+      requestBody:
+        $ref: '#/components/requestBodies/LabelUpdateBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/LabelInfoRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/products/{product}/labels/{label}:offline:
+    put:
+      tags:
+        - Label
+      summary: 将指定产品灰度标签下线，所有设置给用户或群组的对应灰度标签也会被移除！
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/products/{product}/labels/{label}:assign:
+    post:
+      tags:
+        - Setting
+      summary: 批量为用户或群组设置灰度标签
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+      requestBody:
+        $ref: '#/components/requestBodies/UsersGroupsBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
