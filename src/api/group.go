@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/bll"
-	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
 )
@@ -28,14 +27,14 @@ func (a *Group) List(ctx *gear.Context) error {
 	return ctx.OkJSON(res)
 }
 
-// ListLables ..
-func (a *Group) ListLables(ctx *gear.Context) error {
+// ListLabels ..
+func (a *Group) ListLabels(ctx *gear.Context) error {
 	req := tpl.UIDPaginationURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res, err := a.blls.Group.ListLables(ctx, req.UID, req.Pagination)
+	res, err := a.blls.Group.ListLabels(ctx, req.UID, req.Pagination)
 	if err != nil {
 		return err
 	}
@@ -162,18 +161,17 @@ func (a *Group) RemoveMembers(ctx *gear.Context) error {
 	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }
 
-// RemoveLable ..
-func (a *Group) RemoveLable(ctx *gear.Context) error {
+// RemoveLabel ..
+func (a *Group) RemoveLabel(ctx *gear.Context) error {
 	req := tpl.UIDHIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
-	label := &schema.Label{}
-	label.ID = service.HIDToID(req.HID, "label")
-	if label.ID == 0 {
+	labelID := service.HIDToID(req.HID, "label")
+	if labelID <= 0 {
 		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", req.HID)
 	}
-	if err := a.blls.Group.RemoveLable(ctx, req.UID, label.ID); err != nil {
+	if err := a.blls.Group.RemoveLabel(ctx, req.UID, labelID); err != nil {
 		return err
 	}
 	return ctx.OkJSON(tpl.BoolRes{Result: true})
@@ -186,12 +184,11 @@ func (a *Group) RollbackSetting(ctx *gear.Context) error {
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
-	setting := &schema.Setting{}
-	setting.ID = service.HIDToID(req.HID, "setting")
-	if setting.ID == 0 {
+	settingID := service.HIDToID(req.HID, "setting")
+	if settingID <= 0 {
 		return gear.ErrBadRequest.WithMsgf("invalid setting hid: %s", req.HID)
 	}
-	if err := a.blls.Group.RollbackSetting(ctx, req.UID, setting.ID); err != nil {
+	if err := a.blls.Group.RollbackSetting(ctx, req.UID, settingID); err != nil {
 		return err
 	}
 	return ctx.OkJSON(tpl.BoolRes{Result: true})
@@ -203,12 +200,11 @@ func (a *Group) RemoveSetting(ctx *gear.Context) error {
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
-	setting := &schema.Setting{}
-	setting.ID = service.HIDToID(req.HID, "setting")
-	if setting.ID == 0 {
+	settingID := service.HIDToID(req.HID, "setting")
+	if settingID <= 0 {
 		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", req.HID)
 	}
-	if err := a.blls.Group.RemoveSetting(ctx, req.UID, setting.ID); err != nil {
+	if err := a.blls.Group.RemoveSetting(ctx, req.UID, settingID); err != nil {
 		return err
 	}
 	return ctx.OkJSON(tpl.BoolRes{Result: true})

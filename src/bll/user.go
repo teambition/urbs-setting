@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/conf"
 	"github.com/teambition/urbs-setting/src/model"
 	"github.com/teambition/urbs-setting/src/schema"
@@ -16,24 +15,44 @@ type User struct {
 	ms *model.Models
 }
 
-// ListCachedLables ... 该接口不返回错误
-func (b *User) ListCachedLables(ctx context.Context, uid, product string) *tpl.CacheLabelsInfoRes {
+// List 返回用户列表
+func (b *User) List(ctx context.Context, pg tpl.Pagination) (*tpl.UsersRes, error) {
+	users, err := b.ms.User.Find(ctx, pg)
+	if err != nil {
+		return nil, err
+	}
+	res := &tpl.UsersRes{Result: users}
+
+	statistic, _ := b.ms.Statistic.FindByKey(ctx, schema.UsersTotalSize)
+	if statistic != nil {
+		res.TotalSize = int(statistic.Status)
+	}
+
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
+	return res, nil
+}
+
+// ListCachedLabels ... 该接口不返回错误
+func (b *User) ListCachedLabels(ctx context.Context, uid, product string) *tpl.CacheLabelsInfoRes {
 	now := time.Now().UTC().Unix()
 	res := &tpl.CacheLabelsInfoRes{Result: []schema.UserCacheLabel{}, Timestamp: now}
 
-	user, err := b.ms.User.FindByUID(ctx, uid, "id, `uid`, `active_at`, `labels`")
-	if err != nil || user == nil {
+	user, err := b.ms.User.Acquire(ctx, uid)
+	if err != nil {
 		return res
 	}
 
 	// user 上缓存的 labels 过期，则刷新获取最新，RefreshUser 要考虑并发场景
 	if user.ActiveAt == 0 {
-		if user, err = b.ms.User.RefreshLabels(ctx, user.ID, now, true); err != nil {
+		if user, err = b.ms.ApplyLabelRulesAndRefreshUserLabels(ctx, user.ID, now, true); err != nil {
 			return res
 		}
 	} else if conf.Config.IsCacheLabelExpired(now-5, user.ActiveAt) {
 		// 提前 5s 异步处理
-		go b.ms.User.RefreshLabels(ctx, user.ID, now, false)
+		go b.ms.ApplyLabelRulesAndRefreshUserLabels(ctx, user.ID, now, false)
 	}
 
 	res.Result = user.GetLabels(product)
@@ -41,31 +60,25 @@ func (b *User) ListCachedLables(ctx context.Context, uid, product string) *tpl.C
 	return res
 }
 
-// RefreshCachedLables ...
-func (b *User) RefreshCachedLables(ctx context.Context, uid string) error {
-	user, err := b.ms.User.FindByUID(ctx, uid, "id, `uid`, `active_at`, `labels`")
-	if err != nil {
-		return err
-	}
-	if user == nil {
-		return gear.ErrNotFound.WithMsgf("user %s not found", uid)
-	}
-
-	_, err = b.ms.User.RefreshLabels(ctx, user.ID, time.Now().UTC().Unix(), true)
-	return err
-}
-
-// ListLables ...
-func (b *User) ListLables(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.LabelsInfoRes, error) {
-	user, err := b.ms.User.FindByUID(ctx, uid, "id")
+// RefreshCachedLabels ...
+func (b *User) RefreshCachedLabels(ctx context.Context, uid string) (*schema.User, error) {
+	user, err := b.ms.User.Acquire(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
-	if user == nil {
-		return nil, gear.ErrNotFound.WithMsgf("user %s not found", uid)
+
+	user, err = b.ms.ApplyLabelRulesAndRefreshUserLabels(ctx, user.ID, time.Now().UTC().Unix(), true)
+	return user, err
+}
+
+// ListLabels ...
+func (b *User) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.LabelsInfoRes, error) {
+	user, err := b.ms.User.Acquire(ctx, uid)
+	if err != nil {
+		return nil, err
 	}
 
-	labels, err := b.ms.User.FindLables(ctx, user.ID, pg)
+	labels, err := b.ms.User.FindLabels(ctx, user.ID, pg)
 	if err != nil {
 		return nil, err
 	}
@@ -85,29 +98,17 @@ func (b *User) ListLables(ctx context.Context, uid string, pg tpl.Pagination) (*
 
 // ListSettings ...
 func (b *User) ListSettings(ctx context.Context, uid, productName string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
-	user, err := b.ms.User.FindByUID(ctx, uid, "id")
+	user, err := b.ms.User.Acquire(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
-	if user == nil {
-		return nil, gear.ErrNotFound.WithMsgf("user %s not found", uid)
-	}
 
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
 	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	if product.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
-	}
 
-	moduleIDs, err := b.ms.Module.FindIDsByProductID(ctx, product.ID)
+	moduleIDs, err := b.ms.Module.FindIDsByProductID(ctx, productID)
 	if err != nil {
 		return nil, err
 	}
@@ -127,29 +128,17 @@ func (b *User) ListSettings(ctx context.Context, uid, productName string, pg tpl
 // ListSettingsUnionAll ...
 func (b *User) ListSettingsUnionAll(ctx context.Context, uid, productName, channel, client string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
 	res := &tpl.MySettingsRes{Result: []tpl.MySetting{}}
-	user, err := b.ms.User.FindByUID(ctx, uid, "id")
+	user, err := b.ms.User.Acquire(ctx, uid)
 	if err != nil {
-		return nil, err
-	}
-	if user == nil {
 		return res, nil
 	}
 
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
 	}
-	if product == nil {
-		return res, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	if product.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
-	}
 
-	moduleIDs, err := b.ms.Module.FindIDsByProductID(ctx, product.ID)
+	moduleIDs, err := b.ms.Module.FindIDsByProductID(ctx, productID)
 	if err != nil {
 		return nil, err
 	}
@@ -162,6 +151,9 @@ func (b *User) ListSettingsUnionAll(ctx context.Context, uid, productName, chann
 	settings, err := b.ms.User.FindSettingsUnionAll(ctx, user.ID, groupIDs, moduleIDs, pg, channel, client)
 	if err != nil {
 		return nil, err
+	}
+	if pg.PageToken == "" {
+		go b.ms.TryApplySettingRules(ctx, productID, user.ID)
 	}
 
 	res.Result = settings
@@ -183,32 +175,32 @@ func (b *User) BatchAdd(ctx context.Context, users []string) error {
 	return b.ms.User.BatchAdd(ctx, users)
 }
 
-// RemoveLable ...
-func (b *User) RemoveLable(ctx context.Context, uid string, lableID int64) error {
-	user, _ := b.ms.User.FindByUID(ctx, uid, "id")
-	if user == nil {
-		return gear.ErrNotFound.WithMsgf("User not found: %s", uid)
+// RemoveLabel ...
+func (b *User) RemoveLabel(ctx context.Context, uid string, labelID int64) error {
+	user, err := b.ms.User.Acquire(ctx, uid)
+	if err != nil {
+		return err
 	}
 
-	return b.ms.User.RemoveLable(ctx, user.ID, lableID)
+	return b.ms.Label.RemoveUserLabel(ctx, user.ID, labelID)
 }
 
 // RollbackSetting ...
 func (b *User) RollbackSetting(ctx context.Context, uid string, settingID int64) error {
-	user, _ := b.ms.User.FindByUID(ctx, uid, "id")
-	if user == nil {
-		return gear.ErrNotFound.WithMsgf("User not found: %s", uid)
+	user, err := b.ms.User.Acquire(ctx, uid)
+	if err != nil {
+		return err
 	}
 
-	return b.ms.User.RollbackSetting(ctx, user.ID, settingID)
+	return b.ms.Setting.RollbackUserSetting(ctx, user.ID, settingID)
 }
 
 // RemoveSetting ...
 func (b *User) RemoveSetting(ctx context.Context, uid string, settingID int64) error {
-	user, _ := b.ms.User.FindByUID(ctx, uid, "id")
-	if user == nil {
-		return gear.ErrNotFound.WithMsgf("User not found: %s", uid)
+	user, err := b.ms.User.Acquire(ctx, uid)
+	if err != nil {
+		return err
 	}
 
-	return b.ms.User.RemoveSetting(ctx, user.ID, settingID)
+	return b.ms.Setting.RemoveUserSetting(ctx, user.ID, settingID)
 }

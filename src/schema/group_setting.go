@@ -15,4 +15,5 @@ type GroupSetting struct {
 	SettingID int64     `gorm:"column:setting_id"` // 配置项内部 ID
 	Value     string    `gorm:"column:value"`      // varchar(255)，配置值
 	LastValue string    `gorm:"column:last_value"` // varchar(255)，上一次配置值
+	Release   int64     `gorm:"column:rls"`        // 配置项被设置计数批次
 }

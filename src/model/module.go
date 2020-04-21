@@ -5,20 +5,21 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
+	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/tpl"
 )
 
 // Module ...
 type Module struct {
-	DB *gorm.DB
+	*Model
 }
 
 // FindByName 根据 productID 和 name 返回 module 数据
 func (m *Module) FindByName(ctx context.Context, productID int64, name, selectStr string) (*schema.Module, error) {
 	var err error
 	module := &schema.Module{}
-	db := m.DB.Where("product_id = ? and name = ?", productID, name)
+	db := m.DB.Where("`product_id` = ? and `name` = ?", productID, name)
 
 	if selectStr == "" {
 		err = db.First(module).Error
@@ -36,6 +37,21 @@ func (m *Module) FindByName(ctx context.Context, productID int64, name, selectSt
 	return nil, err
 }
 
+// Acquire ...
+func (m *Module) Acquire(ctx context.Context, productID int64, moduleName string) (*schema.Module, error) {
+	module, err := m.FindByName(ctx, productID, moduleName, "")
+	if err != nil {
+		return nil, err
+	}
+	if module == nil {
+		return nil, gear.ErrNotFound.WithMsgf("module %s not found", moduleName)
+	}
+	if module.OfflineAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("module %s was offline", moduleName)
+	}
+	return module, nil
+}
+
 // Find 根据条件查找 modules
 func (m *Module) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Module, error) {
 	modules := make([]schema.Module, 0)
@@ -48,7 +64,7 @@ func (m *Module) Find(ctx context.Context, productID int64, pg tpl.Pagination) (
 // Count 计算 product modules 总数
 func (m *Module) Count(ctx context.Context, productID int64) (int, error) {
 	count := 0
-	err := m.DB.Model(&schema.Module{}).Where("product_id = ?", productID).Count(&count).Error
+	err := m.DB.Model(&schema.Module{}).Where("`product_id` = ?", productID).Count(&count).Error
 	return count, err
 }
 
@@ -68,7 +84,11 @@ func (m *Module) FindIDsByProductID(ctx context.Context, productID int64) ([]int
 
 // Create ...
 func (m *Module) Create(ctx context.Context, module *schema.Module) error {
-	return m.DB.Create(module).Error
+	err := m.DB.Create(module).Error
+	if err == nil {
+		go m.increaseStatisticStatus(ctx, schema.ModulesTotalSize, 1)
+	}
+	return err
 }
 
 // Update 更新指定功能模块
@@ -89,19 +109,21 @@ func (m *Module) Update(ctx context.Context, moduleID int64, changed map[string]
 // Offline 标记模块下线
 func (m *Module) Offline(ctx context.Context, moduleID int64) error {
 	now := time.Now().UTC()
-	db := m.DB.Model(&schema.Module{ID: moduleID}).UpdateColumns(schema.Module{
+	err := m.DB.Model(&schema.Module{ID: moduleID}).UpdateColumns(schema.Module{
 		OfflineAt: &now,
 		Status:    -1,
-	})
-	if db.Error == nil {
+	}).Error
+	if err == nil {
 		var settingIDs []int64
-		if err := db.Model(&schema.Setting{}).Where("module_id = ?", moduleID).Pluck("id", &settingIDs).Error; err == nil {
-			db.Model(&schema.Setting{}).Where("`id` in ( ? )", settingIDs).UpdateColumns(schema.Setting{
+		err = m.DB.Model(&schema.Setting{}).Where("`module_id` = ?", moduleID).Pluck("id", &settingIDs).Error
+		if err == nil {
+			err = m.DB.Model(&schema.Setting{}).Where("`id` in ( ? )", settingIDs).UpdateColumns(schema.Setting{
 				OfflineAt: &now,
 				Status:    -1,
-			})
-			go deleteUserAndGroupSettings(db, settingIDs)
+			}).Error
+			go m.deleteSettingsRules(ctx, settingIDs)
+			go m.deleteUserAndGroupSettings(ctx, settingIDs)
 		}
 	}
-	return db.Error
+	return err
 }

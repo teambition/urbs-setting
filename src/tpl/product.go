@@ -149,3 +149,12 @@ type ProductRes struct {
 	SuccessResponseType
 	Result schema.Product `json:"result"`
 }
+
+// ProductStatistics ...
+type ProductStatistics struct {
+	Labels   int64 `json:"labels"`
+	Modules  int64 `json:"modules"`
+	Settings int64 `json:"settings"`
+	Release  int64 `json:"release"`
+	Status   int64 `json:"status"`
+}

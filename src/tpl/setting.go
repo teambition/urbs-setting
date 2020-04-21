@@ -98,6 +98,7 @@ type SettingInfo struct {
 	Clients   []string   `json:"clients"`
 	Values    []string   `json:"values"`
 	Status    int64      `json:"status"`
+	Release   int64      `json:"release"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 	OfflineAt *time.Time `json:"offline_at"`
@@ -116,6 +117,7 @@ func SettingInfoFrom(setting schema.Setting, product, module string) SettingInfo
 		Clients:   StringToSlice(setting.Clients),
 		Values:    StringToSlice(setting.Values),
 		Status:    setting.Status,
+		Release:   setting.Release,
 		CreatedAt: setting.CreatedAt,
 		UpdatedAt: setting.UpdatedAt,
 		OfflineAt: setting.OfflineAt,
@@ -191,4 +193,18 @@ func (t *MySettingsQueryURL) Validate() error {
 		return gear.ErrBadRequest.WithMsgf("invalid client: %s", t.Client)
 	}
 	return nil
+}
+
+// SettingReleaseInfo ...
+type SettingReleaseInfo struct {
+	Release int64    `json:"release"`
+	Users   []string `json:"users"`
+	Groups  []string `json:"groups"`
+	Value   string   `json:"value"`
+}
+
+// SettingReleaseInfoRes ...
+type SettingReleaseInfoRes struct {
+	SuccessResponseType
+	Result SettingReleaseInfo `json:"result"` // 空数组也保留
 }

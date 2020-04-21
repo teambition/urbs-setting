@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
+	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/conf"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
@@ -15,14 +16,14 @@ import (
 
 // User ...
 type User struct {
-	DB *gorm.DB
+	*Model
 }
 
 // FindByUID 根据 uid 返回 user 数据
 func (m *User) FindByUID(ctx context.Context, uid string, selectStr string) (*schema.User, error) {
 	var err error
 	user := &schema.User{}
-	db := m.DB.Where("uid = ?", uid)
+	db := m.DB.Where("`uid` = ?", uid)
 
 	if selectStr == "" {
 		err = db.First(user).Error
@@ -40,6 +41,28 @@ func (m *User) FindByUID(ctx context.Context, uid string, selectStr string) (*sc
 	return nil, err
 }
 
+// Acquire ...
+func (m *User) Acquire(ctx context.Context, uid string) (*schema.User, error) {
+	user, err := m.FindByUID(ctx, uid, "")
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, gear.ErrNotFound.WithMsgf("user %s not found", uid)
+	}
+	return user, nil
+}
+
+// Find 根据条件查找 products
+func (m *User) Find(ctx context.Context, pg tpl.Pagination) ([]schema.User, error) {
+	users := make([]schema.User, 0)
+	cursor := pg.TokenToID()
+
+	err := m.DB.Where("`id` >= ?", cursor).
+		Order("`id`").Limit(pg.PageSize + 1).Find(&users).Error
+	return users, err
+}
+
 const userCacheLabelsSQL = "(select t2.`id`, t1.`created_at`, t2.`name`, t3.`name` as `p`, t2.`channels`, t2.`clients` " +
 	"from `user_label` t1, `urbs_label` t2, `urbs_product` t3 " +
 	"where t1.`user_id` = ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.`id` " +
@@ -52,8 +75,10 @@ const userCacheLabelsSQL = "(select t2.`id`, t1.`created_at`, t2.`name`, t3.`nam
 	"order by `created_at` desc"
 
 // RefreshLabels 更新 user 上的 labels 缓存，包括通过 group 关系获得的 labels
-func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force bool) (*schema.User, error) {
+func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force bool) (*schema.User, []int64, bool, error) {
 	user := &schema.User{ID: id}
+	labelIDs := make([]int64, 0)
+	refreshed := false
 	err := m.DB.Transaction(func(tx *gorm.DB) error {
 		// 指定 id 的记录被锁住，如果表中无符合记录的数据则排他锁不生效
 		if err := tx.Set("gorm:query_option", "FOR UPDATE").First(user).Error; err != nil {
@@ -89,6 +114,7 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force boo
 				continue // 去重
 			}
 			set[ignoreID] = struct{}{}
+			labelIDs = append(labelIDs, ignoreID)
 
 			label.Channels = tpl.StringToSlice(channels)
 			label.Clients = tpl.StringToSlice(clients)
@@ -101,11 +127,12 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force boo
 		_ = user.PutLabels(data)
 		user.ActiveAt = time.Now().UTC().Unix()
 
+		refreshed = true
 		return tx.Model(&schema.User{ID: id}).UpdateColumns(map[string]interface{}{
 			"labels": user.Labels, "active_at": user.ActiveAt}).Error // 返回 nil 提交事务，否则回滚
 	})
 
-	return user, err
+	return user, labelIDs, refreshed, err
 }
 
 const userSettingsWithGroupSQL = "(select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
@@ -190,8 +217,8 @@ const userLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`off
 	"order by t1.`id` asc " +
 	"limit ?"
 
-// FindLables 根据用户 ID 返回其 labels 数据。
-func (m *User) FindLables(ctx context.Context, userID int64, pg tpl.Pagination) ([]tpl.LabelInfo, error) {
+// FindLabels 根据用户 ID 返回其 labels 数据。
+func (m *User) FindLabels(ctx context.Context, userID int64, pg tpl.Pagination) ([]tpl.LabelInfo, error) {
 	data := []tpl.LabelInfo{}
 	cursor := pg.TokenToID()
 
@@ -222,7 +249,7 @@ func (m *User) FindLables(ctx context.Context, userID int64, pg tpl.Pagination) 
 // CountLabels 计算 user labels 总数
 func (m *User) CountLabels(ctx context.Context, userID int64) (int, error) {
 	count := 0
-	err := m.DB.Model(&schema.UserLabel{}).Where("user_id = ?", userID).Count(&count).Error
+	err := m.DB.Model(&schema.UserLabel{}).Where("`user_id` = ?", userID).Count(&count).Error
 	return count, err
 }
 
@@ -271,23 +298,7 @@ func (m *User) BatchAdd(ctx context.Context, uids []string) error {
 	}
 	b := buf.Bytes()
 	b[len(b)-1] = ';'
-	return m.DB.Exec(string(b)).Error
-}
-
-// RemoveLable 删除用户的 label
-func (m *User) RemoveLable(ctx context.Context, userID, lableID int64) error {
-	return m.DB.Where("user_id = ? and label_id = ?", userID, lableID).Delete(&schema.UserLabel{}).Error
-}
-
-// RemoveSetting 删除用户的 setting
-func (m *User) RemoveSetting(ctx context.Context, userID, settingID int64) error {
-	return m.DB.Where("user_id = ? and setting_id = ?", userID, settingID).Delete(&schema.UserSetting{}).Error
-}
-
-const rollbackUserSettingSQL = "update `user_setting` set `value` = `user_setting`.`last_value` where user_id = ? and setting_id = ?"
-
-// RollbackSetting 回滚用户的 setting
-func (m *User) RollbackSetting(ctx context.Context, userID, settingID int64) error {
-	err := m.DB.Exec(rollbackUserSettingSQL, userID, settingID).Error
+	err := m.DB.Exec(string(b)).Error
+	go m.refreshUsersTotalSize(ctx)
 	return err
 }

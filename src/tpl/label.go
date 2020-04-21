@@ -96,6 +96,7 @@ type LabelInfo struct {
 	Channels  []string   `json:"channels"`
 	Clients   []string   `json:"clients"`
 	Status    int64      `json:"status"`
+	Release   int64      `json:"release"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 	OfflineAt *time.Time `json:"offline_at"`
@@ -112,6 +113,7 @@ func LabelInfoFrom(label schema.Label, product string) LabelInfo {
 		Channels:  StringToSlice(label.Channels),
 		Clients:   StringToSlice(label.Clients),
 		Status:    label.Status,
+		Release:   label.Release,
 		CreatedAt: label.CreatedAt,
 		UpdatedAt: label.UpdatedAt,
 		OfflineAt: label.OfflineAt,
@@ -144,4 +146,17 @@ type CacheLabelsInfoRes struct {
 	SuccessResponseType
 	Timestamp int64                   `json:"timestamp"` // labels 数组生成时间
 	Result    []schema.UserCacheLabel `json:"result"`    // 空数组也保留
+}
+
+// LabelReleaseInfo ...
+type LabelReleaseInfo struct {
+	Release int64    `json:"release"`
+	Users   []string `json:"users"`
+	Groups  []string `json:"groups"`
+}
+
+// LabelReleaseInfoRes ...
+type LabelReleaseInfoRes struct {
+	SuccessResponseType
+	Result LabelReleaseInfo `json:"result"` // 空数组也保留
 }

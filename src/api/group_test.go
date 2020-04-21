@@ -18,7 +18,7 @@ func createGroup(tt *TestTools) (group schema.Group, err error) {
 	res, err := request.Post(fmt.Sprintf("%s/v1/groups:batch", tt.Host)).
 		Set("Content-Type", "application/json").
 		Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
-			tpl.GroupBody{UID: uid, Kind: "org", Desc: uid},
+			{UID: uid, Kind: "org", Desc: uid},
 		}}).
 		End()
 
@@ -39,7 +39,7 @@ func createGroupWithUsers(tt *TestTools, count int) (group schema.Group, users [
 	res, err := request.Post(fmt.Sprintf("%s/v1/groups:batch", tt.Host)).
 		Set("Content-Type", "application/json").
 		Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
-			tpl.GroupBody{UID: groupUID, Kind: "org", Desc: groupUID},
+			{UID: groupUID, Kind: "org", Desc: groupUID},
 		}}).
 		End()
 
@@ -76,7 +76,7 @@ func TestGroupAPIs(t *testing.T) {
 			res, err := request.Post(fmt.Sprintf("%s/v1/groups:batch", tt.Host)).
 				Set("Content-Type", "application/json").
 				Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
-					tpl.GroupBody{UID: uid1, Kind: "org", Desc: "test"},
+					{UID: uid1, Kind: "org", Desc: "test"},
 				}}).
 				End()
 			assert.Nil(err)
@@ -103,8 +103,8 @@ func TestGroupAPIs(t *testing.T) {
 			res, err := request.Post(fmt.Sprintf("%s/v1/groups:batch", tt.Host)).
 				Set("Content-Type", "application/json").
 				Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
-					tpl.GroupBody{UID: uid1, Kind: "org", Desc: "test"},
-					tpl.GroupBody{UID: uid2, Kind: "project", Desc: "test"},
+					{UID: uid1, Kind: "org", Desc: "test"},
+					{UID: uid2, Kind: "project", Desc: "test"},
 				}}).
 				End()
 			assert.Nil(err)
@@ -149,7 +149,7 @@ func TestGroupAPIs(t *testing.T) {
 			res, err := request.Post(fmt.Sprintf("%s/v1/groups:batch", tt.Host)).
 				Set("Content-Type", "application/json").
 				Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
-					tpl.GroupBody{UID: uid2, Kind: "", Desc: "test"},
+					{UID: uid2, Kind: "", Desc: "test"},
 				}}).
 				End()
 			assert.Nil(err)

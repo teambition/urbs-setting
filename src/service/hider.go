@@ -9,6 +9,8 @@ func init() {
 	hIDer[""] = util.NewHID([]byte(conf.Config.HIDKey))
 	hIDer["label"] = util.NewHID([]byte("label" + conf.Config.HIDKey))
 	hIDer["setting"] = util.NewHID([]byte("setting" + conf.Config.HIDKey))
+	hIDer["label_rule"] = util.NewHID([]byte("label_rule" + conf.Config.HIDKey))
+	hIDer["setting_rule"] = util.NewHID([]byte("setting_rule" + conf.Config.HIDKey))
 }
 
 // HIDer 全局 HID 转换器，目前仅支持 schema.Label,  schema.setting 的 ID 转换。

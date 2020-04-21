@@ -43,7 +43,7 @@ func newRouters(apis *APIs) []*gear.Router {
 	// health check
 	router.Get("/healthz", apis.Healthz.Get)
 	// 读取指定用户的灰度标签，包括继承自群组的标签，返回轻量级 labels，无身份验证，用于网关
-	router.Get("/users/:uid/labels:cache", tracing.New(), apis.User.ListCachedLables)
+	router.Get("/users/:uid/labels:cache", tracing.New(), apis.User.ListCachedLabels)
 
 	routerV1 := gear.NewRouter(gear.RouterOptions{
 		Root: "/v1",
@@ -52,10 +52,12 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Use(tracing.New())
 
 	// ***** user ******
+	// 读取用户列表，支持条件筛选
+	routerV1.Get("/users", apis.User.List)
 	// 读取指定用户的灰度标签，支持条件筛选
-	routerV1.Get("/users/:uid/labels", apis.User.ListLables)
+	routerV1.Get("/users/:uid/labels", apis.User.ListLabels)
 	// 强制刷新指定用户的灰度标签列表缓存
-	routerV1.Put("/users/:uid/labels:cache", apis.User.RefreshCachedLables)
+	routerV1.Put("/users/:uid/labels:cache", apis.User.RefreshCachedLabels)
 	// 读取指定用户的功能配置项，支持条件筛选
 	routerV1.Get("/users/:uid/settings", apis.User.ListSettings)
 	// 读取指定用户的功能配置项，支持条件筛选，数据用于客户端
@@ -65,7 +67,7 @@ func newRouters(apis *APIs) []*gear.Router {
 	// 批量添加用户
 	routerV1.Post("/users:batch", apis.User.BatchAdd)
 	// 移除指定用户的指定灰度标签
-	routerV1.Delete("/users/:uid/labels/:hid", apis.User.RemoveLable)
+	routerV1.Delete("/users/:uid/labels/:hid", apis.User.RemoveLabel)
 	// 回滚指定用户的指定配置项
 	routerV1.Put("/users/:uid/settings/:hid+:rollback", apis.User.RollbackSetting)
 	// 移除指定用户的指定配置项
@@ -73,7 +75,7 @@ func newRouters(apis *APIs) []*gear.Router {
 
 	// ***** group ******
 	// 读取指定群组的灰度标签，支持条件筛选
-	routerV1.Get("/groups/:uid/labels", apis.Group.ListLables)
+	routerV1.Get("/groups/:uid/labels", apis.Group.ListLabels)
 	// 读取指定群组的功能配置项，支持条件筛选
 	routerV1.Get("/groups/:uid/settings", apis.Group.ListSettings)
 	// 读取群组列表，支持条件筛选
@@ -93,7 +95,7 @@ func newRouters(apis *APIs) []*gear.Router {
 	// 指定群组根据条件清理成员
 	routerV1.Delete("/groups/:uid/members", apis.Group.RemoveMembers)
 	// 移除指定群组的指定灰度标签
-	routerV1.Delete("/groups/:uid/labels/:hid", apis.Group.RemoveLable)
+	routerV1.Delete("/groups/:uid/labels/:hid", apis.Group.RemoveLabel)
 	// 回滚指定群组的指定配置项
 	routerV1.Put("/groups/:uid/settings/:hid+:rollback", apis.Group.RollbackSetting)
 	// 移除指定群组的指定配置项
@@ -104,6 +106,8 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Get("/products", apis.Product.List)
 	// 创建产品
 	routerV1.Post("/products", apis.Product.Create)
+	// 读取指定产品的统计数据
+	routerV1.Get("/products/:product/statistics", apis.Product.Statistics)
 	// 更新指定产品
 	routerV1.Put("/products/:product", apis.Product.Update)
 	// 下线指定产品功能模块
@@ -140,6 +144,16 @@ func newRouters(apis *APIs) []*gear.Router {
 	// routerV1.Put("/products/:product/modules/:module/settings/:setting+:online", apis.Setting.Online)
 	// 批量为用户或群组设置产品功能模块配置项
 	routerV1.Post("/products/:product/modules/:module/settings/:setting+:assign", apis.Setting.Assign)
+	// 批量撤销对用户或群组设置的产品功能模块配置项
+	routerV1.Post("/products/:product/modules/:module/settings/:setting+:recall", apis.Setting.Recall)
+	// 创建指定产品功能模块配置项的灰度发布规则
+	routerV1.Post("/products/:product/modules/:module/settings/:setting/rules", apis.Setting.CreateRule)
+	// 读取指定产品功能模块配置项的灰度发布规则列表
+	routerV1.Get("/products/:product/modules/:module/settings/:setting/rules", apis.Setting.ListRules)
+	// 更新指定产品功能模块配置项的指定灰度发布规则
+	routerV1.Put("/settings/:hid/rules/:ruleHID", apis.Setting.UpdateRule)
+	// 删除指定产品功能模块配置项的指定灰度发布规则
+	routerV1.Delete("/settings/:hid/rules/:ruleHID", apis.Setting.DeleteRule)
 
 	// ***** label ******
 	// 读取指定产品灰度标签
@@ -156,6 +170,16 @@ func newRouters(apis *APIs) []*gear.Router {
 	// routerV1.Put("/products/:product/labels/:label+:online", apis.Label.Online)
 	// 批量为用户或群组设置产品灰度标签
 	routerV1.Post("/products/:product/labels/:label+:assign", apis.Label.Assign)
+	// 批量撤销对用户或群组设置的产品灰度标签
+	routerV1.Post("/products/:product/labels/:label+:recall", apis.Label.Recall)
+	// 创建指定产品灰度标签的灰度发布规则
+	routerV1.Post("/products/:product/labels/:label/rules", apis.Label.CreateRule)
+	// 读取指定产品灰度标签的灰度发布规则列表
+	routerV1.Get("/products/:product/labels/:label/rules", apis.Label.ListRules)
+	// 更新指定产品灰度标签的指定灰度发布规则
+	routerV1.Put("/labels/:hid/rules/:ruleHID", apis.Label.UpdateRule)
+	// 删除指定产品灰度标签的指定灰度发布规则
+	routerV1.Delete("/labels/:hid/rules/:ruleHID", apis.Label.DeleteRule)
 
 	return []*gear.Router{router, routerV1}
 }

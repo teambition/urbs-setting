@@ -17,7 +17,8 @@ type Label struct {
 	Desc      string     `gorm:"column:description"` // varchar(1022) 灰度标签描述
 	Channels  string     `gorm:"column:channels"`    // varchar(255) 标签适用的版本通道，未配置表示都适用
 	Clients   string     `gorm:"column:clients"`     // varchar(255) 标签适用的客户端类型，未配置表示都适用
-	Status    int64      `gorm:"column:status"`      // -1 下线弃用，0 未使用，大于 0 为被使用计数
+	Status    int64      `gorm:"column:status"`      // -1 下线弃用，使用用户计数（被动异步计算，非精确值）
+	Release   int64      `gorm:"column:rls"`         // 标签发布（被设置）计数
 }
 
 // TableName retuns table name

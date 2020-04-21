@@ -85,3 +85,16 @@ func (a *Product) Delete(ctx *gear.Context) error {
 	}
 	return ctx.OkJSON(res)
 }
+
+// Statistics ..
+func (a *Product) Statistics(ctx *gear.Context) error {
+	req := tpl.ProductURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+	res, err := a.blls.Product.Statistics(ctx, req.Product)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(tpl.SuccessResponseType{Result: res})
+}

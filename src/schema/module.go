@@ -15,7 +15,7 @@ type Module struct {
 	ProductID int64      `gorm:"column:product_id"`                   // 所从属的产品线 ID
 	Name      string     `gorm:"column:name" json:"name"`             // varchar(63) 功能模块名称，产品线内唯一
 	Desc      string     `gorm:"column:description" json:"desc"`      // varchar(1022) 功能模块描述
-	Status    int64      `gorm:"column:status" json:"status"`         // -1 下线弃用，0 未使用，大于 0 为有效配置项数
+	Status    int64      `gorm:"column:status" json:"status"`         // -1 下线弃用，有效配置项计数（被动异步计算，非精确值）
 }
 
 // TableName retuns table name

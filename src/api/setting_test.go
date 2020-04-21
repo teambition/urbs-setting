@@ -333,9 +333,11 @@ func TestSettingAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
 
-			json := tpl.BoolRes{}
+			json := tpl.SettingReleaseInfoRes{}
 			res.JSON(&json)
-			assert.True(json.Result)
+			assert.Equal(int64(1), json.Result.Release)
+			assert.Equal("a", json.Result.Value)
+			assert.Equal(group.UID, json.Result.Groups[0])
 
 			var count int64
 			assert.Nil(tt.DB.Table(`user_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
@@ -362,19 +364,25 @@ func TestSettingAPIs(t *testing.T) {
 		t.Run("should work with duplicate data", func(t *testing.T) {
 			assert := assert.New(t)
 
+			uids := []string{users[0].UID, users[2].UID}
 			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:assign", tt.Host, product.Name, module.Name, setting.Name)).
 				Set("Content-Type", "application/json").
 				Send(tpl.UsersGroupsBody{
-					Users: []string{users[0].UID, users[2].UID},
+					Users: uids,
 					Value: "b",
 				}).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
 
-			json := tpl.BoolRes{}
+			json := tpl.SettingReleaseInfoRes{}
 			res.JSON(&json)
-			assert.True(json.Result)
+			result := json.Result
+			assert.Equal(int64(2), result.Release)
+			assert.Equal("b", result.Value)
+			assert.Equal(0, len(result.Groups))
+			assert.True(tpl.StringSliceHas(result.Users, users[0].UID))
+			assert.True(tpl.StringSliceHas(result.Users, users[2].UID))
 
 			var count int64
 			assert.Nil(tt.DB.Table(`user_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
@@ -429,9 +437,11 @@ func TestSettingAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
 
-			json := tpl.BoolRes{}
+			json := tpl.SettingReleaseInfoRes{}
 			res.JSON(&json)
-			assert.True(json.Result)
+			result := json.Result
+			assert.Equal(int64(1), result.Release)
+			assert.Equal("x", result.Value)
 
 			var count int64
 			assert.Nil(tt.DB.Table(`user_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
@@ -445,9 +455,9 @@ func TestSettingAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
 
-			json = tpl.BoolRes{}
-			res.JSON(&json)
-			assert.True(json.Result)
+			json2 := tpl.BoolRes{}
+			res.JSON(&json2)
+			assert.True(json2.Result)
 
 			time.Sleep(time.Millisecond * 100)
 			assert.Nil(tt.DB.Table(`user_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
