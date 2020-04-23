@@ -3,7 +3,6 @@ package bll
 import (
 	"context"
 
-	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/model"
 	"github.com/teambition/urbs-setting/src/tpl"
 )
@@ -32,17 +31,14 @@ func (b *Group) List(ctx context.Context, kind string, pg tpl.Pagination) (*tpl.
 	return res, nil
 }
 
-// ListLables ...
-func (b *Group) ListLables(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.LabelsInfoRes, error) {
-	group, err := b.ms.Group.FindByUID(ctx, uid, "id")
+// ListLabels ...
+func (b *Group) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.LabelsInfoRes, error) {
+	group, err := b.ms.Group.Acquire(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
-	if group == nil {
-		return nil, gear.ErrNotFound.WithMsgf("group %s not found", uid)
-	}
 
-	labels, err := b.ms.Group.FindLables(ctx, group.ID, pg)
+	labels, err := b.ms.Group.FindLabels(ctx, group.ID, pg)
 	if err != nil {
 		return nil, err
 	}
@@ -62,24 +58,18 @@ func (b *Group) ListLables(ctx context.Context, uid string, pg tpl.Pagination) (
 
 // ListMembers ...
 func (b *Group) ListMembers(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.GroupMembersRes, error) {
-	group, err := b.ms.Group.FindByUID(ctx, uid, "id")
+	group, err := b.ms.Group.Acquire(ctx, uid)
 	if err != nil {
 		return nil, err
-	}
-	if group == nil {
-		return nil, gear.ErrNotFound.WithMsgf("group %s not found", uid)
 	}
 
 	members, err := b.ms.Group.FindMembers(ctx, group.ID, pg)
 	if err != nil {
 		return nil, err
 	}
-	total, err := b.ms.Group.CountMembers(ctx, group.ID)
-	if err != nil {
-		return nil, err
-	}
+
 	res := &tpl.GroupMembersRes{Result: members}
-	res.TotalSize = total
+	res.TotalSize = int(group.Status)
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]
@@ -89,29 +79,17 @@ func (b *Group) ListMembers(ctx context.Context, uid string, pg tpl.Pagination) 
 
 // ListSettings ...
 func (b *Group) ListSettings(ctx context.Context, uid, productName string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
-	group, err := b.ms.Group.FindByUID(ctx, uid, "id")
+	group, err := b.ms.Group.Acquire(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
-	if group == nil {
-		return nil, gear.ErrNotFound.WithMsgf("group %s not found", uid)
-	}
 
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
 	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	if product.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
-	}
 
-	moduleIDs, err := b.ms.Module.FindIDsByProductID(ctx, product.ID)
+	moduleIDs, err := b.ms.Module.FindIDsByProductID(ctx, productID)
 	if err != nil {
 		return nil, err
 	}
@@ -141,12 +119,9 @@ func (b *Group) BatchAdd(ctx context.Context, groups []tpl.GroupBody) error {
 
 // BatchAddMembers 批量给群组添加成员，如果用户未加入系统，则会自动加入
 func (b *Group) BatchAddMembers(ctx context.Context, uid string, users []string) error {
-	group, err := b.ms.Group.FindByUID(ctx, uid, "id, `sync_at`")
+	group, err := b.ms.Group.Acquire(ctx, uid)
 	if err != nil {
 		return err
-	}
-	if group == nil {
-		return gear.ErrNotFound.WithMsgf("group %s not found", uid)
 	}
 
 	if err = b.ms.User.BatchAdd(ctx, users); err != nil {
@@ -158,9 +133,9 @@ func (b *Group) BatchAddMembers(ctx context.Context, uid string, users []string)
 
 // RemoveMembers ...
 func (b *Group) RemoveMembers(ctx context.Context, uid, userUID string, syncLt int64) error {
-	group, _ := b.ms.Group.FindByUID(ctx, uid, "id")
-	if group == nil {
-		return gear.ErrNotFound.WithMsgf("Group not found: %s", uid)
+	group, err := b.ms.Group.Acquire(ctx, uid)
+	if err != nil {
+		return err
 	}
 
 	var userID int64
@@ -173,42 +148,42 @@ func (b *Group) RemoveMembers(ctx context.Context, uid, userUID string, syncLt i
 	return b.ms.Group.RemoveMembers(ctx, group.ID, userID, syncLt)
 }
 
-// RemoveLable ...
-func (b *Group) RemoveLable(ctx context.Context, uid string, lableID int64) error {
-	group, _ := b.ms.Group.FindByUID(ctx, uid, "id")
-	if group == nil {
-		return gear.ErrNotFound.WithMsgf("Group not found: %s", uid)
+// RemoveLabel ...
+func (b *Group) RemoveLabel(ctx context.Context, uid string, labelID int64) error {
+	group, err := b.ms.Group.Acquire(ctx, uid)
+	if err != nil {
+		return err
 	}
-	return b.ms.Group.RemoveLable(ctx, group.ID, lableID)
+	return b.ms.Label.RemoveGroupLabel(ctx, group.ID, labelID)
 }
 
 // RollbackSetting ...
 func (b *Group) RollbackSetting(ctx context.Context, uid string, settingID int64) error {
-	group, _ := b.ms.Group.FindByUID(ctx, uid, "id")
-	if group == nil {
-		return gear.ErrNotFound.WithMsgf("Group not found: %s", uid)
+	group, err := b.ms.Group.Acquire(ctx, uid)
+	if err != nil {
+		return err
 	}
 
-	return b.ms.Group.RollbackSetting(ctx, group.ID, settingID)
+	return b.ms.Setting.RollbackGroupSetting(ctx, group.ID, settingID)
 }
 
 // RemoveSetting ...
 func (b *Group) RemoveSetting(ctx context.Context, uid string, settingID int64) error {
-	group, _ := b.ms.Group.FindByUID(ctx, uid, "id")
-	if group == nil {
-		return gear.ErrNotFound.WithMsgf("Group not found: %s", uid)
+	group, err := b.ms.Group.Acquire(ctx, uid)
+	if err != nil {
+		return err
 	}
 
-	return b.ms.Group.RemoveSetting(ctx, group.ID, settingID)
+	return b.ms.Setting.RemoveGroupSetting(ctx, group.ID, settingID)
 }
 
 // Update ...
 func (b *Group) Update(ctx context.Context, uid string, body tpl.GroupUpdateBody) (*tpl.GroupRes, error) {
-	group, _ := b.ms.Group.FindByUID(ctx, uid, "id")
-	if group == nil {
-		return nil, gear.ErrNotFound.WithMsgf("Group not found: %s", uid)
+	group, err := b.ms.Group.Acquire(ctx, uid)
+	if err != nil {
+		return nil, err
 	}
-	group, err := b.ms.Group.Update(ctx, group.ID, body.ToMap())
+	group, err = b.ms.Group.Update(ctx, group.ID, body.ToMap())
 	if err != nil {
 		return nil, err
 	}

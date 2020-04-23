@@ -16,22 +16,16 @@ type Module struct {
 
 // List 返回产品下的功能模块列表，TODO：支持分页
 func (b *Module) List(ctx context.Context, productName string, pg tpl.Pagination) (*tpl.ModulesRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
 	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	modules, err := b.ms.Module.Find(ctx, product.ID, pg)
+	modules, err := b.ms.Module.Find(ctx, productID, pg)
 	if err != nil {
 		return nil, err
 	}
 
-	total, err := b.ms.Module.Count(ctx, product.ID)
+	total, err := b.ms.Module.Count(ctx, productID)
 	if err != nil {
 		return nil, err
 	}
@@ -47,21 +41,12 @@ func (b *Module) List(ctx context.Context, productName string, pg tpl.Pagination
 
 // Create 创建功能模块
 func (b *Module) Create(ctx context.Context, productName, moduleName, desc string) (*tpl.ModuleRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
 	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	if product.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
-	}
 
-	module := &schema.Module{ProductID: product.ID, Name: moduleName, Desc: desc}
+	module := &schema.Module{ProductID: productID, Name: moduleName, Desc: desc}
 	if err = b.ms.Module.Create(ctx, module); err != nil {
 		return nil, err
 	}
@@ -70,29 +55,14 @@ func (b *Module) Create(ctx context.Context, productName, moduleName, desc strin
 
 // Update ...
 func (b *Module) Update(ctx context.Context, productName, moduleName string, body tpl.ModuleUpdateBody) (*tpl.ModuleRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
-	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	if product.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
 	}
 
-	module, err := b.ms.Module.FindByName(ctx, product.ID, moduleName, "id, `offline_at`")
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
 	if err != nil {
 		return nil, err
-	}
-	if module == nil {
-		return nil, gear.ErrNotFound.WithMsgf("label %s not found", moduleName)
-	}
-	if module.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("label %s was offline", moduleName)
 	}
 
 	module, err = b.ms.Module.Update(ctx, module.ID, body.ToMap())
@@ -104,22 +74,13 @@ func (b *Module) Update(ctx context.Context, productName, moduleName string, bod
 
 // Offline 下线功能模块
 func (b *Module) Offline(ctx context.Context, productName, moduleName string) (*tpl.BoolRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
 	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	if product.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
-	}
 
 	res := &tpl.BoolRes{Result: false}
-	module, err := b.ms.Module.FindByName(ctx, product.ID, moduleName, "id, `offline_at`")
+	module, err := b.ms.Module.FindByName(ctx, productID, moduleName, "id, `offline_at`")
 	if err != nil {
 		return nil, err
 	}

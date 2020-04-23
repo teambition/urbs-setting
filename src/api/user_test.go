@@ -214,10 +214,11 @@ func TestUserAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
 
-			json2 := tpl.BoolRes{}
+			json2 := tpl.UserRes{}
 			_, err = res.JSON(&json2)
 			assert.Nil(err)
-			assert.True(json2.Result)
+			assert.Equal(users[1].UID, json2.Result.UID)
+			assert.True(time.Now().UTC().Unix()-json2.Result.ActiveAt <= 1)
 
 			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[1].UID, product.Name)).
 				End()
@@ -244,7 +245,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(200, res.StatusCode)
 			res.Content() // close http client
 
-			// users[1] lables from cache
+			// users[1] labels from cache
 			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[1].UID, product.Name)).
 				End()
 			assert.Nil(err)
@@ -259,7 +260,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(0, len(json.Result[0].Clients))
 			assert.Equal(0, len(json.Result[0].Channels))
 
-			// users[2] get all lables
+			// users[2] get all labels
 			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[2].UID, product.Name)).
 				End()
 			assert.Nil(err)
@@ -287,7 +288,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(200, res.StatusCode)
 			res.Content() // close http client
 
-			// users[2] get all lables
+			// users[2] get all labels
 			res, err = request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, users[3].UID, product.Name)).
 				End()
 			assert.Nil(err)

@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/bll"
-	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
 )
@@ -13,40 +12,55 @@ type User struct {
 	blls *bll.Blls
 }
 
-// ListCachedLables 返回执行 user 在 product 下所有 labels，按照 label 指派时间反序
-func (a *User) ListCachedLables(ctx *gear.Context) error {
+// List ..
+func (a *User) List(ctx *gear.Context) error {
+	req := tpl.Pagination{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	res, err := a.blls.User.List(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return ctx.OkJSON(res)
+}
+
+// ListCachedLabels 返回执行 user 在 product 下所有 labels，按照 label 指派时间反序
+func (a *User) ListCachedLabels(ctx *gear.Context) error {
 	req := tpl.UIDProductURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res := a.blls.User.ListCachedLables(ctx, req.UID, req.Product)
+	res := a.blls.User.ListCachedLabels(ctx, req.UID, req.Product)
 	return ctx.OkJSON(res)
 }
 
-// RefreshCachedLables 强制更新 user 的 labels 缓存
-func (a *User) RefreshCachedLables(ctx *gear.Context) error {
+// RefreshCachedLabels 强制更新 user 的 labels 缓存
+func (a *User) RefreshCachedLabels(ctx *gear.Context) error {
 	req := tpl.UIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	err := a.blls.User.RefreshCachedLables(ctx, req.UID)
+	user, err := a.blls.User.RefreshCachedLabels(ctx, req.UID)
 	if err != nil {
 		return err
 	}
-	res := tpl.BoolRes{Result: true}
+	res := tpl.UserRes{Result: *user}
 	return ctx.OkJSON(res)
 }
 
-// ListLables 返回 user 的 labels，按照 label 指派时间正序，支持分页
-func (a *User) ListLables(ctx *gear.Context) error {
+// ListLabels 返回 user 的 labels，按照 label 指派时间正序，支持分页
+func (a *User) ListLabels(ctx *gear.Context) error {
 	req := tpl.UIDPaginationURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res, err := a.blls.User.ListLables(ctx, req.UID, req.Pagination)
+	res, err := a.blls.User.ListLabels(ctx, req.UID, req.Pagination)
 	if err != nil {
 		return err
 	}
@@ -110,18 +124,17 @@ func (a *User) BatchAdd(ctx *gear.Context) error {
 	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }
 
-// RemoveLable ..
-func (a *User) RemoveLable(ctx *gear.Context) error {
+// RemoveLabel ..
+func (a *User) RemoveLabel(ctx *gear.Context) error {
 	req := tpl.UIDHIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
-	label := &schema.Label{}
-	label.ID = service.HIDToID(req.HID, "label")
-	if label.ID == 0 {
+	labelID := service.HIDToID(req.HID, "label")
+	if labelID <= 0 {
 		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", req.HID)
 	}
-	if err := a.blls.User.RemoveLable(ctx, req.UID, label.ID); err != nil {
+	if err := a.blls.User.RemoveLabel(ctx, req.UID, labelID); err != nil {
 		return err
 	}
 	return ctx.OkJSON(tpl.BoolRes{Result: true})
@@ -134,12 +147,11 @@ func (a *User) RollbackSetting(ctx *gear.Context) error {
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
-	setting := &schema.Setting{}
-	setting.ID = service.HIDToID(req.HID, "setting")
-	if setting.ID == 0 {
+	settingID := service.HIDToID(req.HID, "setting")
+	if settingID <= 0 {
 		return gear.ErrBadRequest.WithMsgf("invalid setting hid: %s", req.HID)
 	}
-	if err := a.blls.User.RollbackSetting(ctx, req.UID, setting.ID); err != nil {
+	if err := a.blls.User.RollbackSetting(ctx, req.UID, settingID); err != nil {
 		return err
 	}
 	return ctx.OkJSON(tpl.BoolRes{Result: true})
@@ -151,12 +163,11 @@ func (a *User) RemoveSetting(ctx *gear.Context) error {
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
-	setting := &schema.Setting{}
-	setting.ID = service.HIDToID(req.HID, "setting")
-	if setting.ID == 0 {
+	settingID := service.HIDToID(req.HID, "setting")
+	if settingID <= 0 {
 		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", req.HID)
 	}
-	if err := a.blls.User.RemoveSetting(ctx, req.UID, setting.ID); err != nil {
+	if err := a.blls.User.RemoveSetting(ctx, req.UID, settingID); err != nil {
 		return err
 	}
 	return ctx.OkJSON(tpl.BoolRes{Result: true})

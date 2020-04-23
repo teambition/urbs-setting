@@ -16,36 +16,23 @@ type Setting struct {
 
 // List 返回产品下的功能模块配置项列表，TODO：支持分页
 func (b *Setting) List(ctx context.Context, productName, moduleName string, pg tpl.Pagination) (*tpl.SettingsInfoRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
-	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
 	}
 
-	module, err := b.ms.Module.FindByName(ctx, product.ID, moduleName, "id")
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
 	if err != nil {
 		return nil, err
-	}
-	if module == nil {
-		return nil, gear.ErrNotFound.WithMsgf("module %s not found", moduleName)
 	}
 
 	settings, err := b.ms.Setting.Find(ctx, module.ID, pg)
 	if err != nil {
 		return nil, err
 	}
-	total, err := b.ms.Setting.Count(ctx, module.ID)
-	if err != nil {
-		return nil, err
-	}
 
 	res := &tpl.SettingsInfoRes{Result: tpl.SettingsInfoFrom(settings, productName, moduleName)}
-	res.TotalSize = total
+	res.TotalSize = int(module.Status)
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]
@@ -55,31 +42,19 @@ func (b *Setting) List(ctx context.Context, productName, moduleName string, pg t
 
 // Get 返回产品下指定功能模块配置项
 func (b *Setting) Get(ctx context.Context, productName, moduleName, settingName string) (*tpl.SettingInfoRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
-	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
 	}
 
-	module, err := b.ms.Module.FindByName(ctx, product.ID, moduleName, "id")
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
 	if err != nil {
 		return nil, err
-	}
-	if module == nil {
-		return nil, gear.ErrNotFound.WithMsgf("module %s not found", moduleName)
 	}
 
-	setting, err := b.ms.Setting.FindByName(ctx, module.ID, settingName, "")
+	setting, err := b.ms.Setting.Acquire(ctx, module.ID, settingName)
 	if err != nil {
 		return nil, err
-	}
-	if setting == nil {
-		return nil, gear.ErrNotFound.WithMsgf("setting %s not found", settingName)
 	}
 
 	res := &tpl.SettingInfoRes{Result: tpl.SettingInfoFrom(*setting, productName, moduleName)}
@@ -88,29 +63,14 @@ func (b *Setting) Get(ctx context.Context, productName, moduleName, settingName 
 
 // Create 创建功能模块配置项
 func (b *Setting) Create(ctx context.Context, productName, moduleName, settingName, desc string) (*tpl.SettingInfoRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
-	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	if product.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
 	}
 
-	module, err := b.ms.Module.FindByName(ctx, product.ID, moduleName, "id, `offline_at`")
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
 	if err != nil {
 		return nil, err
-	}
-	if module == nil {
-		return nil, gear.ErrNotFound.WithMsgf("module %s not found", moduleName)
-	}
-	if module.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("module %s was offline", moduleName)
 	}
 
 	setting := &schema.Setting{ModuleID: module.ID, Name: settingName, Desc: desc}
@@ -122,40 +82,19 @@ func (b *Setting) Create(ctx context.Context, productName, moduleName, settingNa
 
 // Update ...
 func (b *Setting) Update(ctx context.Context, productName, moduleName, settingName string, body tpl.SettingUpdateBody) (*tpl.SettingInfoRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
-	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	if product.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
 	}
 
-	module, err := b.ms.Module.FindByName(ctx, product.ID, moduleName, "id, `offline_at`")
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
 	if err != nil {
 		return nil, err
-	}
-	if module == nil {
-		return nil, gear.ErrNotFound.WithMsgf("label %s not found", moduleName)
-	}
-	if module.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("label %s was offline", moduleName)
 	}
 
-	setting, err := b.ms.Setting.FindByName(ctx, module.ID, settingName, "id, `offline_at`")
+	setting, err := b.ms.Setting.Acquire(ctx, module.ID, settingName)
 	if err != nil {
 		return nil, err
-	}
-	if setting == nil {
-		return nil, gear.ErrNotFound.WithMsgf("setting %s not found", settingName)
-	}
-	if setting.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("setting %s was offline", settingName)
 	}
 
 	setting, err = b.ms.Setting.Update(ctx, setting.ID, body.ToMap())
@@ -167,29 +106,14 @@ func (b *Setting) Update(ctx context.Context, productName, moduleName, settingNa
 
 // Offline 下线功能模块配置项
 func (b *Setting) Offline(ctx context.Context, productName, moduleName, settingName string) (*tpl.BoolRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
-	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	if product.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
 	}
 
-	module, err := b.ms.Module.FindByName(ctx, product.ID, moduleName, "id, `offline_at`")
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
 	if err != nil {
 		return nil, err
-	}
-	if module == nil {
-		return nil, gear.ErrNotFound.WithMsgf("module %s not found", moduleName)
-	}
-	if module.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("module %s was offline", moduleName)
 	}
 
 	res := &tpl.BoolRes{Result: false}
@@ -201,7 +125,7 @@ func (b *Setting) Offline(ctx context.Context, productName, moduleName, settingN
 		return nil, gear.ErrNotFound.WithMsgf("setting %s not found", settingName)
 	}
 	if setting.OfflineAt == nil {
-		if err = b.ms.Setting.Offline(ctx, setting.ID); err != nil {
+		if err = b.ms.Setting.Offline(ctx, module.ID, setting.ID); err != nil {
 			return nil, err
 		}
 		res.Result = true
@@ -210,62 +134,38 @@ func (b *Setting) Offline(ctx context.Context, productName, moduleName, settingN
 }
 
 // Assign 把配置项批量分配给用户或群组
-func (b *Setting) Assign(ctx context.Context, productName, moduleName, settingName, value string, users, groups []string) error {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`")
+func (b *Setting) Assign(ctx context.Context, productName, moduleName, settingName, value string, users, groups []string) (*tpl.SettingReleaseInfo, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
-		return err
-	}
-	if product == nil {
-		return gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.OfflineAt != nil {
-		return gear.ErrNotFound.WithMsgf("product %s was offline", productName)
+		return nil, err
 	}
 
-	module, err := b.ms.Module.FindByName(ctx, product.ID, moduleName, "id, `offline_at`")
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
 	if err != nil {
-		return err
-	}
-	if module == nil {
-		return gear.ErrNotFound.WithMsgf("module %s not found", moduleName)
-	}
-	if module.OfflineAt != nil {
-		return gear.ErrNotFound.WithMsgf("module %s was offline", moduleName)
+		return nil, err
 	}
 
-	setting, err := b.ms.Setting.FindByName(ctx, module.ID, settingName, "id, `vals`, `offline_at`")
+	setting, err := b.ms.Setting.Acquire(ctx, module.ID, settingName)
 	if err != nil {
-		return err
-	}
-	if setting == nil {
-		return gear.ErrNotFound.WithMsgf("setting %s not found", settingName)
-	}
-	if setting.OfflineAt != nil {
-		return gear.ErrNotFound.WithMsgf("setting %s was offline", settingName)
+		return nil, err
 	}
 	vals := tpl.StringToSlice(setting.Values)
 	if value != "" && !tpl.StringSliceHas(vals, value) {
-		return gear.ErrBadRequest.WithMsgf("value %s is not in setting", value)
+		return nil, gear.ErrBadRequest.WithMsgf("value %s is not in setting", value)
 	}
 	return b.ms.Setting.Assign(ctx, setting.ID, value, users, groups)
 }
 
 // Delete 物理删除配置项
 func (b *Setting) Delete(ctx context.Context, productName, moduleName, settingName string) (*tpl.BoolRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
-	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
 	}
 
-	module, err := b.ms.Module.FindByName(ctx, product.ID, moduleName, "id")
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
 	if err != nil {
 		return nil, err
-	}
-	if module == nil {
-		return nil, gear.ErrNotFound.WithMsgf("module %s not found", moduleName)
 	}
 
 	setting, err := b.ms.Setting.FindByName(ctx, module.ID, settingName, "id, `offline_at`")
@@ -283,5 +183,173 @@ func (b *Setting) Delete(ctx context.Context, productName, moduleName, settingNa
 		}
 		res.Result = true
 	}
+	return res, nil
+}
+
+// Recall 撤销指定批次的用户或群组的配置项
+func (b *Setting) Recall(ctx context.Context, productName, moduleName, settingName string, release int64) (*tpl.BoolRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
+	if err != nil {
+		return nil, err
+	}
+
+	setting, err := b.ms.Setting.Acquire(ctx, module.ID, settingName)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &tpl.BoolRes{Result: false}
+	if err = b.ms.Setting.Recall(ctx, setting.ID, release); err != nil {
+		return nil, err
+	}
+	res.Result = true
+	return res, nil
+}
+
+// CreateRule ...
+func (b *Setting) CreateRule(ctx context.Context, productName, moduleName, settingName string, body tpl.SettingRuleBody) (*tpl.SettingRuleInfoRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
+	if err != nil {
+		return nil, err
+	}
+
+	setting, err := b.ms.Setting.Acquire(ctx, module.ID, settingName)
+	if err != nil {
+		return nil, err
+	}
+	vals := tpl.StringToSlice(setting.Values)
+	if body.Value != "" && !tpl.StringSliceHas(vals, body.Value) {
+		return nil, gear.ErrBadRequest.WithMsgf("value %s is not in setting", body.Value)
+	}
+
+	settingRule := &schema.SettingRule{
+		ProductID: productID,
+		SettingID: setting.ID,
+		Kind:      body.Kind,
+		Rule:      body.ToRule(),
+		Value:     body.Value,
+		Release:   0,
+	}
+	if err = b.ms.SettingRule.Create(ctx, settingRule); err != nil {
+		return nil, err
+	}
+	// 创建成功再从 setting 获取当前的 release 发布计数
+	release, err := b.ms.Setting.AcquireRelease(ctx, setting.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	settingRule, err = b.ms.SettingRule.Update(ctx, settingRule.ID, map[string]interface{}{"rls": release})
+	if err != nil {
+		return nil, err
+	}
+	return &tpl.SettingRuleInfoRes{Result: tpl.SettingRuleInfoFrom(*settingRule)}, nil
+}
+
+// ListRules ...
+func (b *Setting) ListRules(ctx context.Context, productName, moduleName, settingName string) (*tpl.SettingRulesInfoRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
+	if err != nil {
+		return nil, err
+	}
+
+	setting, err := b.ms.Setting.Acquire(ctx, module.ID, settingName)
+	if err != nil {
+		return nil, err
+	}
+
+	settingRules, err := b.ms.SettingRule.Find(ctx, productID, setting.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tpl.SettingRulesInfoRes{Result: tpl.SettingRulesInfoFrom(settingRules)}, nil
+}
+
+// UpdateRule ...
+func (b *Setting) UpdateRule(ctx context.Context, settingID, ruleID int64, body tpl.SettingRuleBody) (*tpl.SettingRuleInfoRes, error) {
+	setting, err := b.ms.Setting.AcquireByID(ctx, settingID)
+	if err != nil {
+		return nil, err
+	}
+
+	settingRule, err := b.ms.SettingRule.Acquire(ctx, ruleID)
+	if err != nil {
+		return nil, err
+	}
+
+	if settingRule.SettingID != setting.ID || body.Kind != settingRule.Kind {
+		return nil, gear.ErrNotFound.WithMsgf("label rule not matched!")
+	}
+
+	changed := map[string]interface{}{}
+	if body.Value != "" {
+		vals := tpl.StringToSlice(setting.Values)
+		if !tpl.StringSliceHas(vals, body.Value) {
+			return nil, gear.ErrBadRequest.WithMsgf("value %s is not in setting", body.Value)
+		}
+		if body.Value != settingRule.Value {
+			changed["value"] = body.Value
+		}
+	}
+
+	rule := body.ToRule()
+	if rule != settingRule.Rule {
+		changed["rule"] = rule
+	}
+
+	if len(changed) > 0 {
+		release, err := b.ms.Setting.AcquireRelease(ctx, setting.ID)
+		if err != nil {
+			return nil, err
+		}
+		changed["rls"] = release
+		settingRule, err = b.ms.SettingRule.Update(ctx, settingRule.ID, changed)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &tpl.SettingRuleInfoRes{Result: tpl.SettingRuleInfoFrom(*settingRule)}, nil
+}
+
+// DeleteRule ...
+func (b *Setting) DeleteRule(ctx context.Context, settingID, ruleID int64) (*tpl.BoolRes, error) {
+	setting, err := b.ms.Setting.AcquireByID(ctx, settingID)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &tpl.BoolRes{Result: false}
+	settingRule, err := b.ms.SettingRule.Acquire(ctx, ruleID)
+	if err != nil {
+		return res, nil
+	}
+
+	if settingRule.SettingID != setting.ID {
+		return nil, gear.ErrNotFound.WithMsgf("setting rule not matched!")
+	}
+
+	err = b.ms.SettingRule.Delete(ctx, settingRule.ID)
+	if err != nil {
+		return nil, err
+	}
+	res.Result = true
+
 	return res, nil
 }

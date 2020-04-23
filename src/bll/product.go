@@ -46,21 +46,12 @@ func (b *Product) Create(ctx context.Context, name, desc string) (*tpl.ProductRe
 
 // Update ...
 func (b *Product) Update(ctx context.Context, productName string, body tpl.ProductUpdateBody) (*tpl.ProductRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
 	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	if product.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
-	}
 
-	product, err = b.ms.Product.Update(ctx, product.ID, body.ToMap())
+	product, err := b.ms.Product.Update(ctx, productID, body.ToMap())
 	if err != nil {
 		return nil, err
 	}
@@ -112,4 +103,13 @@ func (b *Product) Delete(ctx context.Context, productName string) (*tpl.BoolRes,
 		}
 	}
 	return res, nil
+}
+
+// Statistics 返回产品的统计数据
+func (b *Product) Statistics(ctx context.Context, productName string) (*tpl.ProductStatistics, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+	return b.ms.Product.Statistics(ctx, productID)
 }

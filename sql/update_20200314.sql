@@ -2,8 +2,6 @@ ALTER TABLE `urbs_user` MODIFY COLUMN `created_at` datetime(3) NOT NULL DEFAULT 
 ALTER TABLE `urbs_user` MODIFY COLUMN `uid` varchar(63) NOT NULL COLLATE utf8mb4_bin;
 ALTER TABLE `urbs_user` MODIFY COLUMN `labels` varchar(8190) NOT NULL COLLATE utf8mb4_bin DEFAULT '';
 
- COLLATE=utf8mb4_bin
-
 ALTER TABLE `urbs_group` MODIFY COLUMN `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3);
 ALTER TABLE `urbs_group` MODIFY COLUMN `updated_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3);
 ALTER TABLE `urbs_group` MODIFY COLUMN `uid` varchar(63) NOT NULL COLLATE utf8mb4_bin;

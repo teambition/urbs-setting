@@ -3,13 +3,11 @@ package model
 import (
 	"context"
 	"database/sql"
-
-	"github.com/jinzhu/gorm"
 )
 
 // Healthz ...
 type Healthz struct {
-	DB *gorm.DB
+	*Model
 }
 
 // DBStats ...

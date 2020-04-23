@@ -316,9 +316,10 @@ func TestLabelAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
 
-			json := tpl.BoolRes{}
+			json := tpl.LabelReleaseInfoRes{}
 			res.JSON(&json)
-			assert.True(json.Result)
+			assert.Equal(int64(1), json.Result.Release)
+			assert.Equal(group.UID, json.Result.Groups[0])
 
 			var count int64
 			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label.ID).Count(&count).Error)
@@ -331,18 +332,22 @@ func TestLabelAPIs(t *testing.T) {
 		t.Run("should work with duplicate data", func(t *testing.T) {
 			assert := assert.New(t)
 
+			uids := []string{users[0].UID, users[2].UID}
 			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s:assign", tt.Host, product.Name, label.Name)).
 				Set("Content-Type", "application/json").
 				Send(tpl.UsersGroupsBody{
-					Users: []string{users[0].UID, users[2].UID},
+					Users: uids,
 				}).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
 
-			json := tpl.BoolRes{}
+			json := tpl.LabelReleaseInfoRes{}
 			res.JSON(&json)
-			assert.True(json.Result)
+			assert.Equal(int64(2), json.Result.Release)
+			assert.Equal(0, len(json.Result.Groups))
+			assert.True(tpl.StringSliceHas(json.Result.Users, users[0].UID))
+			assert.True(tpl.StringSliceHas(json.Result.Users, users[2].UID))
 
 			var count int64
 			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label.ID).Count(&count).Error)

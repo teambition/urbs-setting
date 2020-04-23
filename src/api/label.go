@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/bll"
+	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
 )
 
@@ -88,10 +89,11 @@ func (a *Label) Assign(ctx *gear.Context) error {
 		return err
 	}
 
-	if err := a.blls.Label.Assign(ctx, req.Product, req.Label, body.Users, body.Groups); err != nil {
+	res, err := a.blls.Label.Assign(ctx, req.Product, req.Label, body.Users, body.Groups)
+	if err != nil {
 		return err
 	}
-	return ctx.OkJSON(tpl.BoolRes{Result: true})
+	return ctx.OkJSON(tpl.LabelReleaseInfoRes{Result: *res})
 }
 
 // Delete ..
@@ -101,6 +103,111 @@ func (a *Label) Delete(ctx *gear.Context) error {
 		return err
 	}
 	res, err := a.blls.Label.Delete(ctx, req.Product, req.Label)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
+// Recall ..
+func (a *Label) Recall(ctx *gear.Context) error {
+	req := tpl.ProductLabelURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	body := tpl.RecallBody{}
+	if err := ctx.ParseBody(&body); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Label.Recall(ctx, req.Product, req.Label, body.Release)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
+// CreateRule ..
+func (a *Label) CreateRule(ctx *gear.Context) error {
+	req := tpl.ProductLabelURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	body := tpl.LabelRuleBody{}
+	if err := ctx.ParseBody(&body); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Label.CreateRule(ctx, req.Product, req.Label, body)
+	if err != nil {
+		return err
+	}
+
+	return ctx.OkJSON(res)
+}
+
+// ListRules ..
+func (a *Label) ListRules(ctx *gear.Context) error {
+	req := tpl.ProductLabelURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+	res, err := a.blls.Label.ListRules(ctx, req.Product, req.Label)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
+// UpdateRule ..
+func (a *Label) UpdateRule(ctx *gear.Context) error {
+	req := tpl.HIDRuleHIDURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	labelID := service.HIDToID(req.HID, "label")
+	if labelID <= 0 {
+		return gear.ErrBadRequest.WithMsgf("invalid label hid: %s", req.HID)
+	}
+
+	ruleID := service.HIDToID(req.RuleHID, "label_rule")
+	if ruleID <= 0 {
+		return gear.ErrBadRequest.WithMsgf("invalid label_rule hid: %s", req.RuleHID)
+	}
+
+	body := tpl.LabelRuleBody{}
+	if err := ctx.ParseBody(&body); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Label.UpdateRule(ctx, labelID, ruleID, body)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
+// DeleteRule ..
+func (a *Label) DeleteRule(ctx *gear.Context) error {
+	req := tpl.HIDRuleHIDURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	labelID := service.HIDToID(req.HID, "label")
+	if labelID <= 0 {
+		return gear.ErrBadRequest.WithMsgf("invalid label hid: %s", req.HID)
+	}
+
+	ruleID := service.HIDToID(req.RuleHID, "label_rule")
+	if ruleID <= 0 {
+		return gear.ErrBadRequest.WithMsgf("invalid label_rule hid: %s", req.RuleHID)
+	}
+
+	res, err := a.blls.Label.DeleteRule(ctx, labelID, ruleID)
 	if err != nil {
 		return err
 	}

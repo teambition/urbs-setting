@@ -16,21 +16,16 @@ type Label struct {
 
 // List 返回产品下的标签列表
 func (b *Label) List(ctx context.Context, productName string, pg tpl.Pagination) (*tpl.LabelsInfoRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
 	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	labels, err := b.ms.Label.Find(ctx, product.ID, pg)
+
+	labels, err := b.ms.Label.Find(ctx, productID, pg)
 	if err != nil {
 		return nil, err
 	}
-	total, err := b.ms.Label.Count(ctx, product.ID)
+	total, err := b.ms.Label.Count(ctx, productID)
 	if err != nil {
 		return nil, err
 	}
@@ -47,54 +42,26 @@ func (b *Label) List(ctx context.Context, productName string, pg tpl.Pagination)
 
 // Create 创建标签
 func (b *Label) Create(ctx context.Context, productName, labelName, desc string) (*tpl.LabelInfoRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
 	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	if product.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
-	}
 
-	label := schema.Label{ProductID: product.ID, Name: labelName, Desc: desc}
-	if err = b.ms.Label.Create(ctx, &label); err != nil {
+	label := &schema.Label{ProductID: productID, Name: labelName, Desc: desc}
+	if err = b.ms.Label.Create(ctx, label); err != nil {
 		return nil, err
 	}
-	return &tpl.LabelInfoRes{Result: tpl.LabelInfoFrom(label, productName)}, nil
+	return &tpl.LabelInfoRes{Result: tpl.LabelInfoFrom(*label, productName)}, nil
 }
 
 // Update ...
 func (b *Label) Update(ctx context.Context, productName, labelName string, body tpl.LabelUpdateBody) (*tpl.LabelInfoRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
 	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	if product.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
-	}
 
-	label, err := b.ms.Label.FindByName(ctx, product.ID, labelName, "id, `offline_at`")
-	if err != nil {
-		return nil, err
-	}
-	if label == nil {
-		return nil, gear.ErrNotFound.WithMsgf("label %s not found", labelName)
-	}
-	if label.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("label %s was offline", labelName)
-	}
-
+	label, err := b.ms.Label.Acquire(ctx, productID, labelName)
 	label, err = b.ms.Label.Update(ctx, label.ID, body.ToMap())
 	if err != nil {
 		return nil, err
@@ -104,22 +71,13 @@ func (b *Label) Update(ctx context.Context, productName, labelName string, body 
 
 // Offline 下线标签
 func (b *Label) Offline(ctx context.Context, productName, labelName string) (*tpl.BoolRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`, `deleted_at`")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
 	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.DeletedAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
-	}
-	if product.OfflineAt != nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
-	}
 
 	res := &tpl.BoolRes{Result: false}
-	label, err := b.ms.Label.FindByName(ctx, product.ID, labelName, "id, `offline_at`")
+	label, err := b.ms.Label.FindByName(ctx, productID, labelName, "id, `offline_at`")
 	if err != nil {
 		return nil, err
 	}
@@ -136,42 +94,24 @@ func (b *Label) Offline(ctx context.Context, productName, labelName string) (*tp
 }
 
 // Assign 把标签批量分配给用户或群组
-func (b *Label) Assign(ctx context.Context, productName, labelName string, users, groups []string) error {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id, `offline_at`")
+func (b *Label) Assign(ctx context.Context, productName, labelName string, users, groups []string) (*tpl.LabelReleaseInfo, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
-		return err
-	}
-	if product == nil {
-		return gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
-	if product.OfflineAt != nil {
-		return gear.ErrNotFound.WithMsgf("product %s was offline", productName)
+		return nil, err
 	}
 
-	label, err := b.ms.Label.FindByName(ctx, product.ID, labelName, "id, `offline_at`")
-	if err != nil {
-		return err
-	}
-	if label == nil {
-		return gear.ErrNotFound.WithMsgf("label %s not found", labelName)
-	}
-	if label.OfflineAt != nil {
-		return gear.ErrNotFound.WithMsgf("label %s was offline", labelName)
-	}
+	label, err := b.ms.Label.Acquire(ctx, productID, labelName)
 	return b.ms.Label.Assign(ctx, label.ID, users, groups)
 }
 
 // Delete 物理删除标签
 func (b *Label) Delete(ctx context.Context, productName, labelName string) (*tpl.BoolRes, error) {
-	product, err := b.ms.Product.FindByName(ctx, productName, "id")
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
 	}
-	if product == nil {
-		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
-	}
 
-	label, err := b.ms.Label.FindByName(ctx, product.ID, labelName, "id, `offline_at`")
+	label, err := b.ms.Label.FindByName(ctx, productID, labelName, "id, `offline_at`")
 	if err != nil {
 		return nil, err
 	}
@@ -187,5 +127,144 @@ func (b *Label) Delete(ctx context.Context, productName, labelName string) (*tpl
 		}
 		res.Result = true
 	}
+	return res, nil
+}
+
+// Recall 撤销指定批次的用户或群组的灰度标签
+func (b *Label) Recall(ctx context.Context, productName, labelName string, release int64) (*tpl.BoolRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	label, err := b.ms.Label.Acquire(ctx, productID, labelName)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &tpl.BoolRes{Result: false}
+	if err = b.ms.Label.Recall(ctx, label.ID, release); err != nil {
+		return nil, err
+	}
+	res.Result = true
+	return res, nil
+}
+
+// CreateRule ...
+func (b *Label) CreateRule(ctx context.Context, productName, labelName string, body tpl.LabelRuleBody) (*tpl.LabelRuleInfoRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	label, err := b.ms.Label.Acquire(ctx, productID, labelName)
+	if err != nil {
+		return nil, err
+	}
+
+	labelRule := &schema.LabelRule{
+		ProductID: productID,
+		LabelID:   label.ID,
+		Kind:      body.Kind,
+		Rule:      body.ToRule(),
+		Release:   0,
+	}
+	if err = b.ms.LabelRule.Create(ctx, labelRule); err != nil {
+		return nil, err
+	}
+	// 创建成功再从 label 获取当前的 release 发布计数
+	release, err := b.ms.Label.AcquireRelease(ctx, label.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	changed := map[string]interface{}{"rls": release}
+	labelRule, err = b.ms.LabelRule.Update(ctx, labelRule.ID, changed)
+	if err != nil {
+		return nil, err
+	}
+	return &tpl.LabelRuleInfoRes{Result: tpl.LabelRuleInfoFrom(*labelRule)}, nil
+}
+
+// ListRules ...
+func (b *Label) ListRules(ctx context.Context, productName, labelName string) (*tpl.LabelRulesInfoRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	label, err := b.ms.Label.Acquire(ctx, productID, labelName)
+	if err != nil {
+		return nil, err
+	}
+
+	labelRules, err := b.ms.LabelRule.Find(ctx, productID, label.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tpl.LabelRulesInfoRes{Result: tpl.LabelRulesInfoFrom(labelRules)}, nil
+}
+
+// UpdateRule ...
+func (b *Label) UpdateRule(ctx context.Context, labelID, ruleID int64, body tpl.LabelRuleBody) (*tpl.LabelRuleInfoRes, error) {
+	label, err := b.ms.Label.AcquireByID(ctx, labelID)
+	if err != nil {
+		return nil, err
+	}
+
+	labelRule, err := b.ms.LabelRule.Acquire(ctx, ruleID)
+	if err != nil {
+		return nil, err
+	}
+
+	if labelRule.LabelID != label.ID || body.Kind != labelRule.Kind {
+		return nil, gear.ErrNotFound.WithMsgf("label rule not matched!")
+	}
+
+	changed := map[string]interface{}{}
+	rule := body.ToRule()
+	if rule != labelRule.Rule {
+		changed["rule"] = rule
+	}
+
+	if len(changed) > 0 {
+		release, err := b.ms.Label.AcquireRelease(ctx, label.ID)
+		if err != nil {
+			return nil, err
+		}
+		changed["rls"] = release
+		labelRule, err = b.ms.LabelRule.Update(ctx, labelRule.ID, changed)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &tpl.LabelRuleInfoRes{Result: tpl.LabelRuleInfoFrom(*labelRule)}, nil
+}
+
+// DeleteRule ...
+func (b *Label) DeleteRule(ctx context.Context, labelID, ruleID int64) (*tpl.BoolRes, error) {
+	label, err := b.ms.Label.AcquireByID(ctx, labelID)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &tpl.BoolRes{Result: false}
+	labelRule, err := b.ms.LabelRule.Acquire(ctx, ruleID)
+	if err != nil {
+		return res, nil
+	}
+
+	if labelRule.LabelID != label.ID {
+		return nil, gear.ErrNotFound.WithMsgf("label rule not matched!")
+	}
+
+	err = b.ms.LabelRule.Delete(ctx, labelRule.ID)
+	if err != nil {
+		return nil, err
+	}
+	res.Result = true
+
 	return res, nil
 }

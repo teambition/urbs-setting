@@ -121,6 +121,23 @@ func (t *UIDPaginationURL) Validate() error {
 	return nil
 }
 
+// HIDRuleHIDURL ...
+type HIDRuleHIDURL struct {
+	HID     string `json:"hid" param:"hid"`
+	RuleHID string `json:"ruleHID" param:"ruleHID"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *HIDRuleHIDURL) Validate() error {
+	if !validHIDReg.MatchString(t.HID) {
+		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", t.HID)
+	}
+	if !validHIDReg.MatchString(t.RuleHID) {
+		return gear.ErrBadRequest.WithMsgf("invalid rule hid: %s", t.RuleHID)
+	}
+	return nil
+}
+
 // NameDescBody ...
 type NameDescBody struct {
 	Name string `json:"name"`
@@ -167,6 +184,19 @@ func (t *UsersGroupsBody) Validate() error {
 	return nil
 }
 
+// RecallBody ...
+type RecallBody struct {
+	Release int64 `json:"release"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *RecallBody) Validate() error {
+	if t.Release <= 0 {
+		return gear.ErrBadRequest.WithMsg("release required")
+	}
+	return nil
+}
+
 // StringToSlice ...
 func StringToSlice(s string) []string {
 	if s == "" {
@@ -177,6 +207,16 @@ func StringToSlice(s string) []string {
 
 // StringSliceHas ...
 func StringSliceHas(sl []string, v string) bool {
+	for _, s := range sl {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+// Int64SliceHas ...
+func Int64SliceHas(sl []int64, v int64) bool {
 	for _, s := range sl {
 		if v == s {
 			return true

@@ -15,7 +15,7 @@ type Product struct {
 	OfflineAt *time.Time `gorm:"column:offline_at" json:"offline_at"` // 下线时间，用于灰度管理
 	Name      string     `gorm:"column:name" json:"name"`             // varchar(63) 产品线名称，表内唯一
 	Desc      string     `gorm:"column:description" json:"desc"`      // varchar(1022) 产品线描述
-	Status    int64      `gorm:"column:status" json:"status"`         // -1 下线弃用，0 未使用，大于 0 为有效功能模块数
+	Status    int64      `gorm:"column:status" json:"status"`         // -1 下线弃用，未使用
 }
 
 // TableName retuns table name

@@ -12,4 +12,5 @@ type UserLabel struct {
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UserID    int64     `gorm:"column:user_id"`  // 用户内部 ID
 	LabelID   int64     `gorm:"column:label_id"` // 灰度标签内部 ID
+	Release   int64     `gorm:"column:rls"`      // 标签被设置计数批次
 }
