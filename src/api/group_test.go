@@ -561,7 +561,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal(int64(0), count)
 		})
 
-		t.Run("should work with sync_lt query", func(t *testing.T) {
+		t.Run("should work with syncLt query", func(t *testing.T) {
 			assert := assert.New(t)
 
 			var count int64
@@ -591,7 +591,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Nil(tt.DB.Table(`user_group`).Where("group_id = ?", group.ID).Count(&count).Error)
 			assert.Equal(int64(10), count)
 
-			res, err = request.Delete(fmt.Sprintf("%s/v1/groups/%s/members?sync_lt=%d", tt.Host, group.UID, syncAt)).
+			res, err = request.Delete(fmt.Sprintf("%s/v1/groups/%s/members?syncLt=%d", tt.Host, group.UID, syncAt)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)

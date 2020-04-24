@@ -53,7 +53,7 @@ func TestModuleAPIs(t *testing.T) {
 
 			text, err := res.Text()
 			assert.Nil(err)
-			assert.True(strings.Contains(text, `"offline_at":null`))
+			assert.True(strings.Contains(text, `"offlineAt":null`))
 			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.ModuleRes{}
@@ -135,7 +135,7 @@ func TestModuleAPIs(t *testing.T) {
 
 			text, err := res.Text()
 			assert.Nil(err)
-			assert.True(strings.Contains(text, `"offline_at":null`))
+			assert.True(strings.Contains(text, `"offlineAt":null`))
 			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.ModuleRes{}

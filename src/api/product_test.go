@@ -45,8 +45,8 @@ func TestProductAPIs(t *testing.T) {
 
 			text, err := res.Text()
 			assert.Nil(err)
-			assert.True(strings.Contains(text, `"offline_at":null`))
-			assert.True(strings.Contains(text, `"deleted_at":null`))
+			assert.True(strings.Contains(text, `"offlineAt":null`))
+			assert.True(strings.Contains(text, `"deletedAt":null`))
 			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.ProductRes{}
@@ -183,8 +183,8 @@ func TestProductAPIs(t *testing.T) {
 
 			text, err := res.Text()
 			assert.Nil(err)
-			assert.True(strings.Contains(text, `"offline_at":null`))
-			assert.True(strings.Contains(text, `"deleted_at":null`))
+			assert.True(strings.Contains(text, `"offlineAt":null`))
+			assert.True(strings.Contains(text, `"deletedAt":null`))
 			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.ProductRes{}

@@ -85,25 +85,24 @@ func (t *ProductPaginationURL) Validate() error {
 
 // ProductLabelURL ...
 type ProductLabelURL struct {
-	ProductURL
+	ProductPaginationURL
 	Label string `json:"label" param:"label"`
 }
 
 // Validate 实现 gear.BodyTemplate。
 func (t *ProductLabelURL) Validate() error {
-	if err := t.ProductURL.Validate(); err != nil {
-		return err
-	}
 	if !validLabelReg.MatchString(t.Label) {
 		return gear.ErrBadRequest.WithMsgf("invalid label: %s", t.Label)
+	}
+	if err := t.ProductPaginationURL.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
 
 // ProductModuleURL ...
 type ProductModuleURL struct {
-	Pagination
-	ProductURL
+	ProductPaginationURL
 	Module string `json:"module" param:"module"`
 }
 
@@ -112,10 +111,7 @@ func (t *ProductModuleURL) Validate() error {
 	if !validNameReg.MatchString(t.Module) {
 		return gear.ErrBadRequest.WithMsgf("invalid module name: %s", t.Module)
 	}
-	if err := t.ProductURL.Validate(); err != nil {
-		return err
-	}
-	if err := t.Pagination.Validate(); err != nil {
+	if err := t.ProductPaginationURL.Validate(); err != nil {
 		return err
 	}
 	return nil
@@ -129,11 +125,11 @@ type ProductModuleSettingURL struct {
 
 // Validate 实现 gear.BodyTemplate。
 func (t *ProductModuleSettingURL) Validate() error {
-	if err := t.ProductModuleURL.Validate(); err != nil {
-		return err
-	}
 	if !validNameReg.MatchString(t.Setting) {
 		return gear.ErrBadRequest.WithMsgf("invalid setting name: %s", t.Setting)
+	}
+	if err := t.ProductModuleURL.Validate(); err != nil {
+		return err
 	}
 	return nil
 }

@@ -97,9 +97,9 @@ type LabelInfo struct {
 	Clients   []string   `json:"clients"`
 	Status    int64      `json:"status"`
 	Release   int64      `json:"release"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	OfflineAt *time.Time `json:"offline_at"`
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
+	OfflineAt *time.Time `json:"offlineAt"`
 }
 
 // LabelInfoFrom create a LabelInfo from schema.Label

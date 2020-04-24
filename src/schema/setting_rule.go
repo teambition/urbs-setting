@@ -13,7 +13,7 @@ type SettingRule struct {
 	UpdatedAt time.Time `gorm:"column:updated_at"`
 	ProductID int64     `gorm:"column:product_id"` // 所从属的产品线 ID，与灰度标签的产品线一致
 	SettingID int64     `gorm:"column:setting_id"` // 规则所指向的灰度标签 ID
-	Kind      string    `gorm:"column:kind"`       // 规则类型，目前支持 "user_percent"
+	Kind      string    `gorm:"column:kind"`       // 规则类型，目前支持 "userPercent"
 	Rule      string    `gorm:"column:rule"`       // varchar(1022)，规则值，JSON string，对于 percent 类，其格式为 {"value": percent}
 	Value     string    `gorm:"column:value"`      // varchar(255)，配置值
 	Release   int64     `gorm:"column:rls"`        // 标签发布（被设置）计数批次

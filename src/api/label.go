@@ -213,3 +213,29 @@ func (a *Label) DeleteRule(ctx *gear.Context) error {
 	}
 	return ctx.OkJSON(res)
 }
+
+// ListUsers ..
+func (a *Label) ListUsers(ctx *gear.Context) error {
+	req := tpl.ProductLabelURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+	res, err := a.blls.Label.ListUsers(ctx, req.Product, req.Label, req.Pagination)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
+// ListGroups ..
+func (a *Label) ListGroups(ctx *gear.Context) error {
+	req := tpl.ProductLabelURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+	res, err := a.blls.Label.ListGroups(ctx, req.Product, req.Label, req.Pagination)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}

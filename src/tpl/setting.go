@@ -99,9 +99,9 @@ type SettingInfo struct {
 	Values    []string   `json:"values"`
 	Status    int64      `json:"status"`
 	Release   int64      `json:"release"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	OfflineAt *time.Time `json:"offline_at"`
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
+	OfflineAt *time.Time `json:"offlineAt"`
 }
 
 // SettingInfoFrom create a SettingInfo from schema.Setting
@@ -152,9 +152,9 @@ type MySetting struct {
 	Module    string    `json:"module"`
 	Name      string    `json:"name"`
 	Value     string    `json:"value"`
-	LastValue string    `json:"last_value"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	LastValue string    `json:"lastValue"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 // MySettingsRes ...

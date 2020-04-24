@@ -54,7 +54,7 @@ func TestLabelAPIs(t *testing.T) {
 
 			text, err := res.Text()
 			assert.Nil(err)
-			assert.True(strings.Contains(text, `"offline_at":null`))
+			assert.True(strings.Contains(text, `"offlineAt":null`))
 			assert.True(strings.Contains(text, `"hid"`))
 			assert.False(strings.Contains(text, `"id"`))
 
@@ -153,7 +153,7 @@ func TestLabelAPIs(t *testing.T) {
 
 			text, err := res.Text()
 			assert.Nil(err)
-			assert.True(strings.Contains(text, `"offline_at":null`))
+			assert.True(strings.Contains(text, `"offlineAt":null`))
 			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.LabelInfoRes{}

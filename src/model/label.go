@@ -7,6 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/schema"
+	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
 )
 
@@ -250,4 +251,62 @@ func (m *Label) AcquireRelease(ctx context.Context, labelID int64) (int64, error
 		return 0, err
 	}
 	return label.Release, nil
+}
+
+const listLabelUsersSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid` " +
+	"from `user_label` t1, `urbs_user` t2 " +
+	"where t1.`label_id` = ? and t1.`id` <= ? and t1.`user_id` = t2.`id` " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+// ListUsers ...
+func (m *Label) ListUsers(ctx context.Context, labelID int64, pg tpl.Pagination) ([]tpl.LabelUserInfo, error) {
+	data := []tpl.LabelUserInfo{}
+	cursor := pg.TokenToID(true)
+
+	rows, err := m.DB.Raw(listLabelUsersSQL, labelID, cursor, pg.PageSize+1).Rows()
+	defer rows.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		info := tpl.LabelUserInfo{}
+		if err := rows.Scan(&info.ID, &info.AssignedAt, &info.Release, &info.User); err != nil {
+			return nil, err
+		}
+		info.LabelHID = service.IDToHID(labelID, "label")
+		data = append(data, info)
+	}
+	return data, err
+}
+
+const listLabelGroupsSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid`, t2.`kind`, t2.`description`, t2.`status` " +
+	"from `group_label` t1, `urbs_group` t2 " +
+	"where t1.`label_id` = ? and t1.`id` <= ? and t1.`group_id` = t2.`id` " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+// ListGroups ...
+func (m *Label) ListGroups(ctx context.Context, labelID int64, pg tpl.Pagination) ([]tpl.LabelGroupInfo, error) {
+	data := []tpl.LabelGroupInfo{}
+	cursor := pg.TokenToID(true)
+
+	rows, err := m.DB.Raw(listLabelGroupsSQL, labelID, cursor, pg.PageSize+1).Rows()
+	defer rows.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		info := tpl.LabelGroupInfo{}
+		if err := rows.Scan(&info.ID, &info.AssignedAt, &info.Release, &info.Group, &info.Kind, &info.Desc, &info.Status); err != nil {
+			return nil, err
+		}
+		info.LabelHID = service.IDToHID(labelID, "label")
+		data = append(data, info)
+	}
+	return data, err
 }

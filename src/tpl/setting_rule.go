@@ -22,8 +22,8 @@ type SettingRuleInfo struct {
 	Rule       interface{} `json:"rule"`
 	Value      string      `json:"value"`
 	Release    int64       `json:"release"`
-	CreatedAt  time.Time   `json:"created_at"`
-	UpdatedAt  time.Time   `json:"updated_at"`
+	CreatedAt  time.Time   `json:"createdAt"`
+	UpdatedAt  time.Time   `json:"updatedAt"`
 }
 
 // SettingRuleInfoFrom ...

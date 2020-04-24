@@ -353,3 +353,63 @@ func (b *Setting) DeleteRule(ctx context.Context, settingID, ruleID int64) (*tpl
 
 	return res, nil
 }
+
+// ListUsers 返回产品下功能配置项的用户列表
+func (b *Setting) ListUsers(ctx context.Context, productName, moduleName, settingName string, pg tpl.Pagination) (*tpl.SettingUsersInfoRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
+	if err != nil {
+		return nil, err
+	}
+
+	setting, err := b.ms.Setting.Acquire(ctx, module.ID, settingName)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := b.ms.Setting.ListUsers(ctx, setting.ID, pg)
+	if err != nil {
+		return nil, err
+	}
+	res := &tpl.SettingUsersInfoRes{Result: data}
+	// res.TotalSize = total
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
+	return res, nil
+}
+
+// ListGroups 返回产品下功能配置项的群组列表
+func (b *Setting) ListGroups(ctx context.Context, productName, moduleName, settingName string, pg tpl.Pagination) (*tpl.SettingGroupsInfoRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
+	if err != nil {
+		return nil, err
+	}
+
+	setting, err := b.ms.Setting.Acquire(ctx, module.ID, settingName)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := b.ms.Setting.ListGroups(ctx, setting.ID, pg)
+	if err != nil {
+		return nil, err
+	}
+	res := &tpl.SettingGroupsInfoRes{Result: data}
+	// res.TotalSize = total
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
+	return res, nil
+}

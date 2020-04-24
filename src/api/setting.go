@@ -225,3 +225,29 @@ func (a *Setting) DeleteRule(ctx *gear.Context) error {
 	}
 	return ctx.OkJSON(res)
 }
+
+// ListUsers ..
+func (a *Setting) ListUsers(ctx *gear.Context) error {
+	req := tpl.ProductModuleSettingURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+	res, err := a.blls.Setting.ListUsers(ctx, req.Product, req.Module, req.Setting, req.Pagination)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
+// ListGroups ..
+func (a *Setting) ListGroups(ctx *gear.Context) error {
+	req := tpl.ProductModuleSettingURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+	res, err := a.blls.Setting.ListGroups(ctx, req.Product, req.Module, req.Setting, req.Pagination)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}

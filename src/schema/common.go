@@ -15,7 +15,7 @@ type PercentRule struct {
 
 // Validate ...
 func (r *PercentRule) Validate() error {
-	if r.Kind != "user_percent" {
+	if r.Kind != "userPercent" {
 		return fmt.Errorf("invalid kind: %s", r.Kind)
 	}
 	if r.Rule.Value < 0 || r.Rule.Value > 100 {
@@ -34,9 +34,9 @@ func (r *PercentRule) ToRule() string {
 
 // ToPercentRule ...
 func ToPercentRule(kind, rule string) *PercentRule {
-	r := &PercentRule{Kind: "user_percent"}
+	r := &PercentRule{Kind: "userPercent"}
 	r.Rule.Value = -1
-	if kind == "user_percent" && rule != "" {
+	if kind == "userPercent" && rule != "" {
 		if err := json.Unmarshal([]byte(rule), &r.Rule); err != nil {
 			r.Rule.Value = -1
 		}
@@ -52,7 +52,7 @@ func ToPercentRule(kind, rule string) *PercentRule {
 // ToRuleObject ...
 func ToRuleObject(kind, rule string) interface{} {
 	switch kind {
-	case "user_percent":
+	case "userPercent":
 		return ToPercentRule(kind, rule).Rule
 	default:
 		return struct{}{}

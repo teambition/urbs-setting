@@ -41,7 +41,7 @@ func (t *GroupsBody) Validate() error {
 // GroupUpdateBody ...
 type GroupUpdateBody struct {
 	Desc   *string `json:"desc"`
-	SyncAt *int64  `json:"sync_at"`
+	SyncAt *int64  `json:"syncAt"`
 }
 
 // Validate 实现 gear.BodyTemplate。
@@ -83,8 +83,8 @@ type GroupsURL struct {
 // GroupMembersURL ...
 type GroupMembersURL struct {
 	UID    string `json:"uid" param:"uid"`
-	User   string `json:"user" query:"user"`       // 根据用户 uid 删除一个成员
-	SyncLt int64  `json:"sync_lt" query:"sync_lt"` // 或根据 sync_lt 删除同步时间小于指定值的所有成员
+	User   string `json:"user" query:"user"`     // 根据用户 uid 删除一个成员
+	SyncLt int64  `json:"syncLt" query:"syncLt"` // 或根据 sync_lt 删除同步时间小于指定值的所有成员
 }
 
 // Validate 实现 gear.BodyTemplate。
@@ -100,10 +100,10 @@ func (t *GroupMembersURL) Validate() error {
 	} else if t.SyncLt != 0 {
 		if t.SyncLt < 0 || t.SyncLt > (time.Now().UTC().Unix()+3600) {
 			// 较大的 SyncLt 可以删除整个群组成员！+3600 是防止把毫秒当秒用
-			return gear.ErrBadRequest.WithMsgf("invalid sync_lt: %d", t.SyncLt)
+			return gear.ErrBadRequest.WithMsgf("invalid syncLt: %d", t.SyncLt)
 		}
 	} else {
-		return gear.ErrBadRequest.WithMsg("user or sync_lt required")
+		return gear.ErrBadRequest.WithMsg("user or syncLt required")
 	}
 	return nil
 }
@@ -118,8 +118,8 @@ type GroupsRes struct {
 type GroupMember struct {
 	ID        int64     `json:"-"`
 	User      string    `json:"user"`
-	CreatedAt time.Time `json:"created_at"`
-	SyncAt    int64     `json:"sync_at"` // 归属关系同步时间戳，1970 以来的秒数，应该与 group.sync_at 相等
+	CreatedAt time.Time `json:"createdAt"`
+	SyncAt    int64     `json:"syncAt"` // 归属关系同步时间戳，1970 以来的秒数，应该与 group.sync_at 相等
 }
 
 // GroupMembersRes ...

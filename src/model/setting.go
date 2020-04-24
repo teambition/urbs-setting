@@ -7,6 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/schema"
+	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
 )
 
@@ -260,4 +261,62 @@ func (m *Setting) AcquireRelease(ctx context.Context, settingID int64) (int64, e
 		return 0, err
 	}
 	return setting.Release, nil
+}
+
+const listSettingUsersSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid`, t1.`value`, t1.`last_value` " +
+	"from `user_setting` t1, `urbs_user` t2 " +
+	"where t1.`setting_id` = ? and t1.`id` <= ? and t1.`user_id` = t2.`id` " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+// ListUsers ...
+func (m *Setting) ListUsers(ctx context.Context, settingID int64, pg tpl.Pagination) ([]tpl.SettingUserInfo, error) {
+	data := []tpl.SettingUserInfo{}
+	cursor := pg.TokenToID(true)
+
+	rows, err := m.DB.Raw(listSettingUsersSQL, settingID, cursor, pg.PageSize+1).Rows()
+	defer rows.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		info := tpl.SettingUserInfo{}
+		if err := rows.Scan(&info.ID, &info.AssignedAt, &info.Release, &info.User, &info.Value, &info.LastValue); err != nil {
+			return nil, err
+		}
+		info.SettingHID = service.IDToHID(settingID, "setting")
+		data = append(data, info)
+	}
+	return data, err
+}
+
+const listSettingGroupsSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid`, t2.`kind`, t2.`description`, t2.`status`, t1.`value`, t1.`last_value` " +
+	"from `group_setting` t1, `urbs_group` t2 " +
+	"where t1.`setting_id` = ? and t1.`id` <= ? and t1.`group_id` = t2.`id` " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+// ListGroups ...
+func (m *Setting) ListGroups(ctx context.Context, settingID int64, pg tpl.Pagination) ([]tpl.SettingGroupInfo, error) {
+	data := []tpl.SettingGroupInfo{}
+	cursor := pg.TokenToID(true)
+
+	rows, err := m.DB.Raw(listSettingGroupsSQL, settingID, cursor, pg.PageSize+1).Rows()
+	defer rows.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		info := tpl.SettingGroupInfo{}
+		if err := rows.Scan(&info.ID, &info.AssignedAt, &info.Release, &info.Group, &info.Kind, &info.Desc, &info.Status, &info.Value, &info.LastValue); err != nil {
+			return nil, err
+		}
+		info.SettingHID = service.IDToHID(settingID, "setting")
+		data = append(data, info)
+	}
+	return data, err
 }

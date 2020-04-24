@@ -268,3 +268,53 @@ func (b *Label) DeleteRule(ctx context.Context, labelID, ruleID int64) (*tpl.Boo
 
 	return res, nil
 }
+
+// ListUsers 返回产品下灰度标签的用户列表
+func (b *Label) ListUsers(ctx context.Context, productName, labelName string, pg tpl.Pagination) (*tpl.LabelUsersInfoRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	label, err := b.ms.Label.Acquire(ctx, productID, labelName)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := b.ms.Label.ListUsers(ctx, label.ID, pg)
+	if err != nil {
+		return nil, err
+	}
+	res := &tpl.LabelUsersInfoRes{Result: data}
+	// res.TotalSize = total
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
+	return res, nil
+}
+
+// ListGroups 返回产品下灰度标签的群组列表
+func (b *Label) ListGroups(ctx context.Context, productName, labelName string, pg tpl.Pagination) (*tpl.LabelGroupsInfoRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	label, err := b.ms.Label.Acquire(ctx, productID, labelName)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := b.ms.Label.ListGroups(ctx, label.ID, pg)
+	if err != nil {
+		return nil, err
+	}
+	res := &tpl.LabelGroupsInfoRes{Result: data}
+	// res.TotalSize = total
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
+	return res, nil
+}
