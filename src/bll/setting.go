@@ -14,7 +14,7 @@ type Setting struct {
 	ms *model.Models
 }
 
-// List 返回产品下的功能模块配置项列表，TODO：支持分页
+// List 返回产品下的功能模块配置项列表
 func (b *Setting) List(ctx context.Context, productName, moduleName string, pg tpl.Pagination) (*tpl.SettingsInfoRes, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
@@ -33,6 +33,26 @@ func (b *Setting) List(ctx context.Context, productName, moduleName string, pg t
 
 	res := &tpl.SettingsInfoRes{Result: tpl.SettingsInfoFrom(settings, productName, moduleName)}
 	res.TotalSize = int(module.Status)
+	if len(res.Result) > pg.PageSize {
+		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
+		res.Result = res.Result[:pg.PageSize]
+	}
+	return res, nil
+}
+
+// ListByProduct 返回产品下的所有功能模块的配置项列表
+func (b *Setting) ListByProduct(ctx context.Context, productName string, pg tpl.Pagination) (*tpl.SettingsInfoRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	settingsInfo, err := b.ms.Setting.FindByProductID(ctx, productName, productID, pg)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &tpl.SettingsInfoRes{Result: settingsInfo}
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]
@@ -282,8 +302,18 @@ func (b *Setting) ListRules(ctx context.Context, productName, moduleName, settin
 }
 
 // UpdateRule ...
-func (b *Setting) UpdateRule(ctx context.Context, settingID, ruleID int64, body tpl.SettingRuleBody) (*tpl.SettingRuleInfoRes, error) {
-	setting, err := b.ms.Setting.AcquireByID(ctx, settingID)
+func (b *Setting) UpdateRule(ctx context.Context, productName, moduleName, settingName string, ruleID int64, body tpl.SettingRuleBody) (*tpl.SettingRuleInfoRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
+	if err != nil {
+		return nil, err
+	}
+
+	setting, err := b.ms.Setting.Acquire(ctx, module.ID, settingName)
 	if err != nil {
 		return nil, err
 	}
@@ -329,8 +359,18 @@ func (b *Setting) UpdateRule(ctx context.Context, settingID, ruleID int64, body 
 }
 
 // DeleteRule ...
-func (b *Setting) DeleteRule(ctx context.Context, settingID, ruleID int64) (*tpl.BoolRes, error) {
-	setting, err := b.ms.Setting.AcquireByID(ctx, settingID)
+func (b *Setting) DeleteRule(ctx context.Context, productName, moduleName, settingName string, ruleID int64) (*tpl.BoolRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
+	if err != nil {
+		return nil, err
+	}
+
+	setting, err := b.ms.Setting.Acquire(ctx, module.ID, settingName)
 	if err != nil {
 		return nil, err
 	}

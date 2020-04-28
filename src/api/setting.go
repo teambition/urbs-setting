@@ -25,6 +25,19 @@ func (a *Setting) List(ctx *gear.Context) error {
 	return ctx.OkJSON(res)
 }
 
+// ListByProduct ..
+func (a *Setting) ListByProduct(ctx *gear.Context) error {
+	req := tpl.ProductPaginationURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+	res, err := a.blls.Setting.ListByProduct(ctx, req.Product, req.Pagination)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
 // Create ..
 func (a *Setting) Create(ctx *gear.Context) error {
 	req := tpl.ProductModuleURL{}
@@ -175,19 +188,14 @@ func (a *Setting) ListRules(ctx *gear.Context) error {
 
 // UpdateRule ..
 func (a *Setting) UpdateRule(ctx *gear.Context) error {
-	req := tpl.HIDRuleHIDURL{}
+	req := tpl.ProductModuleSettingHIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	settingID := service.HIDToID(req.HID, "setting")
-	if settingID <= 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid setting hid: %s", req.HID)
-	}
-
-	ruleID := service.HIDToID(req.RuleHID, "setting_rule")
+	ruleID := service.HIDToID(req.HID, "setting_rule")
 	if ruleID <= 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid setting_rule hid: %s", req.RuleHID)
+		return gear.ErrBadRequest.WithMsgf("invalid setting_rule hid: %s", req.HID)
 	}
 
 	body := tpl.SettingRuleBody{}
@@ -195,7 +203,7 @@ func (a *Setting) UpdateRule(ctx *gear.Context) error {
 		return err
 	}
 
-	res, err := a.blls.Setting.UpdateRule(ctx, settingID, ruleID, body)
+	res, err := a.blls.Setting.UpdateRule(ctx, req.Product, req.Module, req.Setting, ruleID, body)
 	if err != nil {
 		return err
 	}
@@ -204,22 +212,17 @@ func (a *Setting) UpdateRule(ctx *gear.Context) error {
 
 // DeleteRule ..
 func (a *Setting) DeleteRule(ctx *gear.Context) error {
-	req := tpl.HIDRuleHIDURL{}
+	req := tpl.ProductModuleSettingHIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	settingID := service.HIDToID(req.HID, "setting")
-	if settingID <= 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid setting hid: %s", req.HID)
-	}
-
-	ruleID := service.HIDToID(req.RuleHID, "setting_rule")
+	ruleID := service.HIDToID(req.HID, "setting_rule")
 	if ruleID <= 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid setting_rule hid: %s", req.RuleHID)
+		return gear.ErrBadRequest.WithMsgf("invalid setting_rule hid: %s", req.HID)
 	}
 
-	res, err := a.blls.Setting.DeleteRule(ctx, settingID, ruleID)
+	res, err := a.blls.Setting.DeleteRule(ctx, req.Product, req.Module, req.Setting, ruleID)
 	if err != nil {
 		return err
 	}

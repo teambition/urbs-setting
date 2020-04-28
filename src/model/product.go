@@ -60,7 +60,7 @@ func (m *Product) Find(ctx context.Context, pg tpl.Pagination) ([]schema.Product
 	products := make([]schema.Product, 0)
 	cursor := pg.TokenToID()
 
-	err := m.DB.Where("`id` >= ? and `deleted_at` is null", cursor).
+	err := m.DB.Where("`id` >= ? and `deleted_at` is null and `offline_at` is null", cursor).
 		Order("`id`").Limit(pg.PageSize + 1).Find(&products).Error
 	return products, err
 }
@@ -68,7 +68,7 @@ func (m *Product) Find(ctx context.Context, pg tpl.Pagination) ([]schema.Product
 // Count 计算 products 总数
 func (m *Product) Count(ctx context.Context) (int, error) {
 	count := 0
-	err := m.DB.Model(&schema.Product{}).Where("`deleted_at` is null").Count(&count).Error
+	err := m.DB.Model(&schema.Product{}).Where("`deleted_at` is null and `offline_at` is null").Count(&count).Error
 	return count, err
 }
 

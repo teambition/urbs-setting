@@ -207,8 +207,13 @@ func (b *Label) ListRules(ctx context.Context, productName, labelName string) (*
 }
 
 // UpdateRule ...
-func (b *Label) UpdateRule(ctx context.Context, labelID, ruleID int64, body tpl.LabelRuleBody) (*tpl.LabelRuleInfoRes, error) {
-	label, err := b.ms.Label.AcquireByID(ctx, labelID)
+func (b *Label) UpdateRule(ctx context.Context, productName, labelName string, ruleID int64, body tpl.LabelRuleBody) (*tpl.LabelRuleInfoRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	label, err := b.ms.Label.Acquire(ctx, productID, labelName)
 	if err != nil {
 		return nil, err
 	}
@@ -244,8 +249,13 @@ func (b *Label) UpdateRule(ctx context.Context, labelID, ruleID int64, body tpl.
 }
 
 // DeleteRule ...
-func (b *Label) DeleteRule(ctx context.Context, labelID, ruleID int64) (*tpl.BoolRes, error) {
-	label, err := b.ms.Label.AcquireByID(ctx, labelID)
+func (b *Label) DeleteRule(ctx context.Context, productName, labelName string, ruleID int64) (*tpl.BoolRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	label, err := b.ms.Label.Acquire(ctx, productID, labelName)
 	if err != nil {
 		return nil, err
 	}

@@ -163,19 +163,14 @@ func (a *Label) ListRules(ctx *gear.Context) error {
 
 // UpdateRule ..
 func (a *Label) UpdateRule(ctx *gear.Context) error {
-	req := tpl.HIDRuleHIDURL{}
+	req := tpl.ProductLabelHIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	labelID := service.HIDToID(req.HID, "label")
-	if labelID <= 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid label hid: %s", req.HID)
-	}
-
-	ruleID := service.HIDToID(req.RuleHID, "label_rule")
+	ruleID := service.HIDToID(req.HID, "label_rule")
 	if ruleID <= 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid label_rule hid: %s", req.RuleHID)
+		return gear.ErrBadRequest.WithMsgf("invalid label_rule hid: %s", req.HID)
 	}
 
 	body := tpl.LabelRuleBody{}
@@ -183,7 +178,7 @@ func (a *Label) UpdateRule(ctx *gear.Context) error {
 		return err
 	}
 
-	res, err := a.blls.Label.UpdateRule(ctx, labelID, ruleID, body)
+	res, err := a.blls.Label.UpdateRule(ctx, req.Product, req.Label, ruleID, body)
 	if err != nil {
 		return err
 	}
@@ -192,22 +187,17 @@ func (a *Label) UpdateRule(ctx *gear.Context) error {
 
 // DeleteRule ..
 func (a *Label) DeleteRule(ctx *gear.Context) error {
-	req := tpl.HIDRuleHIDURL{}
+	req := tpl.ProductLabelHIDURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	labelID := service.HIDToID(req.HID, "label")
-	if labelID <= 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid label hid: %s", req.HID)
-	}
-
-	ruleID := service.HIDToID(req.RuleHID, "label_rule")
+	ruleID := service.HIDToID(req.HID, "label_rule")
 	if ruleID <= 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid label_rule hid: %s", req.RuleHID)
+		return gear.ErrBadRequest.WithMsgf("invalid label_rule hid: %s", req.HID)
 	}
 
-	res, err := a.blls.Label.DeleteRule(ctx, labelID, ruleID)
+	res, err := a.blls.Label.DeleteRule(ctx, req.Product, req.Label, ruleID)
 	if err != nil {
 		return err
 	}

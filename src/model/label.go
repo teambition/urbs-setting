@@ -70,7 +70,7 @@ func (m *Label) AcquireByID(ctx context.Context, labelID int64) (*schema.Label, 
 func (m *Label) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Label, error) {
 	labels := make([]schema.Label, 0)
 	cursor := pg.TokenToID()
-	err := m.DB.Where("`product_id` = ? and `id` >= ?", productID, cursor).
+	err := m.DB.Where("`product_id` = ? and `id` >= ? and `offline_at` is null", productID, cursor).
 		Order("`id`").Limit(pg.PageSize + 1).Find(&labels).Error
 	return labels, err
 }
@@ -78,7 +78,7 @@ func (m *Label) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([
 // Count 计算 product labels 总数
 func (m *Label) Count(ctx context.Context, productID int64) (int, error) {
 	count := 0
-	err := m.DB.Model(&schema.Label{}).Where("`product_id` = ?", productID).Count(&count).Error
+	err := m.DB.Model(&schema.Label{}).Where("`product_id` = ? and `offline_at` is null", productID).Count(&count).Error
 	return count, err
 }
 

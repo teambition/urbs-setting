@@ -121,23 +121,6 @@ func (t *UIDPaginationURL) Validate() error {
 	return nil
 }
 
-// HIDRuleHIDURL ...
-type HIDRuleHIDURL struct {
-	HID     string `json:"hid" param:"hid"`
-	RuleHID string `json:"ruleHID" param:"ruleHID"`
-}
-
-// Validate 实现 gear.BodyTemplate。
-func (t *HIDRuleHIDURL) Validate() error {
-	if !validHIDReg.MatchString(t.HID) {
-		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", t.HID)
-	}
-	if !validHIDReg.MatchString(t.RuleHID) {
-		return gear.ErrBadRequest.WithMsgf("invalid rule hid: %s", t.RuleHID)
-	}
-	return nil
-}
-
 // NameDescBody ...
 type NameDescBody struct {
 	Name string `json:"name"`

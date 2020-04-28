@@ -131,6 +131,8 @@ func newRouters(apis *APIs) []*gear.Router {
 
 	// ***** setting ******
 	// 读取指定产品功能模块的配置项
+	routerV1.Get("/products/:product/settings", apis.Setting.ListByProduct)
+	// 读取指定产品功能模块的配置项
 	routerV1.Get("/products/:product/modules/:module/settings", apis.Setting.List)
 	// 创建指定产品功能模块配置项
 	routerV1.Post("/products/:product/modules/:module/settings", apis.Setting.Create)
@@ -155,9 +157,9 @@ func newRouters(apis *APIs) []*gear.Router {
 	// 读取指定产品功能模块配置项的群组列表
 	routerV1.Get("/products/:product/modules/:module/settings/:setting/groups", apis.Setting.ListGroups)
 	// 更新指定产品功能模块配置项的指定灰度发布规则
-	routerV1.Put("/settings/:hid/rules/:ruleHID", apis.Setting.UpdateRule)
+	routerV1.Put("/products/:product/modules/:module/settings/:setting/rules/:hid", apis.Setting.UpdateRule)
 	// 删除指定产品功能模块配置项的指定灰度发布规则
-	routerV1.Delete("/settings/:hid/rules/:ruleHID", apis.Setting.DeleteRule)
+	routerV1.Delete("/products/:product/modules/:module/settings/:setting/rules/:hid", apis.Setting.DeleteRule)
 
 	// ***** label ******
 	// 读取指定产品灰度标签
@@ -185,9 +187,9 @@ func newRouters(apis *APIs) []*gear.Router {
 	// 读取指定产品灰度标签的群组列表
 	routerV1.Get("/products/:product/labels/:label/groups", apis.Label.ListGroups)
 	// 更新指定产品灰度标签的指定灰度发布规则
-	routerV1.Put("/labels/:hid/rules/:ruleHID", apis.Label.UpdateRule)
+	routerV1.Put("/products/:product/labels/:label/rules/:hid", apis.Label.UpdateRule)
 	// 删除指定产品灰度标签的指定灰度发布规则
-	routerV1.Delete("/labels/:hid/rules/:ruleHID", apis.Label.DeleteRule)
+	routerV1.Delete("/products/:product/labels/:label/rules/:hid", apis.Label.DeleteRule)
 
 	return []*gear.Router{router, routerV1}
 }

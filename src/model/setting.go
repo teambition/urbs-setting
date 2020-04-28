@@ -65,11 +65,40 @@ func (m *Setting) AcquireByID(ctx context.Context, settingID int64) (*schema.Set
 	return setting, nil
 }
 
+const findSettingsByProductIDSQL = "select t1.`id`, t1.`created_at`, t1.`updated_at`, t1.`name`, t1.`description`, t1.`channels`, t1.`clients`, t1.`vals`, t1.`status`, t1.`rls`, t2.`name` as module " +
+	"from `urbs_setting` t1, `urbs_module` t2 " +
+	"where t2.`product_id` = ? and t2.`offline_at` is null and t2.`id` = t1.`module_id` and t1.`id` >= ? and t1.`offline_at` is null " +
+	"order by t1.`id` limit ?"
+
+// FindByProductID 根据条件查找 settings
+func (m *Setting) FindByProductID(ctx context.Context, product string, productID int64, pg tpl.Pagination) ([]tpl.SettingInfo, error) {
+	cursor := pg.TokenToID()
+
+	rows, err := m.DB.Raw(findSettingsByProductIDSQL, productID, cursor, pg.PageSize+1).Rows()
+	defer rows.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	data := make([]tpl.SettingInfo, 0)
+	for rows.Next() {
+		var module string
+		var s schema.Setting
+		if err := rows.Scan(&s.ID, &s.CreatedAt, &s.UpdatedAt, &s.Name, &s.Desc, &s.Channels, &s.Clients, &s.Values, &s.Status, &s.Release, &module); err != nil {
+			return nil, err
+		}
+
+		data = append(data, tpl.SettingInfoFrom(s, product, module))
+	}
+
+	return data, err
+}
+
 // Find 根据条件查找 settings
 func (m *Setting) Find(ctx context.Context, moduleID int64, pg tpl.Pagination) ([]schema.Setting, error) {
 	settings := make([]schema.Setting, 0)
 	cursor := pg.TokenToID()
-	err := m.DB.Where("`module_id` = ? and `id` >= ?", moduleID, cursor).
+	err := m.DB.Where("`module_id` = ? and `id` >= ? and `offline_at` is null", moduleID, cursor).
 		Order("`id`").Limit(pg.PageSize + 1).Find(&settings).Error
 	return settings, err
 }

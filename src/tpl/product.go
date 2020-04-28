@@ -100,6 +100,23 @@ func (t *ProductLabelURL) Validate() error {
 	return nil
 }
 
+// ProductLabelHIDURL ...
+type ProductLabelHIDURL struct {
+	ProductLabelURL
+	HID string `json:"hid" param:"hid"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *ProductLabelHIDURL) Validate() error {
+	if !validHIDReg.MatchString(t.HID) {
+		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", t.HID)
+	}
+	if err := t.ProductLabelURL.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ProductModuleURL ...
 type ProductModuleURL struct {
 	ProductPaginationURL
@@ -129,6 +146,23 @@ func (t *ProductModuleSettingURL) Validate() error {
 		return gear.ErrBadRequest.WithMsgf("invalid setting name: %s", t.Setting)
 	}
 	if err := t.ProductModuleURL.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ProductModuleSettingHIDURL ...
+type ProductModuleSettingHIDURL struct {
+	ProductModuleSettingURL
+	HID string `json:"hid" param:"hid"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *ProductModuleSettingHIDURL) Validate() error {
+	if !validHIDReg.MatchString(t.HID) {
+		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", t.HID)
+	}
+	if err := t.ProductModuleSettingURL.Validate(); err != nil {
 		return err
 	}
 	return nil

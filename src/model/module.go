@@ -56,7 +56,7 @@ func (m *Module) Acquire(ctx context.Context, productID int64, moduleName string
 func (m *Module) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Module, error) {
 	modules := make([]schema.Module, 0)
 	cursor := pg.TokenToID()
-	err := m.DB.Where("`product_id` = ? and `id` >= ?", productID, cursor).
+	err := m.DB.Where("`product_id` = ? and `id` >= ?  and `offline_at` is null", productID, cursor).
 		Order("`id`").Limit(pg.PageSize + 1).Find(&modules).Error
 	return modules, err
 }
@@ -64,7 +64,7 @@ func (m *Module) Find(ctx context.Context, productID int64, pg tpl.Pagination) (
 // Count 计算 product modules 总数
 func (m *Module) Count(ctx context.Context, productID int64) (int, error) {
 	count := 0
-	err := m.DB.Model(&schema.Module{}).Where("`product_id` = ?", productID).Count(&count).Error
+	err := m.DB.Model(&schema.Module{}).Where("`product_id` = ? and `offline_at` is null", productID).Count(&count).Error
 	return count, err
 }
 
