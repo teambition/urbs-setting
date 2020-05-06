@@ -11,6 +11,7 @@
         - $ref: "#/components/parameters/PathUID"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/LabelsInfoRes'
@@ -31,6 +32,7 @@
         - $ref: "#/components/parameters/PathUID"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/MySettingsRes'
@@ -56,6 +58,7 @@
             type: string
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/GroupsRes'
@@ -219,6 +222,7 @@
         - $ref: "#/components/parameters/PathUID"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/GroupMembersRes'

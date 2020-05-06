@@ -181,7 +181,7 @@ func TestGroupAPIs(t *testing.T) {
 			json := tpl.GroupsRes{}
 			res.JSON(&json)
 			assert.True(len(json.Result) > 0)
-			assert.Equal("org", json.Result[0].Kind)
+			assert.Equal("project", json.Result[0].Kind)
 		})
 
 		t.Run("should work with kind", func(t *testing.T) {
@@ -691,7 +691,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal(2, len(json.Result))
 			assert.Equal(2, json.TotalSize)
 			assert.Equal("", json.NextPageToken)
-			assert.Equal(service.IDToHID(label2.ID, "label"), json.Result[1].HID)
+			assert.Equal(service.IDToHID(label2.ID, "label"), json.Result[0].HID)
 		})
 	})
 
@@ -770,7 +770,7 @@ func TestGroupAPIs(t *testing.T) {
 		t.Run("should work", func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Get(fmt.Sprintf("%s/v1/groups/%s/settings?product=%s", tt.Host, group.UID, product.Name)).
+			res, err := request.Get(fmt.Sprintf("%s/v1/groups/%s/settings", tt.Host, group.UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -797,7 +797,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Nil(tt.DB.Table(`group_setting`).Where("group_id = ?", group.ID).Count(&count).Error)
 			assert.Equal(int64(1), count)
 
-			res, err = request.Get(fmt.Sprintf("%s/v1/groups/%s/settings?product=%s", tt.Host, group.UID, product.Name)).
+			res, err = request.Get(fmt.Sprintf("%s/v1/groups/%s/settings", tt.Host, group.UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -832,7 +832,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal(200, res.StatusCode)
 			res.Content() // close http clients
 
-			res, err = request.Get(fmt.Sprintf("%s/v1/groups/%s/settings?product=%s", tt.Host, group.UID, product.Name)).
+			res, err = request.Get(fmt.Sprintf("%s/v1/groups/%s/settings", tt.Host, group.UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -848,7 +848,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal(2, len(json.Result))
 			assert.Equal("", json.NextPageToken)
 
-			data = json.Result[1]
+			data = json.Result[0]
 			assert.Equal(service.IDToHID(setting2.ID, "setting"), data.HID)
 			assert.Equal(module.Name, data.Module)
 			assert.Equal(setting2.Name, data.Name)
@@ -885,7 +885,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal(200, res.StatusCode)
 			res.Content() // close http client
 
-			res, err = request.Get(fmt.Sprintf("%s/v1/groups/%s/settings?product=%s", tt.Host, group.UID, product.Name)).
+			res, err = request.Get(fmt.Sprintf("%s/v1/groups/%s/settings", tt.Host, group.UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -920,7 +920,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal(200, res.StatusCode)
 			res.Content() // close http client
 
-			res, err = request.Get(fmt.Sprintf("%s/v1/groups/%s/settings?product=%s", tt.Host, group.UID, product.Name)).
+			res, err = request.Get(fmt.Sprintf("%s/v1/groups/%s/settings", tt.Host, group.UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -954,7 +954,7 @@ func TestGroupAPIs(t *testing.T) {
 			res.JSON(&json2)
 			assert.True(json2.Result)
 
-			res, err = request.Get(fmt.Sprintf("%s/v1/groups/%s/settings?product=%s", tt.Host, group.UID, product.Name)).
+			res, err = request.Get(fmt.Sprintf("%s/v1/groups/%s/settings", tt.Host, group.UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)

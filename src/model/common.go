@@ -90,11 +90,11 @@ func (ms *Models) TryApplySettingRules(ctx context.Context, productID, userID in
 
 func (m *Model) lock(ctx context.Context, key string, expire time.Duration) error {
 	now := time.Now().UTC()
-	lock := &schema.Lock{Key: key, ExpireAt: now.Add(expire)}
+	lock := &schema.Lock{Name: key, ExpireAt: now.Add(expire)}
 	err := m.DB.Create(lock).Error
 	if err != nil {
 		l := &schema.Lock{}
-		if e := m.DB.Where("`key` = ?", key).First(l).Error; e == nil {
+		if e := m.DB.Where("`name` = ?", key).First(l).Error; e == nil {
 			if l.ExpireAt.Before(now) {
 				m.unlock(ctx, key) // 释放失效、异常的锁
 				err = m.DB.Create(lock).Error
@@ -110,7 +110,7 @@ func (m *Model) lock(ctx context.Context, key string, expire time.Duration) erro
 }
 
 func (m *Model) unlock(ctx context.Context, key string) {
-	_ = m.DB.Where("`key` = ?", key).Delete(&schema.Lock{})
+	_ = m.DB.Where("`name` = ?", key).Delete(&schema.Lock{})
 }
 
 const refreshLabelStatusSQL = "select sum(t2.`status`) as Status " +
@@ -215,7 +215,7 @@ func (m *Model) increaseStatisticStatus(ctx context.Context, key schema.Statisti
 	} else if delta == 0 {
 		return nil
 	}
-	const sql = "insert ignore into `urbs_statistic` (`key`, `status`) values (?, ?) " +
+	const sql = "insert ignore into `urbs_statistic` (`name`, `status`) values (?, ?) " +
 		"on duplicate key update `status` = ?"
 
 	return m.DB.Exec(sql, key, 1, exp).Error
@@ -223,7 +223,7 @@ func (m *Model) increaseStatisticStatus(ctx context.Context, key schema.Statisti
 
 // updateStatisticStatus 更新指定 key 的统计值
 func (m *Model) updateStatisticStatus(ctx context.Context, key schema.StatisticKey, status int64) error {
-	const sql = "insert ignore into `urbs_statistic` (`key`, `status`) values (?, ?) " +
+	const sql = "insert ignore into `urbs_statistic` (`name`, `status`) values (?, ?) " +
 		"on duplicate key update `status` = ?"
 
 	return m.DB.Exec(sql, key, status, status).Error
@@ -231,7 +231,7 @@ func (m *Model) updateStatisticStatus(ctx context.Context, key schema.StatisticK
 
 // updateStatisticStatus 更新指定 key 的 JSON 值
 func (m *Model) updateStatisticValue(ctx context.Context, key schema.StatisticKey, value string) error {
-	const sql = "insert ignore into `urbs_statistic` (`key`, `value`) values (?, ?) " +
+	const sql = "insert ignore into `urbs_statistic` (`name`, `value`) values (?, ?) " +
 		"on duplicate key update `value` = ?"
 
 	return m.DB.Exec(sql, key, value, value).Error

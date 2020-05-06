@@ -26,13 +26,13 @@ func (b *Setting) List(ctx context.Context, productName, moduleName string, pg t
 		return nil, err
 	}
 
-	settings, err := b.ms.Setting.Find(ctx, module.ID, pg)
+	settings, total, err := b.ms.Setting.Find(ctx, module.ID, pg)
 	if err != nil {
 		return nil, err
 	}
 
 	res := &tpl.SettingsInfoRes{Result: tpl.SettingsInfoFrom(settings, productName, moduleName)}
-	res.TotalSize = int(module.Status)
+	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]
@@ -47,12 +47,13 @@ func (b *Setting) ListByProduct(ctx context.Context, productName string, pg tpl.
 		return nil, err
 	}
 
-	settingsInfo, err := b.ms.Setting.FindByProductID(ctx, productName, productID, pg)
+	settingsInfo, total, err := b.ms.Setting.FindByProductID(ctx, productName, productID, pg)
 	if err != nil {
 		return nil, err
 	}
 
 	res := &tpl.SettingsInfoRes{Result: settingsInfo}
+	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]
@@ -411,12 +412,12 @@ func (b *Setting) ListUsers(ctx context.Context, productName, moduleName, settin
 		return nil, err
 	}
 
-	data, err := b.ms.Setting.ListUsers(ctx, setting.ID, pg)
+	data, total, err := b.ms.Setting.ListUsers(ctx, setting.ID, pg)
 	if err != nil {
 		return nil, err
 	}
 	res := &tpl.SettingUsersInfoRes{Result: data}
-	// res.TotalSize = total
+	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]
@@ -441,12 +442,12 @@ func (b *Setting) ListGroups(ctx context.Context, productName, moduleName, setti
 		return nil, err
 	}
 
-	data, err := b.ms.Setting.ListGroups(ctx, setting.ID, pg)
+	data, total, err := b.ms.Setting.ListGroups(ctx, setting.ID, pg)
 	if err != nil {
 		return nil, err
 	}
 	res := &tpl.SettingGroupsInfoRes{Result: data}
-	// res.TotalSize = total
+	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]

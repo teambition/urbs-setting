@@ -3,6 +3,7 @@ package model
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -53,14 +54,38 @@ func (m *User) Acquire(ctx context.Context, uid string) (*schema.User, error) {
 	return user, nil
 }
 
-// Find 根据条件查找 products
-func (m *User) Find(ctx context.Context, pg tpl.Pagination) ([]schema.User, error) {
-	users := make([]schema.User, 0)
-	cursor := pg.TokenToID()
+// AcquireID ...
+func (m *User) AcquireID(ctx context.Context, uid string) (int64, error) {
+	user, err := m.FindByUID(ctx, uid, "`id`")
+	if err != nil {
+		return 0, err
+	}
+	if user == nil {
+		return 0, gear.ErrNotFound.WithMsgf("user %s not found", uid)
+	}
+	return user.ID, nil
+}
 
-	err := m.DB.Where("`id` >= ?", cursor).
-		Order("`id`").Limit(pg.PageSize + 1).Find(&users).Error
-	return users, err
+// Find 根据条件查找 products
+func (m *User) Find(ctx context.Context, pg tpl.Pagination) ([]schema.User, int, error) {
+	users := make([]schema.User, 0)
+	cursor := pg.TokenToID(true)
+	total := 0
+
+	var err error
+	db := m.DB.Where("`id` <= ?", cursor)
+	if pg.Q != "" {
+		db = m.DB.Where("`id` <= ? and `uid` like ?", cursor, pg.Q)
+		err = db.Model(&schema.User{}).Count(&total).Error
+	}
+
+	if err == nil {
+		err = db.Order("`id` desc").Limit(pg.PageSize + 1).Find(&users).Error
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+	return users, total, nil
 }
 
 const userCacheLabelsSQL = "(select t2.`id`, t1.`created_at`, t2.`name`, t3.`name` as `p`, t2.`channels`, t2.`clients` " +
@@ -210,23 +235,56 @@ func (m *User) FindSettingsUnionAll(ctx context.Context, userID int64, groupIDs 
 	return data, nil
 }
 
-const userLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`offline_at`, t2.`name`, " +
+const listUserLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`offline_at`, t2.`name`, " +
 	"t2.`description`, t2.`status`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
 	"from `user_label` t1, `urbs_label` t2, `urbs_product` t3 " +
-	"where t1.`user_id` = ? and t1.`id` >= ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.id " +
-	"order by t1.`id` asc " +
+	"where t1.`user_id` = ? and t1.`id` <= ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.id " +
+	"order by t1.`id` desc " +
 	"limit ?"
 
-// FindLabels 根据用户 ID 返回其 labels 数据。
-func (m *User) FindLabels(ctx context.Context, userID int64, pg tpl.Pagination) ([]tpl.LabelInfo, error) {
-	data := []tpl.LabelInfo{}
-	cursor := pg.TokenToID()
+const countUserLabelsSQL = "select count(t2.`id`) " +
+	"from `user_label` t1, `urbs_label` t2 " +
+	"where t1.`user_id` = ? and t1.`label_id` = t2.`id`"
 
-	rows, err := m.DB.Raw(userLabelsSQL, userID, cursor, pg.PageSize+1).Rows()
+const searchUserLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`offline_at`, t2.`name`, " +
+	"t2.`description`, t2.`status`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
+	"from `user_label` t1, `urbs_label` t2, `urbs_product` t3 " +
+	"where t1.`user_id` = ? and t1.`id` <= ? and t1.`label_id` = t2.`id` and t2.`name` like ? and t2.`product_id` = t3.`id` " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+const countSearchUserLabelsSQL = "select count(t2.`id`) " +
+	"from `user_label` t1, `urbs_label` t2 " +
+	"where t1.`user_id` = ? and t1.`label_id` = t2.`id` and t2.`name` like ?"
+
+// FindLabels 根据用户 ID 返回其 labels 数据。
+func (m *User) FindLabels(ctx context.Context, userID int64, pg tpl.Pagination) ([]tpl.LabelInfo, int, error) {
+	data := []tpl.LabelInfo{}
+	cursor := pg.TokenToID(true)
+	total := 0
+
+	if pg.Q == "" {
+		if err := m.DB.Raw(countUserLabelsSQL, userID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	} else {
+		if err := m.DB.Raw(countSearchUserLabelsSQL, userID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	}
+
+	var err error
+	var rows *sql.Rows
+	if pg.Q == "" {
+		rows, err = m.DB.Raw(listUserLabelsSQL, userID, cursor, pg.PageSize+1).Rows()
+	} else {
+		rows, err = m.DB.Raw(searchUserLabelsSQL, userID, cursor, pg.Q, pg.PageSize+1).Rows()
+	}
+
 	defer rows.Close()
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	for rows.Next() {
@@ -235,7 +293,7 @@ func (m *User) FindLabels(ctx context.Context, userID int64, pg tpl.Pagination) 
 		var channels string
 		if err := rows.Scan(&labelInfo.ID, &labelInfo.CreatedAt, &labelInfo.UpdatedAt, &labelInfo.OfflineAt,
 			&labelInfo.Name, &labelInfo.Desc, &labelInfo.Status, &channels, &clients, &labelInfo.Product); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		labelInfo.Channels = tpl.StringToSlice(channels)
 		labelInfo.Clients = tpl.StringToSlice(clients)
@@ -243,46 +301,72 @@ func (m *User) FindLabels(ctx context.Context, userID int64, pg tpl.Pagination) 
 		data = append(data, labelInfo)
 	}
 
-	return data, nil
+	return data, total, nil
 }
 
-// CountLabels 计算 user labels 总数
-func (m *User) CountLabels(ctx context.Context, userID int64) (int, error) {
-	count := 0
-	err := m.DB.Model(&schema.UserLabel{}).Where("`user_id` = ?", userID).Count(&count).Error
-	return count, err
-}
-
-const userSettingsSQL = "select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
-	"t2.`id`, t2.`name`, t3.`name` as `module` " +
-	"from `user_setting` t1, `urbs_setting` t2, `urbs_module` t3 " +
-	"where t1.`user_id` = ? and t1.`id` >= ? and t1.`setting_id` = t2.`id` and t2.`module_id` in ( ? ) and t2.`module_id` = t3.`id` " +
-	"order by t1.`id` asc " +
+const listUserSettingsSQL = "select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
+	"t2.`id`, t2.`name`, t3.`name` as `module`, t4.`name` as `product` " +
+	"from `user_setting` t1, `urbs_setting` t2, `urbs_module` t3, `urbs_product` t4 " +
+	"where t1.`user_id` = ? and t1.`id` <= ? and t1.`setting_id` = t2.`id` and t2.`module_id` = t3.`id` and t3.`product_id` = t4.`id` " +
+	"order by t1.`id` desc " +
 	"limit ?"
 
-// FindSettings 根据用户 ID, moduleIDs 返回 settings 数据。
-func (m *User) FindSettings(ctx context.Context, userID int64, moduleIDs []int64, pg tpl.Pagination) ([]tpl.MySetting, error) {
-	data := []tpl.MySetting{}
-	cursor := pg.TokenToID()
+const countUserSettingsSQL = "select count(t2.`id`) " +
+	"from `user_setting` t1, `urbs_setting` t2 " +
+	"where t1.`user_id` = ? and t1.`setting_id` = t2.`id`"
 
-	rows, err := m.DB.Raw(userSettingsSQL, userID, cursor, moduleIDs, pg.PageSize+1).Rows()
+const searchUserSettingsSQL = "select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
+	"t2.`id`, t2.`name`, t3.`name` as `module`, t4.`name` as `product` " +
+	"from `user_setting` t1, `urbs_setting` t2, `urbs_module` t3, `urbs_product` t4 " +
+	"where t1.`user_id` = ? and t1.`id` <= ? and t1.`setting_id` = t2.`id` and t2.`name` like ? and t2.`module_id` = t3.`id` and t3.`product_id` = t4.`id` " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+const countSearchUserSettingsSQL = "select count(t2.`id`) " +
+	"from `user_setting` t1, `urbs_setting` t2 " +
+	"where t1.`user_id` = ? and t1.`setting_id` = t2.`id` and t2.`name` like ?"
+
+// FindSettings 根据用户 ID 返回 settings 数据。
+func (m *User) FindSettings(ctx context.Context, userID int64, pg tpl.Pagination) ([]tpl.MySetting, int, error) {
+	data := []tpl.MySetting{}
+	cursor := pg.TokenToID(true)
+	total := 0
+
+	if pg.Q == "" {
+		if err := m.DB.Raw(countUserSettingsSQL, userID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	} else {
+		if err := m.DB.Raw(countSearchUserSettingsSQL, userID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	}
+
+	var err error
+	var rows *sql.Rows
+	if pg.Q == "" {
+		rows, err = m.DB.Raw(listUserSettingsSQL, userID, cursor, pg.PageSize+1).Rows()
+	} else {
+		rows, err = m.DB.Raw(searchUserSettingsSQL, userID, cursor, pg.Q, pg.PageSize+1).Rows()
+	}
+
 	defer rows.Close()
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	for rows.Next() {
 		mySetting := tpl.MySetting{}
 		if err := rows.Scan(&mySetting.CreatedAt, &mySetting.UpdatedAt, &mySetting.Value, &mySetting.LastValue,
-			&mySetting.ID, &mySetting.Name, &mySetting.Module); err != nil {
-			return nil, err
+			&mySetting.ID, &mySetting.Name, &mySetting.Module, &mySetting.Product); err != nil {
+			return nil, 0, err
 		}
 		mySetting.HID = service.IDToHID(mySetting.ID, "setting")
 		data = append(data, mySetting)
 	}
 
-	return data, nil
+	return data, total, nil
 }
 
 // BatchAdd 批量添加用户

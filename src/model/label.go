@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -54,6 +55,21 @@ func (m *Label) Acquire(ctx context.Context, productID int64, labelName string) 
 	return label, nil
 }
 
+// AcquireID ...
+func (m *Label) AcquireID(ctx context.Context, productID int64, labelName string) (int64, error) {
+	label, err := m.FindByName(ctx, productID, labelName, "`id`, `offline_at`")
+	if err != nil {
+		return 0, err
+	}
+	if label == nil {
+		return 0, gear.ErrNotFound.WithMsgf("label %s not found", labelName)
+	}
+	if label.OfflineAt != nil {
+		return 0, gear.ErrNotFound.WithMsgf("label %s was offline", labelName)
+	}
+	return label.ID, nil
+}
+
 // AcquireByID ...
 func (m *Label) AcquireByID(ctx context.Context, labelID int64) (*schema.Label, error) {
 	label := &schema.Label{ID: labelID}
@@ -67,19 +83,23 @@ func (m *Label) AcquireByID(ctx context.Context, labelID int64) (*schema.Label, 
 }
 
 // Find 根据条件查找 labels
-func (m *Label) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Label, error) {
+func (m *Label) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Label, int, error) {
 	labels := make([]schema.Label, 0)
-	cursor := pg.TokenToID()
-	err := m.DB.Where("`product_id` = ? and `id` >= ? and `offline_at` is null", productID, cursor).
-		Order("`id`").Limit(pg.PageSize + 1).Find(&labels).Error
-	return labels, err
-}
+	cursor := pg.TokenToID(true)
+	db := m.DB.Where("`id` <= ? and `product_id` = ? and `offline_at` is null", cursor, productID)
+	if pg.Q != "" {
+		db = m.DB.Where("`id` <= ? and `product_id` = ? and `offline_at` is null and `name` like ?", cursor, productID, pg.Q)
+	}
 
-// Count 计算 product labels 总数
-func (m *Label) Count(ctx context.Context, productID int64) (int, error) {
-	count := 0
-	err := m.DB.Model(&schema.Label{}).Where("`product_id` = ? and `offline_at` is null", productID).Count(&count).Error
-	return count, err
+	total := 0
+	err := db.Model(&schema.Label{}).Count(&total).Error
+	if err == nil {
+		err = db.Order("`id` desc").Limit(pg.PageSize + 1).Find(&labels).Error
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+	return labels, total, nil
 }
 
 // Create ...
@@ -259,27 +279,58 @@ const listLabelUsersSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid` "
 	"order by t1.`id` desc " +
 	"limit ?"
 
+const countLabelUsersSQL = "select count(t2.`id`) " +
+	"from `user_label` t1, `urbs_user` t2  " +
+	"where t1.`label_id` = ? and t1.`user_id` = t2.`id`"
+
+const searchLabelUsersSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid` " +
+	"from `user_label` t1, `urbs_user` t2 " +
+	"where t1.`label_id` = ? and t1.`id` <= ? and t1.`user_id` = t2.`id` and t2.`uid` like ? " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+const countSearchLabelUsersSQL = "select count(t2.`id`) " +
+	"from `user_label` t1, `urbs_user` t2 " +
+	"where t1.`label_id` = ? and t1.`user_id` = t2.`id` and t2.`uid` like ?"
+
 // ListUsers ...
-func (m *Label) ListUsers(ctx context.Context, labelID int64, pg tpl.Pagination) ([]tpl.LabelUserInfo, error) {
+func (m *Label) ListUsers(ctx context.Context, labelID int64, pg tpl.Pagination) ([]tpl.LabelUserInfo, int, error) {
 	data := []tpl.LabelUserInfo{}
 	cursor := pg.TokenToID(true)
+	total := 0
 
-	rows, err := m.DB.Raw(listLabelUsersSQL, labelID, cursor, pg.PageSize+1).Rows()
+	if pg.Q == "" {
+		if err := m.DB.Raw(countLabelUsersSQL, labelID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	} else {
+		if err := m.DB.Raw(countSearchLabelUsersSQL, labelID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	}
+
+	var err error
+	var rows *sql.Rows
+	if pg.Q == "" {
+		rows, err = m.DB.Raw(listLabelUsersSQL, labelID, cursor, pg.PageSize+1).Rows()
+	} else {
+		rows, err = m.DB.Raw(searchLabelUsersSQL, labelID, cursor, pg.Q, pg.PageSize+1).Rows()
+	}
 	defer rows.Close()
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	for rows.Next() {
 		info := tpl.LabelUserInfo{}
 		if err := rows.Scan(&info.ID, &info.AssignedAt, &info.Release, &info.User); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		info.LabelHID = service.IDToHID(labelID, "label")
 		data = append(data, info)
 	}
-	return data, err
+	return data, total, err
 }
 
 const listLabelGroupsSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid`, t2.`kind`, t2.`description`, t2.`status` " +
@@ -288,25 +339,56 @@ const listLabelGroupsSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid`,
 	"order by t1.`id` desc " +
 	"limit ?"
 
+const countLabelGroupsSQL = "select count(t2.`id`) " +
+	"from `group_label` t1, `urbs_group` t2  " +
+	"where t1.`label_id` = ? and t1.`group_id` = t2.`id`"
+
+const searchLabelGroupsSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid`, t2.`kind`, t2.`description`, t2.`status` " +
+	"from `group_label` t1, `urbs_group` t2 " +
+	"where t1.`label_id` = ? and t1.`id` <= ? and t1.`group_id` = t2.`id` and t2.`uid` like ? " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+const countSearchLabelGroupsSQL = "select count(t2.`id`) " +
+	"from `group_label` t1, `urbs_group` t2 " +
+	"where t1.`label_id` = ? and t1.`group_id` = t2.`id` and t2.`uid` like ?"
+
 // ListGroups ...
-func (m *Label) ListGroups(ctx context.Context, labelID int64, pg tpl.Pagination) ([]tpl.LabelGroupInfo, error) {
+func (m *Label) ListGroups(ctx context.Context, labelID int64, pg tpl.Pagination) ([]tpl.LabelGroupInfo, int, error) {
 	data := []tpl.LabelGroupInfo{}
 	cursor := pg.TokenToID(true)
+	total := 0
 
-	rows, err := m.DB.Raw(listLabelGroupsSQL, labelID, cursor, pg.PageSize+1).Rows()
+	if pg.Q == "" {
+		if err := m.DB.Raw(countLabelGroupsSQL, labelID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	} else {
+		if err := m.DB.Raw(countSearchLabelGroupsSQL, labelID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	}
+
+	var err error
+	var rows *sql.Rows
+	if pg.Q == "" {
+		rows, err = m.DB.Raw(listLabelGroupsSQL, labelID, cursor, pg.PageSize+1).Rows()
+	} else {
+		rows, err = m.DB.Raw(searchLabelGroupsSQL, labelID, cursor, pg.Q, pg.PageSize+1).Rows()
+	}
 	defer rows.Close()
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	for rows.Next() {
 		info := tpl.LabelGroupInfo{}
 		if err := rows.Scan(&info.ID, &info.AssignedAt, &info.Release, &info.Group, &info.Kind, &info.Desc, &info.Status); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		info.LabelHID = service.IDToHID(labelID, "label")
 		data = append(data, info)
 	}
-	return data, err
+	return data, total, err
 }

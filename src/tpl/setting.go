@@ -149,6 +149,7 @@ type SettingInfoRes struct {
 type MySetting struct {
 	ID        int64     `json:"-"`
 	HID       string    `json:"hid"`
+	Product   string    `json:"product"`
 	Module    string    `json:"module"`
 	Name      string    `json:"name"`
 	Value     string    `json:"value"`

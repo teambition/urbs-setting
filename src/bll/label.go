@@ -21,11 +21,7 @@ func (b *Label) List(ctx context.Context, productName string, pg tpl.Pagination)
 		return nil, err
 	}
 
-	labels, err := b.ms.Label.Find(ctx, productID, pg)
-	if err != nil {
-		return nil, err
-	}
-	total, err := b.ms.Label.Count(ctx, productID)
+	labels, total, err := b.ms.Label.Find(ctx, productID, pg)
 	if err != nil {
 		return nil, err
 	}
@@ -291,12 +287,12 @@ func (b *Label) ListUsers(ctx context.Context, productName, labelName string, pg
 		return nil, err
 	}
 
-	data, err := b.ms.Label.ListUsers(ctx, label.ID, pg)
+	data, total, err := b.ms.Label.ListUsers(ctx, label.ID, pg)
 	if err != nil {
 		return nil, err
 	}
 	res := &tpl.LabelUsersInfoRes{Result: data}
-	// res.TotalSize = total
+	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]
@@ -316,12 +312,12 @@ func (b *Label) ListGroups(ctx context.Context, productName, labelName string, p
 		return nil, err
 	}
 
-	data, err := b.ms.Label.ListGroups(ctx, label.ID, pg)
+	data, total, err := b.ms.Label.ListGroups(ctx, label.ID, pg)
 	if err != nil {
 		return nil, err
 	}
 	res := &tpl.LabelGroupsInfoRes{Result: data}
-	// res.TotalSize = total
+	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]

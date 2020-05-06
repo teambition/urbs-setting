@@ -9,8 +9,27 @@ import (
 	"github.com/teambition/urbs-setting/src/service"
 )
 
+// Search 搜索
+type Search struct {
+	Q string `json:"q" query:"q"`
+}
+
+// Validate escape and build MySQL LIKE pattern
+func (s *Search) Validate() error {
+	if s.Q != "" {
+		s.Q = strings.ReplaceAll(s.Q, `\`, "-")
+		s.Q = strings.ReplaceAll(s.Q, "%", `\%`)
+		s.Q = strings.ReplaceAll(s.Q, "_", `\_`)
+	}
+	if s.Q != "" {
+		s.Q = s.Q + "%" // %q% 在大数据表（如user表）下开销太大
+	}
+	return nil
+}
+
 // Pagination 分页
 type Pagination struct {
+	Search
 	PageToken string `json:"pageToken" query:"pageToken"`
 	PageSize  int    `json:"pageSize,omitempty" query:"pageSize"`
 	Skip      int    `json:"skip,omitempty" query:"skip"`
@@ -28,6 +47,10 @@ func (pg *Pagination) Validate() error {
 
 	if pg.PageSize <= 0 {
 		pg.PageSize = 10
+	}
+
+	if err := pg.Search.Validate(); err != nil {
+		return err
 	}
 
 	return nil

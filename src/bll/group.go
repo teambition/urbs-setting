@@ -14,11 +14,7 @@ type Group struct {
 
 // List 返回群组列表，TODO：支持分页
 func (b *Group) List(ctx context.Context, kind string, pg tpl.Pagination) (*tpl.GroupsRes, error) {
-	groups, err := b.ms.Group.Find(ctx, kind, pg)
-	if err != nil {
-		return nil, err
-	}
-	total, err := b.ms.Group.Count(ctx, kind)
+	groups, total, err := b.ms.Group.Find(ctx, kind, pg)
 	if err != nil {
 		return nil, err
 	}
@@ -38,11 +34,7 @@ func (b *Group) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (
 		return nil, err
 	}
 
-	labels, err := b.ms.Group.FindLabels(ctx, group.ID, pg)
-	if err != nil {
-		return nil, err
-	}
-	total, err := b.ms.Group.CountLabels(ctx, group.ID)
+	labels, total, err := b.ms.Group.FindLabels(ctx, group.ID, pg)
 	if err != nil {
 		return nil, err
 	}
@@ -63,13 +55,13 @@ func (b *Group) ListMembers(ctx context.Context, uid string, pg tpl.Pagination) 
 		return nil, err
 	}
 
-	members, err := b.ms.Group.FindMembers(ctx, group.ID, pg)
+	members, total, err := b.ms.Group.FindMembers(ctx, group.ID, pg)
 	if err != nil {
 		return nil, err
 	}
 
 	res := &tpl.GroupMembersRes{Result: members}
-	res.TotalSize = int(group.Status)
+	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]
@@ -78,27 +70,19 @@ func (b *Group) ListMembers(ctx context.Context, uid string, pg tpl.Pagination) 
 }
 
 // ListSettings ...
-func (b *Group) ListSettings(ctx context.Context, uid, productName string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
+func (b *Group) ListSettings(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
 	group, err := b.ms.Group.Acquire(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
 
-	productID, err := b.ms.Product.AcquireID(ctx, productName)
-	if err != nil {
-		return nil, err
-	}
-
-	moduleIDs, err := b.ms.Module.FindIDsByProductID(ctx, productID)
-	if err != nil {
-		return nil, err
-	}
-	settings, err := b.ms.Group.FindSettings(ctx, group.ID, moduleIDs, pg)
+	settings, total, err := b.ms.Group.FindSettings(ctx, group.ID, pg)
 	if err != nil {
 		return nil, err
 	}
 
 	res := &tpl.MySettingsRes{Result: settings}
+	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]

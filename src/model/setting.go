@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -53,6 +54,21 @@ func (m *Setting) Acquire(ctx context.Context, moduleID int64, settingName strin
 	return setting, nil
 }
 
+// AcquireID ...
+func (m *Setting) AcquireID(ctx context.Context, moduleID int64, settingName string) (int64, error) {
+	setting, err := m.FindByName(ctx, moduleID, settingName, "`id`, `offline_at`")
+	if err != nil {
+		return 0, err
+	}
+	if setting == nil {
+		return 0, gear.ErrNotFound.WithMsgf("setting %s not found", settingName)
+	}
+	if setting.OfflineAt != nil {
+		return 0, gear.ErrNotFound.WithMsgf("setting %s was offline", settingName)
+	}
+	return setting.ID, nil
+}
+
 // AcquireByID ...
 func (m *Setting) AcquireByID(ctx context.Context, settingID int64) (*schema.Setting, error) {
 	setting := &schema.Setting{ID: settingID}
@@ -65,42 +81,86 @@ func (m *Setting) AcquireByID(ctx context.Context, settingID int64) (*schema.Set
 	return setting, nil
 }
 
-const findSettingsByProductIDSQL = "select t1.`id`, t1.`created_at`, t1.`updated_at`, t1.`name`, t1.`description`, t1.`channels`, t1.`clients`, t1.`vals`, t1.`status`, t1.`rls`, t2.`name` as module " +
+const listSettingsByProductIDSQL = "select t1.`id`, t1.`created_at`, t1.`updated_at`, t1.`name`, t1.`description`, t1.`channels`, t1.`clients`, t1.`vals`, t1.`status`, t1.`rls`, t2.`name` as module " +
 	"from `urbs_setting` t1, `urbs_module` t2 " +
-	"where t2.`product_id` = ? and t2.`offline_at` is null and t2.`id` = t1.`module_id` and t1.`id` >= ? and t1.`offline_at` is null " +
-	"order by t1.`id` limit ?"
+	"where t2.`product_id` = ? and t2.`offline_at` is null and t2.`id` = t1.`module_id` and t1.`id` <= ? and t1.`offline_at` is null " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+const countSettingsByProductIDSQL = "select count(t1.`id`) " +
+	"from `urbs_setting` t1, `urbs_module` t2 " +
+	"where t2.`product_id` = ? and t2.`offline_at` is null and t2.`id` = t1.`module_id` and t1.`offline_at` is null"
+
+const searchSettingsByProductIDSQL = "select t1.`id`, t1.`created_at`, t1.`updated_at`, t1.`name`, t1.`description`, t1.`channels`, t1.`clients`, t1.`vals`, t1.`status`, t1.`rls`, t2.`name` as module " +
+	"from `urbs_setting` t1, `urbs_module` t2 " +
+	"where t2.`product_id` = ? and t2.`offline_at` is null and t2.`id` = t1.`module_id` and t1.`id` <= ? and t1.`offline_at` is null and t1.`name` like ? " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+const countSearchSettingsByProductIDSQL = "select count(t1.`id`) " +
+	"from `urbs_setting` t1, `urbs_module` t2 " +
+	"where t2.`product_id` = ? and t2.`offline_at` is null and t2.`id` = t1.`module_id` and t1.`offline_at` is null and t1.`name` like ? "
 
 // FindByProductID 根据条件查找 settings
-func (m *Setting) FindByProductID(ctx context.Context, product string, productID int64, pg tpl.Pagination) ([]tpl.SettingInfo, error) {
-	cursor := pg.TokenToID()
+func (m *Setting) FindByProductID(ctx context.Context, product string, productID int64, pg tpl.Pagination) ([]tpl.SettingInfo, int, error) {
+	data := make([]tpl.SettingInfo, 0)
+	cursor := pg.TokenToID(true)
+	total := 0
 
-	rows, err := m.DB.Raw(findSettingsByProductIDSQL, productID, cursor, pg.PageSize+1).Rows()
-	defer rows.Close()
-	if err != nil {
-		return nil, err
+	if pg.Q == "" {
+		if err := m.DB.Raw(countSettingsByProductIDSQL, productID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	} else {
+		if err := m.DB.Raw(countSearchSettingsByProductIDSQL, productID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
 	}
 
-	data := make([]tpl.SettingInfo, 0)
+	var err error
+	var rows *sql.Rows
+	if pg.Q == "" {
+		rows, err = m.DB.Raw(listSettingsByProductIDSQL, productID, cursor, pg.PageSize+1).Rows()
+	} else {
+		rows, err = m.DB.Raw(searchSettingsByProductIDSQL, productID, cursor, pg.Q, pg.PageSize+1).Rows()
+	}
+	defer rows.Close()
+
+	if err != nil {
+		return nil, 0, err
+	}
+
 	for rows.Next() {
 		var module string
 		var s schema.Setting
 		if err := rows.Scan(&s.ID, &s.CreatedAt, &s.UpdatedAt, &s.Name, &s.Desc, &s.Channels, &s.Clients, &s.Values, &s.Status, &s.Release, &module); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		data = append(data, tpl.SettingInfoFrom(s, product, module))
 	}
 
-	return data, err
+	return data, total, err
 }
 
 // Find 根据条件查找 settings
-func (m *Setting) Find(ctx context.Context, moduleID int64, pg tpl.Pagination) ([]schema.Setting, error) {
+func (m *Setting) Find(ctx context.Context, moduleID int64, pg tpl.Pagination) ([]schema.Setting, int, error) {
 	settings := make([]schema.Setting, 0)
-	cursor := pg.TokenToID()
-	err := m.DB.Where("`module_id` = ? and `id` >= ? and `offline_at` is null", moduleID, cursor).
-		Order("`id`").Limit(pg.PageSize + 1).Find(&settings).Error
-	return settings, err
+	cursor := pg.TokenToID(true)
+	db := m.DB.Where("`id` <= ? and `module_id` = ? and `offline_at` is null", cursor, moduleID)
+	if pg.Q != "" {
+		db = m.DB.Where("`id` <= ? and `module_id` = ? and `offline_at` is null and `name` like ?", cursor, moduleID, pg.Q)
+	}
+
+	total := 0
+	err := db.Model(&schema.Setting{}).Count(&total).Error
+	if err == nil {
+		err = db.Order("`id` desc").Limit(pg.PageSize + 1).Find(&settings).Error
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+	return settings, total, nil
 }
 
 // Create ...
@@ -298,27 +358,58 @@ const listSettingUsersSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid`
 	"order by t1.`id` desc " +
 	"limit ?"
 
+const countSettingUsersSQL = "select count(t2.`id`) " +
+	"from `user_setting` t1, `urbs_user` t2  " +
+	"where t1.`setting_id` = ? and t1.`user_id` = t2.`id`"
+
+const searchSettingUsersSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid`, t1.`value`, t1.`last_value` " +
+	"from `user_setting` t1, `urbs_user` t2 " +
+	"where t1.`setting_id` = ? and t1.`id` <= ? and t1.`user_id` = t2.`id` and t2.`uid` like ? " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+const countSearchSettingUsersSQL = "select count(t2.`id`) " +
+	"from `user_setting` t1, `urbs_user` t2 " +
+	"where t1.`setting_id` = ? and t1.`user_id` = t2.`id` and t2.`uid` like ?"
+
 // ListUsers ...
-func (m *Setting) ListUsers(ctx context.Context, settingID int64, pg tpl.Pagination) ([]tpl.SettingUserInfo, error) {
+func (m *Setting) ListUsers(ctx context.Context, settingID int64, pg tpl.Pagination) ([]tpl.SettingUserInfo, int, error) {
 	data := []tpl.SettingUserInfo{}
 	cursor := pg.TokenToID(true)
+	total := 0
 
-	rows, err := m.DB.Raw(listSettingUsersSQL, settingID, cursor, pg.PageSize+1).Rows()
+	if pg.Q == "" {
+		if err := m.DB.Raw(countSettingUsersSQL, settingID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	} else {
+		if err := m.DB.Raw(countSearchSettingUsersSQL, settingID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	}
+
+	var err error
+	var rows *sql.Rows
+	if pg.Q == "" {
+		rows, err = m.DB.Raw(listSettingUsersSQL, settingID, cursor, pg.PageSize+1).Rows()
+	} else {
+		rows, err = m.DB.Raw(searchSettingUsersSQL, settingID, cursor, pg.Q, pg.PageSize+1).Rows()
+	}
 	defer rows.Close()
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	for rows.Next() {
 		info := tpl.SettingUserInfo{}
 		if err := rows.Scan(&info.ID, &info.AssignedAt, &info.Release, &info.User, &info.Value, &info.LastValue); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		info.SettingHID = service.IDToHID(settingID, "setting")
 		data = append(data, info)
 	}
-	return data, err
+	return data, total, err
 }
 
 const listSettingGroupsSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid`, t2.`kind`, t2.`description`, t2.`status`, t1.`value`, t1.`last_value` " +
@@ -327,25 +418,56 @@ const listSettingGroupsSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid
 	"order by t1.`id` desc " +
 	"limit ?"
 
+const countSettingGroupsSQL = "select count(t2.`id`) " +
+	"from `group_setting` t1, `urbs_group` t2  " +
+	"where t1.`setting_id` = ? and t1.`group_id` = t2.`id`"
+
+const searchSettingGroupsSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid`, t2.`kind`, t2.`description`, t2.`status`, t1.`value`, t1.`last_value` " +
+	"from `group_setting` t1, `urbs_group` t2 " +
+	"where t1.`setting_id` = ? and t1.`id` <= ? and t1.`group_id` = t2.`id` and t2.`uid` like ? " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+const countSearchSettingGroupsSQL = "select count(t2.`id`) " +
+	"from `group_setting` t1, `urbs_group` t2 " +
+	"where t1.`setting_id` = ? and t1.`group_id` = t2.`id` and t2.`uid` like ?"
+
 // ListGroups ...
-func (m *Setting) ListGroups(ctx context.Context, settingID int64, pg tpl.Pagination) ([]tpl.SettingGroupInfo, error) {
+func (m *Setting) ListGroups(ctx context.Context, settingID int64, pg tpl.Pagination) ([]tpl.SettingGroupInfo, int, error) {
 	data := []tpl.SettingGroupInfo{}
 	cursor := pg.TokenToID(true)
+	total := 0
 
-	rows, err := m.DB.Raw(listSettingGroupsSQL, settingID, cursor, pg.PageSize+1).Rows()
+	if pg.Q == "" {
+		if err := m.DB.Raw(countSettingGroupsSQL, settingID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	} else {
+		if err := m.DB.Raw(countSearchSettingGroupsSQL, settingID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	}
+
+	var err error
+	var rows *sql.Rows
+	if pg.Q == "" {
+		rows, err = m.DB.Raw(listSettingGroupsSQL, settingID, cursor, pg.PageSize+1).Rows()
+	} else {
+		rows, err = m.DB.Raw(searchSettingGroupsSQL, settingID, cursor, pg.Q, pg.PageSize+1).Rows()
+	}
 	defer rows.Close()
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	for rows.Next() {
 		info := tpl.SettingGroupInfo{}
 		if err := rows.Scan(&info.ID, &info.AssignedAt, &info.Release, &info.Group, &info.Kind, &info.Desc, &info.Status, &info.Value, &info.LastValue); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		info.SettingHID = service.IDToHID(settingID, "setting")
 		data = append(data, info)
 	}
-	return data, err
+	return data, total, err
 }

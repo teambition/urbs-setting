@@ -11,6 +11,7 @@
         - $ref: "#/components/parameters/PathProduct"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/LabelsInfoRes'

@@ -14,7 +14,7 @@ type Statistic struct {
 // FindByKey ...
 func (m *Statistic) FindByKey(ctx context.Context, key schema.StatisticKey) (*schema.Statistic, error) {
 	statistic := &schema.Statistic{}
-	if err := m.DB.Where("`key` =  ?", key).First(&statistic).Error; err != nil {
+	if err := m.DB.Where("`name` =  ?", key).First(&statistic).Error; err != nil {
 		return nil, err
 	}
 	return statistic, nil
@@ -23,6 +23,6 @@ func (m *Statistic) FindByKey(ctx context.Context, key schema.StatisticKey) (*sc
 // FindByKeys ...
 func (m *Statistic) FindByKeys(ctx context.Context, keys []schema.StatisticKey) ([]schema.Statistic, error) {
 	statistics := make([]schema.Statistic, 0)
-	err := m.DB.Where("`key` in ( ? )", keys).Find(&statistics).Error
+	err := m.DB.Where("`name` in ( ? )", keys).Find(&statistics).Error
 	return statistics, err
 }

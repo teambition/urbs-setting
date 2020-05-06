@@ -52,20 +52,39 @@ func (m *Module) Acquire(ctx context.Context, productID int64, moduleName string
 	return module, nil
 }
 
-// Find 根据条件查找 modules
-func (m *Module) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Module, error) {
-	modules := make([]schema.Module, 0)
-	cursor := pg.TokenToID()
-	err := m.DB.Where("`product_id` = ? and `id` >= ?  and `offline_at` is null", productID, cursor).
-		Order("`id`").Limit(pg.PageSize + 1).Find(&modules).Error
-	return modules, err
+// AcquireID ...
+func (m *Module) AcquireID(ctx context.Context, productID int64, moduleName string) (int64, error) {
+	module, err := m.FindByName(ctx, productID, moduleName, "`id`, `offline_at`")
+	if err != nil {
+		return 0, err
+	}
+	if module == nil {
+		return 0, gear.ErrNotFound.WithMsgf("module %s not found", moduleName)
+	}
+	if module.OfflineAt != nil {
+		return 0, gear.ErrNotFound.WithMsgf("module %s was offline", moduleName)
+	}
+	return module.ID, nil
 }
 
-// Count 计算 product modules 总数
-func (m *Module) Count(ctx context.Context, productID int64) (int, error) {
-	count := 0
-	err := m.DB.Model(&schema.Module{}).Where("`product_id` = ? and `offline_at` is null", productID).Count(&count).Error
-	return count, err
+// Find 根据条件查找 modules
+func (m *Module) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Module, int, error) {
+	modules := make([]schema.Module, 0)
+	cursor := pg.TokenToID(true)
+	db := m.DB.Where("`id` <= ? and `product_id` = ? and `offline_at` is null", cursor, productID)
+	if pg.Q != "" {
+		db = m.DB.Where("`id` <= ? and `product_id` = ? and `offline_at` is null and `name` like ?", cursor, productID, pg.Q)
+	}
+
+	total := 0
+	err := db.Model(&schema.Label{}).Count(&total).Error
+	if err == nil {
+		err = db.Order("`id` desc").Limit(pg.PageSize + 1).Find(&modules).Error
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+	return modules, total, nil
 }
 
 // FindIDsByProductID 根据 productID 查找未下线模块 ID 数组

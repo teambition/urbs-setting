@@ -8,7 +8,7 @@ type SettingGroupInfo struct {
 	SettingHID string    `json:"settingHID"`
 	AssignedAt time.Time `json:"assignedAt"`
 	Release    int64     `json:"release"`
-	Group      string    `json:"Group"`
+	Group      string    `json:"group"`
 	Kind       string    `json:"kind"`
 	Desc       string    `json:"desc"`
 	Status     int64     `json:"status"`

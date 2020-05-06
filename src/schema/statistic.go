@@ -10,7 +10,7 @@ type Statistic struct {
 	ID        int64     `gorm:"column:id"`
 	CreatedAt time.Time `gorm:"column:created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at"`
-	Key       string    `gorm:"column:key"` // varchar(255) 锁键，表内唯一
+	Name      string    `gorm:"column:name"` // varchar(255) 锁键，表内唯一
 	Status    int64     `gorm:"column:status"`
 	Value     string    `gorm:"column:value"` // varchar(8190) json value
 }

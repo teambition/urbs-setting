@@ -8,7 +8,7 @@ type LabelGroupInfo struct {
 	LabelHID   string    `json:"labelHID"`
 	AssignedAt time.Time `json:"assignedAt"`
 	Release    int64     `json:"release"`
-	Group      string    `json:"Group"`
+	Group      string    `json:"group"`
 	Kind       string    `json:"kind"`
 	Desc       string    `json:"desc"`
 	Status     int64     `json:"status"`

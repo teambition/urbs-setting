@@ -17,17 +17,19 @@ type User struct {
 
 // List 返回用户列表
 func (b *User) List(ctx context.Context, pg tpl.Pagination) (*tpl.UsersRes, error) {
-	users, err := b.ms.User.Find(ctx, pg)
+	users, total, err := b.ms.User.Find(ctx, pg)
 	if err != nil {
 		return nil, err
 	}
 	res := &tpl.UsersRes{Result: users}
+	res.TotalSize = total
 
-	statistic, _ := b.ms.Statistic.FindByKey(ctx, schema.UsersTotalSize)
-	if statistic != nil {
-		res.TotalSize = int(statistic.Status)
+	if res.TotalSize == 0 && pg.Q == "" {
+		statistic, _ := b.ms.Statistic.FindByKey(ctx, schema.UsersTotalSize)
+		if statistic != nil {
+			res.TotalSize = int(statistic.Status)
+		}
 	}
-
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]
@@ -39,6 +41,9 @@ func (b *User) List(ctx context.Context, pg tpl.Pagination) (*tpl.UsersRes, erro
 func (b *User) ListCachedLabels(ctx context.Context, uid, product string) *tpl.CacheLabelsInfoRes {
 	now := time.Now().UTC().Unix()
 	res := &tpl.CacheLabelsInfoRes{Result: []schema.UserCacheLabel{}, Timestamp: now}
+	if product == "" {
+		return res
+	}
 
 	user, err := b.ms.User.Acquire(ctx, uid)
 	if err != nil {
@@ -78,11 +83,7 @@ func (b *User) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (*
 		return nil, err
 	}
 
-	labels, err := b.ms.User.FindLabels(ctx, user.ID, pg)
-	if err != nil {
-		return nil, err
-	}
-	total, err := b.ms.User.CountLabels(ctx, user.ID)
+	labels, total, err := b.ms.User.FindLabels(ctx, user.ID, pg)
 	if err != nil {
 		return nil, err
 	}
@@ -97,27 +98,19 @@ func (b *User) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (*
 }
 
 // ListSettings ...
-func (b *User) ListSettings(ctx context.Context, uid, productName string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
+func (b *User) ListSettings(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
 	user, err := b.ms.User.Acquire(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
 
-	productID, err := b.ms.Product.AcquireID(ctx, productName)
-	if err != nil {
-		return nil, err
-	}
-
-	moduleIDs, err := b.ms.Module.FindIDsByProductID(ctx, productID)
-	if err != nil {
-		return nil, err
-	}
-	settings, err := b.ms.User.FindSettings(ctx, user.ID, moduleIDs, pg)
+	settings, total, err := b.ms.User.FindSettings(ctx, user.ID, pg)
 	if err != nil {
 		return nil, err
 	}
 
 	res := &tpl.MySettingsRes{Result: settings}
+	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
 		res.Result = res.Result[:pg.PageSize]

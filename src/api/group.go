@@ -59,12 +59,12 @@ func (a *Group) ListMembers(ctx *gear.Context) error {
 
 // ListSettings ..
 func (a *Group) ListSettings(ctx *gear.Context) error {
-	req := tpl.UIDProductURL{}
+	req := tpl.UIDPaginationURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res, err := a.blls.Group.ListSettings(ctx, req.UID, req.Product, req.Pagination)
+	res, err := a.blls.Group.ListSettings(ctx, req.UID, req.Pagination)
 	if err != nil {
 		return err
 	}

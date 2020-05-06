@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -50,48 +51,93 @@ func (m *Group) Acquire(ctx context.Context, uid string) (*schema.Group, error) 
 	return group, nil
 }
 
+// AcquireID ...
+func (m *Group) AcquireID(ctx context.Context, uid string) (int64, error) {
+	group, err := m.FindByUID(ctx, uid, "`id`")
+	if err != nil {
+		return 0, err
+	}
+	if group == nil {
+		return 0, gear.ErrNotFound.WithMsgf("group %s not found", uid)
+	}
+	return group.ID, nil
+}
+
 // Find 根据条件查找 groups
-func (m *Group) Find(ctx context.Context, kind string, pg tpl.Pagination) ([]schema.Group, error) {
+func (m *Group) Find(ctx context.Context, kind string, pg tpl.Pagination) ([]schema.Group, int, error) {
 	groups := make([]schema.Group, 0)
-	cursor := pg.TokenToID()
-	db := m.DB.Where("`id` >= ?", cursor)
+	cursor := pg.TokenToID(true)
+	db := m.DB.Where("`id` <= ?", cursor)
+	if pg.Q != "" {
+		db = m.DB.Where("`id` <= ? and `uid` like ?", cursor, pg.Q)
+	}
 	if kind != "" {
-		db = m.DB.Where("`id` >= ? and `kind` = ?", cursor, kind)
+		db = m.DB.Where("`id` <= ? and `kind` = ?", cursor, kind)
+		if pg.Q != "" {
+			db = m.DB.Where("`id` <= ? and `kind` = ? and `uid` like ?", cursor, kind, pg.Q)
+		}
 	}
 
-	err := db.Order("`id`").Limit(pg.PageSize + 1).Find(&groups).Error
-	return groups, err
-}
-
-// Count 计算 group 总数
-func (m *Group) Count(ctx context.Context, kind string) (int, error) {
-
-	count := 0
-	db := m.DB.Model(&schema.Group{})
-	if kind != "" {
-		db = db.Where("`kind` = ?", kind)
+	total := 0
+	err := db.Model(&schema.Group{}).Count(&total).Error
+	if err == nil {
+		err = db.Order("`id` desc").Limit(pg.PageSize + 1).Find(&groups).Error
 	}
-	err := db.Count(&count).Error
-	return count, err
+	if err != nil {
+		return nil, 0, err
+	}
+	return groups, total, nil
 }
 
-const groupLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`offline_at`, t2.`name`, " +
+const listGroupLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`offline_at`, t2.`name`, " +
 	"t2.`description`, t2.`status`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
 	"from `group_label` t1, `urbs_label` t2, `urbs_product` t3 " +
-	"where t1.`group_id` = ? and t1.`id` >= ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.`id` " +
-	"order by t1.`id` asc " +
+	"where t1.`group_id` = ? and t1.`id` <= ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.`id` " +
+	"order by t1.`id` desc " +
 	"limit ?"
 
-// FindLabels 根据群组 ID 返回其 labels 数据。TODO：支持更多筛选条件和分页
-func (m *Group) FindLabels(ctx context.Context, groupID int64, pg tpl.Pagination) ([]tpl.LabelInfo, error) {
-	data := []tpl.LabelInfo{}
-	cursor := pg.TokenToID()
+const countGroupLabelsSQL = "select count(t2.`id`) " +
+	"from `group_label` t1, `urbs_label` t2  " +
+	"where t1.`group_id` = ? and t1.`label_id` = t2.`id`"
 
-	rows, err := m.DB.Raw(groupLabelsSQL, groupID, cursor, pg.PageSize+1).Rows()
+const searchGroupLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`offline_at`, t2.`name`, " +
+	"t2.`description`, t2.`status`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
+	"from `group_label` t1, `urbs_label` t2, `urbs_product` t3 " +
+	"where t1.`group_id` = ? and t1.`id` <= ? and t1.`label_id` = t2.`id` and t2.`name` like ? and t2.`product_id` = t3.`id` " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+const countSearchGroupLabelsSQL = "select count(t2.`id`) " +
+	"from `group_label` t1, `urbs_label` t2 " +
+	"where t1.`group_id` = ? and t1.`label_id` = t2.`id` and t2.`name` like ?"
+
+// FindLabels 根据群组 ID 返回其 labels 数据。TODO：支持更多筛选条件和分页
+func (m *Group) FindLabels(ctx context.Context, groupID int64, pg tpl.Pagination) ([]tpl.LabelInfo, int, error) {
+	data := make([]tpl.LabelInfo, 0)
+	cursor := pg.TokenToID(true)
+	total := 0
+
+	if pg.Q == "" {
+		if err := m.DB.Raw(countGroupLabelsSQL, groupID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	} else {
+		if err := m.DB.Raw(countSearchGroupLabelsSQL, groupID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	}
+
+	var err error
+	var rows *sql.Rows
+	if pg.Q == "" {
+		rows, err = m.DB.Raw(listGroupLabelsSQL, groupID, cursor, pg.PageSize+1).Rows()
+	} else {
+		rows, err = m.DB.Raw(searchGroupLabelsSQL, groupID, cursor, pg.Q, pg.PageSize+1).Rows()
+	}
 	defer rows.Close()
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	for rows.Next() {
@@ -100,7 +146,7 @@ func (m *Group) FindLabels(ctx context.Context, groupID int64, pg tpl.Pagination
 		labelInfo := tpl.LabelInfo{}
 		if err := rows.Scan(&labelInfo.ID, &labelInfo.CreatedAt, &labelInfo.UpdatedAt, &labelInfo.OfflineAt,
 			&labelInfo.Name, &labelInfo.Desc, &labelInfo.Status, &channels, &clients, &labelInfo.Product); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		labelInfo.Channels = tpl.StringToSlice(channels)
 		labelInfo.Clients = tpl.StringToSlice(clients)
@@ -108,47 +154,72 @@ func (m *Group) FindLabels(ctx context.Context, groupID int64, pg tpl.Pagination
 		data = append(data, labelInfo)
 	}
 
-	return data, nil
+	return data, total, nil
 }
 
-// CountLabels 计算 group labels 总数
-func (m *Group) CountLabels(ctx context.Context, groupID int64) (int, error) {
-
-	count := 0
-	err := m.DB.Model(&schema.GroupLabel{}).Where("`group_id` = ?", groupID).Count(&count).Error
-	return count, err
-}
-
-const groupSettingsSQL = "select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
-	"t2.`id`, t2.`name`, t3.`name` as `module` " +
-	"from `group_setting` t1, `urbs_setting` t2, `urbs_module` t3 " +
-	"where t1.`group_id` = ? and t1.`id` >= ? and t1.`setting_id` = t2.`id` and t2.`module_id` in ( ? ) and t2.`module_id` = t3.`id` " +
-	"order by t1.`id` asc " +
+const listGroupSettingsSQL = "select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
+	"t2.`id`, t2.`name`, t3.`name` as `module`, t4.`name` as `product` " +
+	"from `group_setting` t1, `urbs_setting` t2, `urbs_module` t3, `urbs_product` t4 " +
+	"where t1.`group_id` = ? and t1.`id` <= ? and t1.`setting_id` = t2.`id` and t2.`module_id` = t3.`id` and t3.`product_id` = t4.`id` " +
+	"order by t1.`id` desc " +
 	"limit ?"
 
-// FindSettings 根据 Group ID, updateGt, productName 返回其 settings 数据。
-func (m *Group) FindSettings(ctx context.Context, groupID int64, moduleIDs []int64, pg tpl.Pagination) ([]tpl.MySetting, error) {
-	data := []tpl.MySetting{}
-	cursor := pg.TokenToID()
+const countGroupSettingsSQL = "select count(t2.`id`) " +
+	"from `group_setting` t1, `urbs_setting` t2 " +
+	"where t1.`group_id` = ? and t1.`setting_id` = t2.`id`"
 
-	rows, err := m.DB.Raw(groupSettingsSQL, groupID, cursor, moduleIDs, pg.PageSize+1).Rows()
+const searchGroupSettingsSQL = "select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
+	"t2.`id`, t2.`name`, t3.`name` as `module`, t4.`name` as `product` " +
+	"from `group_setting` t1, `urbs_setting` t2, `urbs_module` t3, `urbs_product` t4 " +
+	"where t1.`group_id` = ? and t1.`id` <= ? and t1.`setting_id` = t2.`id` and t2.`name` like ? and t2.`module_id` = t3.`id` and t3.`product_id` = t4.`id` " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+const countSearchGroupSettingsSQL = "select count(t2.`id`) " +
+	"from `group_setting` t1, `urbs_setting` t2 " +
+	"where t1.`group_id` = ? and t1.`setting_id` = t2.`id` and t2.`name` like ?"
+
+// FindSettings 根据 Group ID, updateGt, productName 返回其 settings 数据。
+func (m *Group) FindSettings(ctx context.Context, groupID int64, pg tpl.Pagination) ([]tpl.MySetting, int, error) {
+	data := []tpl.MySetting{}
+	cursor := pg.TokenToID(true)
+	total := 0
+
+	if pg.Q == "" {
+		if err := m.DB.Raw(countGroupSettingsSQL, groupID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	} else {
+		if err := m.DB.Raw(countSearchGroupSettingsSQL, groupID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	}
+
+	var err error
+	var rows *sql.Rows
+	if pg.Q == "" {
+		rows, err = m.DB.Raw(listGroupSettingsSQL, groupID, cursor, pg.PageSize+1).Rows()
+	} else {
+		rows, err = m.DB.Raw(searchGroupSettingsSQL, groupID, cursor, pg.Q, pg.PageSize+1).Rows()
+	}
+
 	defer rows.Close()
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	for rows.Next() {
 		mySetting := tpl.MySetting{}
 		if err := rows.Scan(&mySetting.CreatedAt, &mySetting.UpdatedAt, &mySetting.Value, &mySetting.LastValue,
-			&mySetting.ID, &mySetting.Name, &mySetting.Module); err != nil {
-			return nil, err
+			&mySetting.ID, &mySetting.Name, &mySetting.Module, &mySetting.Product); err != nil {
+			return nil, 0, err
 		}
 		mySetting.HID = service.IDToHID(mySetting.ID, "setting")
 		data = append(data, mySetting)
 	}
 
-	return data, nil
+	return data, total, nil
 }
 
 // BatchAdd 批量添加群组
@@ -222,33 +293,65 @@ func (m *Group) BatchAddMembers(ctx context.Context, group *schema.Group, users 
 	return err
 }
 
-const groupMembersSQL = "select t1.`id`, t2.`uid`, t1.`created_at`, t1.`sync_at` " +
+const listGroupMembersSQL = "select t1.`id`, t2.`uid`, t1.`created_at`, t1.`sync_at` " +
 	"from `user_group` t1, `urbs_user` t2 " +
-	"where t1.`group_id` = ? and t1.`id` >= ? and t1.`user_id` = t2.`id` " +
-	"order by t1.`id` asc " +
+	"where t1.`group_id` = ? and t1.`id` <= ? and t1.`user_id` = t2.`id` " +
+	"order by t1.`id` desc " +
 	"limit ?"
 
-// FindMembers 根据条件查找群组成员
-func (m *Group) FindMembers(ctx context.Context, groupID int64, pg tpl.Pagination) ([]tpl.GroupMember, error) {
-	data := []tpl.GroupMember{}
-	cursor := pg.TokenToID()
+const countGroupMembersSQL = "select count(t2.`id`) " +
+	"from `user_group` t1, `urbs_user` t2 " +
+	"where t1.`group_id` = ? and t1.`user_id` = t2.`id`"
 
-	rows, err := m.DB.Raw(groupMembersSQL, groupID, cursor, pg.PageSize+1).Rows()
+const searchGroupMembersSQL = "select t1.`id`, t1.`uid`, t1.`created_at`, t1.`sync_at` " +
+	"from `user_group` t1, `urbs_user` t2 " +
+	"where t1.`group_id` = ? and t1.`id` <= ? and t1.`user_id` = t2.`id` and t2.`uid` like ? " +
+	"order by t1.`id` desc " +
+	"limit ?"
+
+const countSearchGroupMembersSQL = "select count(t2.`id`) " +
+	"from `user_group` t1, `urbs_user` t2 " +
+	"where t1.`group_id` = ? and t1.`user_id` = t2.`id` and t2.`uid` like ?"
+
+// FindMembers 根据条件查找群组成员
+func (m *Group) FindMembers(ctx context.Context, groupID int64, pg tpl.Pagination) ([]tpl.GroupMember, int, error) {
+	data := []tpl.GroupMember{}
+	cursor := pg.TokenToID(true)
+	total := 0
+
+	if pg.Q == "" {
+		if err := m.DB.Raw(countGroupMembersSQL, groupID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	} else {
+		if err := m.DB.Raw(countSearchGroupMembersSQL, groupID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
+			return nil, 0, err
+		}
+	}
+
+	var err error
+	var rows *sql.Rows
+	if pg.Q == "" {
+		rows, err = m.DB.Raw(listGroupMembersSQL, groupID, cursor, pg.PageSize+1).Rows()
+	} else {
+		rows, err = m.DB.Raw(searchGroupMembersSQL, groupID, cursor, pg.Q, pg.PageSize+1).Rows()
+	}
+
 	defer rows.Close()
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	for rows.Next() {
 		member := tpl.GroupMember{}
 		if err := rows.Scan(&member.ID, &member.User, &member.CreatedAt, &member.SyncAt); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		data = append(data, member)
 	}
 
-	return data, nil
+	return data, total, nil
 }
 
 // FindIDsByUserID 根据 userID 查找加入的 Group ID 数组

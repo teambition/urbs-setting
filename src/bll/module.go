@@ -20,12 +20,7 @@ func (b *Module) List(ctx context.Context, productName string, pg tpl.Pagination
 	if err != nil {
 		return nil, err
 	}
-	modules, err := b.ms.Module.Find(ctx, productID, pg)
-	if err != nil {
-		return nil, err
-	}
-
-	total, err := b.ms.Module.Count(ctx, productID)
+	modules, total, err := b.ms.Module.Find(ctx, productID, pg)
 	if err != nil {
 		return nil, err
 	}

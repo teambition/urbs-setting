@@ -58,6 +58,7 @@
         - $ref: "#/components/parameters/PathUID"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/LabelsInfoRes'
@@ -96,6 +97,7 @@
         - $ref: "#/components/parameters/PathUID"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/MySettingsRes'

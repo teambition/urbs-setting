@@ -12,6 +12,7 @@
         - $ref: "#/components/parameters/PathModule"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/SettingsInfoRes'

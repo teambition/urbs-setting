@@ -16,11 +16,7 @@ type Product struct {
 
 // List 返回产品列表
 func (b *Product) List(ctx context.Context, pg tpl.Pagination) (*tpl.ProductsRes, error) {
-	products, err := b.ms.Product.Find(ctx, pg)
-	if err != nil {
-		return nil, err
-	}
-	total, err := b.ms.Product.Count(ctx)
+	products, total, err := b.ms.Product.Find(ctx, pg)
 	if err != nil {
 		return nil, err
 	}

@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -37,6 +38,24 @@ func (m *Product) FindByName(ctx context.Context, name, selectStr string) (*sche
 	return nil, err
 }
 
+// Acquire ...
+func (m *Product) Acquire(ctx context.Context, productName string) (*schema.Product, error) {
+	product, err := m.FindByName(ctx, productName, "")
+	if err != nil {
+		return nil, err
+	}
+	if product == nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s not found", productName)
+	}
+	if product.DeletedAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s was deleted", productName)
+	}
+	if product.OfflineAt != nil {
+		return nil, gear.ErrNotFound.WithMsgf("product %s was offline", productName)
+	}
+	return product, nil
+}
+
 // AcquireID ...
 func (m *Product) AcquireID(ctx context.Context, productName string) (int64, error) {
 	product, err := m.FindByName(ctx, productName, "`id`, `offline_at`, `deleted_at`")
@@ -56,20 +75,23 @@ func (m *Product) AcquireID(ctx context.Context, productName string) (int64, err
 }
 
 // Find 根据条件查找 products
-func (m *Product) Find(ctx context.Context, pg tpl.Pagination) ([]schema.Product, error) {
+func (m *Product) Find(ctx context.Context, pg tpl.Pagination) ([]schema.Product, int, error) {
 	products := make([]schema.Product, 0)
-	cursor := pg.TokenToID()
+	cursor := pg.TokenToID(true)
+	db := m.DB.Where("`id` <= ? and `deleted_at` is null and `offline_at` is null", cursor)
+	if pg.Q != "" {
+		db = m.DB.Where("`id` <= ? and `deleted_at` is null and `offline_at` is null and `name` like ?", cursor, pg.Q)
+	}
 
-	err := m.DB.Where("`id` >= ? and `deleted_at` is null and `offline_at` is null", cursor).
-		Order("`id`").Limit(pg.PageSize + 1).Find(&products).Error
-	return products, err
-}
-
-// Count 计算 products 总数
-func (m *Product) Count(ctx context.Context) (int, error) {
-	count := 0
-	err := m.DB.Model(&schema.Product{}).Where("`deleted_at` is null and `offline_at` is null").Count(&count).Error
-	return count, err
+	total := 0
+	err := db.Model(&schema.Product{}).Count(&total).Error
+	if err == nil {
+		err = db.Order("`id` desc").Limit(pg.PageSize + 1).Find(&products).Error
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+	return products, total, nil
 }
 
 // Create ...
@@ -173,7 +195,7 @@ func (m *Product) Statistics(ctx context.Context, productID int64) (*tpl.Product
 	var r int64
 	var ignoreID int64
 
-	if err := m.DB.Raw(productLabelStatisticsSQL, productID).Row().Scan(&ignoreID, &n, &s, &r); err != nil {
+	if err := m.DB.Raw(productLabelStatisticsSQL, productID).Row().Scan(&ignoreID, &n, &s, &r); err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 
@@ -184,7 +206,7 @@ func (m *Product) Statistics(ctx context.Context, productID int64) (*tpl.Product
 		return nil, err
 	}
 	res.Modules = int64(len(moduleIDs))
-	if err := m.DB.Raw(productSettingStatisticsSQL, productID, moduleIDs).Row().Scan(&ignoreID, &n, &s, &r); err != nil {
+	if err := m.DB.Raw(productSettingStatisticsSQL, productID, moduleIDs).Row().Scan(&ignoreID, &n, &s, &r); err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 	res.Settings = n

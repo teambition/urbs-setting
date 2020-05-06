@@ -390,7 +390,7 @@ func TestUserAPIs(t *testing.T) {
 		t.Run(`"GET /v1/users/:uid/settings" for invalid user`, func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, _ := request.Get(fmt.Sprintf("%s/v1/users/%s/settings?product=%s", tt.Host, tpl.RandUID(), product.Name)).
+			res, _ := request.Get(fmt.Sprintf("%s/v1/users/%s/settings", tt.Host, tpl.RandUID())).
 				End()
 			assert.Equal(404, res.StatusCode)
 			res.Content() // close http client
@@ -399,7 +399,7 @@ func TestUserAPIs(t *testing.T) {
 		t.Run(`"GET /v1/users/:uid/settings" when without settings`, func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Get(fmt.Sprintf("%s/v1/users/%s/settings?product=%s", tt.Host, users[0].UID, product.Name)).
+			res, err := request.Get(fmt.Sprintf("%s/v1/users/%s/settings", tt.Host, users[0].UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -432,7 +432,7 @@ func TestUserAPIs(t *testing.T) {
 			res.Content() // close http client
 
 			time.Sleep(time.Millisecond * 10)
-			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings?product=%s", tt.Host, users[0].UID, product.Name)).
+			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings", tt.Host, users[0].UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -516,7 +516,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(200, res.StatusCode)
 			res.Content() // close http client
 
-			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings?product=%s", tt.Host, users[0].UID, product.Name)).
+			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings", tt.Host, users[0].UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -625,7 +625,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(200, res.StatusCode)
 			res.Content() // close http client
 
-			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings?product=%s", tt.Host, users[0].UID, product.Name)).
+			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings", tt.Host, users[0].UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -656,7 +656,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(200, res.StatusCode)
 			res.Content() // close http client
 
-			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings?product=%s", tt.Host, users[0].UID, product.Name)).
+			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings", tt.Host, users[0].UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)

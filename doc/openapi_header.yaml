@@ -100,6 +100,15 @@ components:
         type: string
         default: ""
         example: "2020-03-13T11%3A59%3A48Z"
+    QueryQ:
+      in: query
+      name: q
+      description: 部分列表类 API 支持搜索，q 为搜索关键词
+      required: false
+      schema:
+        title: q
+        type: string
+        default: ""
   securitySchemes:
     HeaderAuthorizationJWT:
       name: Authorization
@@ -217,6 +226,10 @@ components:
           type: string
           description: 配置项的 hid
           example: AwAAAAAAAAB25V_QnbhCuRwF
+        product:
+          type: string
+          description: 配置项所属的产品名称
+          example: teambition
         module:
           type: string
           description: 配置项所属的功能模块名称

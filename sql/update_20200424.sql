@@ -41,3 +41,22 @@ CREATE TABLE IF NOT EXISTS `urbs`.`setting_rule` (
   KEY `idx_setting_rule_product_id` (`product_id`),
   KEY `idx_setting_rule_setting_id` (`setting_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+CREATE TABLE IF NOT EXISTS `urbs`.`urbs_statistic` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updated_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  `name` varchar(255) NOT NULL,
+  `value` varchar(8190) NOT NULL DEFAULT '',
+  `status` bigint NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_urbs_statistic_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+CREATE TABLE IF NOT EXISTS `urbs`.`urbs_lock` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `expire_at` datetime(3) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_urbs_statistic_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;

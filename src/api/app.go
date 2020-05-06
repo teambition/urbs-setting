@@ -6,7 +6,6 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/teambition/gear"
-	"github.com/teambition/gear/middleware/requestid"
 
 	"github.com/teambition/urbs-setting/src/logging"
 	"github.com/teambition/urbs-setting/src/util"
@@ -65,7 +64,6 @@ func NewApp() *gear.App {
 		return nil
 	})
 
-	app.Use(requestid.New())
 	if app.Env() != "test" {
 		app.UseHandler(logging.AccessLogger)
 	}

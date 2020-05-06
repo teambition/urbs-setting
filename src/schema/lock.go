@@ -8,7 +8,7 @@ import "time"
 // 内部锁
 type Lock struct {
 	ID       int64     `gorm:"column:id"`
-	Key      string    `gorm:"column:key"` // varchar(255) 锁键，表内唯一
+	Name     string    `gorm:"column:name"` // varchar(255) 锁键，表内唯一
 	ExpireAt time.Time `gorm:"column:expire_at"`
 }
 
