@@ -77,7 +77,7 @@ func (m *Product) AcquireID(ctx context.Context, productName string) (int64, err
 // Find 根据条件查找 products
 func (m *Product) Find(ctx context.Context, pg tpl.Pagination) ([]schema.Product, int, error) {
 	products := make([]schema.Product, 0)
-	cursor := pg.TokenToID(true)
+	cursor := pg.TokenToID()
 	db := m.DB.Where("`id` <= ? and `deleted_at` is null and `offline_at` is null", cursor)
 	if pg.Q != "" {
 		db = m.DB.Where("`id` <= ? and `deleted_at` is null and `offline_at` is null and `name` like ?", cursor, pg.Q)
@@ -98,7 +98,7 @@ func (m *Product) Find(ctx context.Context, pg tpl.Pagination) ([]schema.Product
 func (m *Product) Create(ctx context.Context, product *schema.Product) error {
 	err := m.DB.Create(product).Error
 	if err == nil {
-		go m.increaseStatisticStatus(ctx, schema.ProductsTotalSize, 1)
+		go m.tryIncreaseStatisticStatus(ctx, schema.ProductsTotalSize, 1)
 	}
 	return err
 }
@@ -126,7 +126,7 @@ func (m *Product) Offline(ctx context.Context, productID int64) error {
 		Status:    -1,
 	})
 	if res.RowsAffected > 0 {
-		go m.increaseStatisticStatus(ctx, schema.ProductsTotalSize, -1)
+		go m.tryIncreaseStatisticStatus(ctx, schema.ProductsTotalSize, -1)
 	}
 
 	err := res.Error
@@ -138,9 +138,9 @@ func (m *Product) Offline(ctx context.Context, productID int64) error {
 				OfflineAt: &now,
 				Status:    -1,
 			}).Error
-			go m.deleteLabelsRules(ctx, labelIDs)
-			go m.deleteUserAndGroupLabels(ctx, labelIDs)
-			go m.refreshLabelsTotalSize(ctx)
+			go m.tryDeleteLabelsRules(ctx, labelIDs)
+			go m.tryDeleteUserAndGroupLabels(ctx, labelIDs)
+			go m.tryRefreshLabelsTotalSize(ctx)
 		}
 
 		var moduleIDs []int64
@@ -150,7 +150,7 @@ func (m *Product) Offline(ctx context.Context, productID int64) error {
 				OfflineAt: &now,
 				Status:    -1,
 			}).Error
-			go m.refreshModulesTotalSize(ctx)
+			go m.tryRefreshModulesTotalSize(ctx)
 
 			// 逐个处理，可能数据量太大不适合一次性批量处理
 			for _, moduleID := range moduleIDs {
@@ -160,11 +160,11 @@ func (m *Product) Offline(ctx context.Context, productID int64) error {
 						OfflineAt: &now,
 						Status:    -1,
 					})
-					go m.deleteSettingsRules(ctx, settingIDs)
-					go m.deleteUserAndGroupSettings(ctx, settingIDs)
+					go m.tryDeleteSettingsRules(ctx, settingIDs)
+					go m.tryDeleteUserAndGroupSettings(ctx, settingIDs)
 				}
 			}
-			go m.refreshSettingsTotalSize(ctx)
+			go m.tryRefreshSettingsTotalSize(ctx)
 		}
 	}
 	return err

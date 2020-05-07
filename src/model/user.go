@@ -69,7 +69,7 @@ func (m *User) AcquireID(ctx context.Context, uid string) (int64, error) {
 // Find 根据条件查找 products
 func (m *User) Find(ctx context.Context, pg tpl.Pagination) ([]schema.User, int, error) {
 	users := make([]schema.User, 0)
-	cursor := pg.TokenToID(true)
+	cursor := pg.TokenToID()
 	total := 0
 
 	var err error
@@ -160,13 +160,13 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force boo
 	return user, labelIDs, refreshed, err
 }
 
-const userSettingsWithGroupSQL = "(select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
+const userSettingsWithGroupSQL = "(select t1.`rls`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
 	"t2.`id`, t2.`name`, t3.`name` as `module`, t2.`channels`, t2.`clients` " +
 	"from `user_setting` t1, `urbs_setting` t2, `urbs_module` t3 " +
 	"where t1.`user_id` = ? and t1.`updated_at` <= ? and t1.`setting_id` = t2.`id` and t2.`module_id` in ( ? ) and t2.`module_id` = t3.`id` " +
 	"order by t1.`updated_at` desc limit ? ) " +
 	"union all " +
-	"(select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
+	"(select t1.`rls`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
 	"t2.`id`, t2.`name`, t3.`name` as `module`, t2.`channels`, t2.`clients` " +
 	"from `group_setting` t1, `urbs_setting` t2, `urbs_module` t3 " +
 	"where t1.`group_id` in ( ? ) and t1.`updated_at` <= ? and t1.`setting_id` = t2.`id` and t2.`module_id` in ( ? ) and t2.`module_id` = t3.`id` " +
@@ -195,7 +195,7 @@ func (m *User) FindSettingsUnionAll(ctx context.Context, userID int64, groupIDs 
 			var clients string
 			var channels string
 			mySetting := tpl.MySetting{}
-			if err := rows.Scan(&mySetting.CreatedAt, &mySetting.UpdatedAt, &mySetting.Value, &mySetting.LastValue,
+			if err := rows.Scan(&mySetting.Release, &mySetting.AssignedAt, &mySetting.Value, &mySetting.LastValue,
 				&mySetting.ID, &mySetting.Name, &mySetting.Module, &channels, &clients); err != nil {
 				rows.Close()
 				return nil, err
@@ -229,14 +229,14 @@ func (m *User) FindSettingsUnionAll(ctx context.Context, userID int64, groupIDs 
 			break // get enough
 		}
 		// select next page
-		cursor = data[len(data)-1].UpdatedAt.Add(-time.Millisecond)
+		cursor = data[len(data)-1].AssignedAt.Add(-time.Millisecond)
 	}
 
 	return data, nil
 }
 
-const listUserLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`offline_at`, t2.`name`, " +
-	"t2.`description`, t2.`status`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
+const listUserLabelsSQL = "select t1.`rls`, t1.`created_at`, t2.`id`, t2.`name`, " +
+	"t2.`description`, t3.`name` as `product` " +
 	"from `user_label` t1, `urbs_label` t2, `urbs_product` t3 " +
 	"where t1.`user_id` = ? and t1.`id` <= ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.id " +
 	"order by t1.`id` desc " +
@@ -246,8 +246,8 @@ const countUserLabelsSQL = "select count(t2.`id`) " +
 	"from `user_label` t1, `urbs_label` t2 " +
 	"where t1.`user_id` = ? and t1.`label_id` = t2.`id`"
 
-const searchUserLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`offline_at`, t2.`name`, " +
-	"t2.`description`, t2.`status`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
+const searchUserLabelsSQL = "select t1.`rls`, t2.`created_at`, t2.`id`, t2.`name`, " +
+	"t2.`description`, t3.`name` as `product` " +
 	"from `user_label` t1, `urbs_label` t2, `urbs_product` t3 " +
 	"where t1.`user_id` = ? and t1.`id` <= ? and t1.`label_id` = t2.`id` and t2.`name` like ? and t2.`product_id` = t3.`id` " +
 	"order by t1.`id` desc " +
@@ -258,9 +258,9 @@ const countSearchUserLabelsSQL = "select count(t2.`id`) " +
 	"where t1.`user_id` = ? and t1.`label_id` = t2.`id` and t2.`name` like ?"
 
 // FindLabels 根据用户 ID 返回其 labels 数据。
-func (m *User) FindLabels(ctx context.Context, userID int64, pg tpl.Pagination) ([]tpl.LabelInfo, int, error) {
-	data := []tpl.LabelInfo{}
-	cursor := pg.TokenToID(true)
+func (m *User) FindLabels(ctx context.Context, userID int64, pg tpl.Pagination) ([]tpl.MyLabel, int, error) {
+	data := []tpl.MyLabel{}
+	cursor := pg.TokenToID()
 	total := 0
 
 	if pg.Q == "" {
@@ -288,23 +288,18 @@ func (m *User) FindLabels(ctx context.Context, userID int64, pg tpl.Pagination) 
 	}
 
 	for rows.Next() {
-		labelInfo := tpl.LabelInfo{}
-		var clients string
-		var channels string
-		if err := rows.Scan(&labelInfo.ID, &labelInfo.CreatedAt, &labelInfo.UpdatedAt, &labelInfo.OfflineAt,
-			&labelInfo.Name, &labelInfo.Desc, &labelInfo.Status, &channels, &clients, &labelInfo.Product); err != nil {
+		myLabel := tpl.MyLabel{}
+		if err := rows.Scan(&myLabel.Release, &myLabel.AssignedAt, &myLabel.ID, &myLabel.Name, &myLabel.Desc, &myLabel.Product); err != nil {
 			return nil, 0, err
 		}
-		labelInfo.Channels = tpl.StringToSlice(channels)
-		labelInfo.Clients = tpl.StringToSlice(clients)
-		labelInfo.HID = service.IDToHID(labelInfo.ID, "label")
-		data = append(data, labelInfo)
+		myLabel.HID = service.IDToHID(myLabel.ID, "label")
+		data = append(data, myLabel)
 	}
 
 	return data, total, nil
 }
 
-const listUserSettingsSQL = "select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
+const listUserSettingsSQL = "select t1.`rls`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
 	"t2.`id`, t2.`name`, t3.`name` as `module`, t4.`name` as `product` " +
 	"from `user_setting` t1, `urbs_setting` t2, `urbs_module` t3, `urbs_product` t4 " +
 	"where t1.`user_id` = ? and t1.`id` <= ? and t1.`setting_id` = t2.`id` and t2.`module_id` = t3.`id` and t3.`product_id` = t4.`id` " +
@@ -315,7 +310,7 @@ const countUserSettingsSQL = "select count(t2.`id`) " +
 	"from `user_setting` t1, `urbs_setting` t2 " +
 	"where t1.`user_id` = ? and t1.`setting_id` = t2.`id`"
 
-const searchUserSettingsSQL = "select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
+const searchUserSettingsSQL = "select t1.`rls`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
 	"t2.`id`, t2.`name`, t3.`name` as `module`, t4.`name` as `product` " +
 	"from `user_setting` t1, `urbs_setting` t2, `urbs_module` t3, `urbs_product` t4 " +
 	"where t1.`user_id` = ? and t1.`id` <= ? and t1.`setting_id` = t2.`id` and t2.`name` like ? and t2.`module_id` = t3.`id` and t3.`product_id` = t4.`id` " +
@@ -329,7 +324,7 @@ const countSearchUserSettingsSQL = "select count(t2.`id`) " +
 // FindSettings 根据用户 ID 返回 settings 数据。
 func (m *User) FindSettings(ctx context.Context, userID int64, pg tpl.Pagination) ([]tpl.MySetting, int, error) {
 	data := []tpl.MySetting{}
-	cursor := pg.TokenToID(true)
+	cursor := pg.TokenToID()
 	total := 0
 
 	if pg.Q == "" {
@@ -358,7 +353,7 @@ func (m *User) FindSettings(ctx context.Context, userID int64, pg tpl.Pagination
 
 	for rows.Next() {
 		mySetting := tpl.MySetting{}
-		if err := rows.Scan(&mySetting.CreatedAt, &mySetting.UpdatedAt, &mySetting.Value, &mySetting.LastValue,
+		if err := rows.Scan(&mySetting.Release, &mySetting.AssignedAt, &mySetting.Value, &mySetting.LastValue,
 			&mySetting.ID, &mySetting.Name, &mySetting.Module, &mySetting.Product); err != nil {
 			return nil, 0, err
 		}
@@ -383,6 +378,6 @@ func (m *User) BatchAdd(ctx context.Context, uids []string) error {
 	b := buf.Bytes()
 	b[len(b)-1] = ';'
 	err := m.DB.Exec(string(b)).Error
-	go m.refreshUsersTotalSize(ctx)
+	go m.tryRefreshUsersTotalSize(ctx)
 	return err
 }

@@ -1,9 +1,26 @@
   # Module API
+  /v1/products/{product}/settings:
+    get:
+      tags:
+        - Setting
+      summary: 读取产品的配置项列表，支持分页，按照创建时间倒序
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
+      responses:
+        '200':
+          $ref: '#/components/responses/SettingsInfoRes'
+
   /v1/products/{product}/modules/{module}/settings:
     get:
       tags:
         - Setting
-      summary: 读取产品功能模块配置项列表，支持分页，按照创建时间正序
+      summary: 读取产品功能模块配置项列表，支持分页，按照创建时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -16,8 +33,6 @@
       responses:
         '200':
           $ref: '#/components/responses/SettingsInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
     post:
       tags:
         - Setting
@@ -33,10 +48,6 @@
       responses:
         '200':
           $ref: '#/components/responses/SettingsInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '400':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/modules/{module}/settings/{setting}:
     get:
@@ -53,8 +64,6 @@
       responses:
         '200':
           $ref: '#/components/responses/SettingInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
     put:
       tags:
         - Setting
@@ -71,8 +80,6 @@
       responses:
         '200':
           $ref: '#/components/responses/SettingInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/modules/{module}/settings/{setting}:offline:
     put:
@@ -89,10 +96,6 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/modules/{module}/settings/{setting}:assign:
     post:
@@ -110,8 +113,126 @@
         $ref: '#/components/requestBodies/UsersGroupsBody'
       responses:
         '200':
+          $ref: '#/components/responses/SettingReleaseInfoRes'
+
+  /v1/products/{product}/modules/{module}/settings/{setting}:recall:
+    post:
+      tags:
+        - Setting
+      summary: 批量撤销对用户或群组设置的产品功能配置项
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+      requestBody:
+        $ref: '#/components/requestBodies/RecallBody'
+      responses:
+        '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/products/{product}/modules/{module}/settings/{setting}/users:
+    get:
+      tags:
+        - Setting
+      summary: 读取指定产品功能配置项的用户列表
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
+      responses:
+        '200':
+          $ref: '#/components/responses/SettingUsersInfoRes'
+
+  /v1/products/{product}/modules/{module}/settings/{setting}/groups:
+    get:
+      tags:
+        - Setting
+      summary: 读取指定产品功能配置项的群组列表
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
+      responses:
+        '200':
+          $ref: '#/components/responses/SettingGroupsInfoRes'
+
+  /v1/products/{product}/modules/{module}/settings/{setting}/rules:
+    get:
+      tags:
+        - Setting
+      summary: 读取指定产品功能配置项发布规则列表
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+      responses:
+        '200':
+          $ref: '#/components/responses/SettingRulesInfoRes'
+    post:
+      tags:
+        - Setting
+      summary: 创建指定产品功能配置项的灰度发布规则，同一个功能配置项同一种 kind 的发布规则只能创建一个
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+      requestBody:
+        $ref: '#/components/requestBodies/SettingRuleBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/SettingRuleInfoRes'
+
+  /v1/products/{product}/modules/{module}/settings/{setting}/rules/{hid}:
+    put:
+      tags:
+        - Setting
+      summary: 更新指定产品功能配置项的灰度发布规则
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+        - $ref: "#/components/parameters/PathHID"
+      requestBody:
+        $ref: '#/components/requestBodies/SettingRuleBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/SettingRuleInfoRes'
+    delete:
+      tags:
+        - Setting
+      summary: 删除指定产品功能配置项的灰度发布规则
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+        - $ref: "#/components/parameters/PathHID"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'

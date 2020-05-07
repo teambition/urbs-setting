@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file starting fro
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 -----
+## [1.3.0] - 2020-05-08
+
+**Change:**
+
+- Support label rule and setting rule.
+- Support search for list APIs.
+- Change APIs to camelCase, see https://github.com/json-api/json-api/issues/1255.
+
 ## [1.2.3] - 2020-04-03
 
 **Change:**

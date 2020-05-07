@@ -60,7 +60,7 @@ func (t *SettingUpdateBody) Validate() error {
 			return gear.ErrBadRequest.WithMsgf("invalid values: %v", *t.Values)
 		}
 		for _, value := range *t.Values {
-			if !validValueReg1.MatchString(value) && !validValueReg2.MatchString(value) {
+			if !validValueReg.MatchString(value) {
 				return gear.ErrBadRequest.WithMsgf("invalid value: %s", value)
 			}
 		}
@@ -147,15 +147,16 @@ type SettingInfoRes struct {
 
 // MySetting ...
 type MySetting struct {
-	ID        int64     `json:"-"`
-	HID       string    `json:"hid"`
-	Product   string    `json:"product"`
-	Module    string    `json:"module"`
-	Name      string    `json:"name"`
-	Value     string    `json:"value"`
-	LastValue string    `json:"lastValue"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID         int64     `json:"-"`
+	HID        string    `json:"hid"`
+	Product    string    `json:"product"`
+	Module     string    `json:"module"`
+	Name       string    `json:"name"`
+	Desc       string    `json:"desc"`
+	Value      string    `json:"value"`
+	LastValue  string    `json:"lastValue"`
+	Release    int64     `json:"release"`
+	AssignedAt time.Time `json:"assignedAt"`
 }
 
 // MySettingsRes ...

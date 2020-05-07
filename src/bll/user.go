@@ -39,8 +39,8 @@ func (b *User) List(ctx context.Context, pg tpl.Pagination) (*tpl.UsersRes, erro
 
 // ListCachedLabels ... 该接口不返回错误
 func (b *User) ListCachedLabels(ctx context.Context, uid, product string) *tpl.CacheLabelsInfoRes {
-	now := time.Now().UTC().Unix()
-	res := &tpl.CacheLabelsInfoRes{Result: []schema.UserCacheLabel{}, Timestamp: now}
+	now := time.Now().UTC()
+	res := &tpl.CacheLabelsInfoRes{Result: []schema.UserCacheLabel{}, Timestamp: now.Unix()}
 	if product == "" {
 		return res
 	}
@@ -52,12 +52,12 @@ func (b *User) ListCachedLabels(ctx context.Context, uid, product string) *tpl.C
 
 	// user 上缓存的 labels 过期，则刷新获取最新，RefreshUser 要考虑并发场景
 	if user.ActiveAt == 0 {
-		if user, err = b.ms.ApplyLabelRulesAndRefreshUserLabels(ctx, user.ID, now, true); err != nil {
+		if user = b.ms.TryApplyLabelRulesAndRefreshUserLabels(ctx, user.ID, now, true); user == nil {
 			return res
 		}
-	} else if conf.Config.IsCacheLabelExpired(now-5, user.ActiveAt) {
+	} else if conf.Config.IsCacheLabelExpired(now.Unix()-5, user.ActiveAt) {
 		// 提前 5s 异步处理
-		go b.ms.ApplyLabelRulesAndRefreshUserLabels(ctx, user.ID, now, false)
+		go b.ms.TryApplyLabelRulesAndRefreshUserLabels(ctx, user.ID, now, false)
 	}
 
 	res.Result = user.GetLabels(product)
@@ -72,12 +72,14 @@ func (b *User) RefreshCachedLabels(ctx context.Context, uid string) (*schema.Use
 		return nil, err
 	}
 
-	user, err = b.ms.ApplyLabelRulesAndRefreshUserLabels(ctx, user.ID, time.Now().UTC().Unix(), true)
-	return user, err
+	if user, err = b.ms.ApplyLabelRulesAndRefreshUserLabels(ctx, user.ID, time.Now().UTC(), true); err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 // ListLabels ...
-func (b *User) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.LabelsInfoRes, error) {
+func (b *User) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.MyLabelsRes, error) {
 	user, err := b.ms.User.Acquire(ctx, uid)
 	if err != nil {
 		return nil, err
@@ -88,7 +90,7 @@ func (b *User) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (*
 		return nil, err
 	}
 
-	res := &tpl.LabelsInfoRes{Result: labels}
+	res := &tpl.MyLabelsRes{Result: labels}
 	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
@@ -145,13 +147,13 @@ func (b *User) ListSettingsUnionAll(ctx context.Context, uid, productName, chann
 	if err != nil {
 		return nil, err
 	}
-	if pg.PageToken == "" {
+	if pg.PageToken == "" { // 请求首页时尝试应用 SettingRules
 		go b.ms.TryApplySettingRules(ctx, productID, user.ID)
 	}
 
 	res.Result = settings
 	if len(res.Result) > pg.PageSize {
-		res.NextPageToken = tpl.TimeToPageToken(res.Result[pg.PageSize].UpdatedAt)
+		res.NextPageToken = tpl.TimeToPageToken(res.Result[pg.PageSize].AssignedAt)
 		res.Result = res.Result[:pg.PageSize]
 	}
 	return res, nil

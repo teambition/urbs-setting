@@ -4,7 +4,7 @@ openapi: 3.0.0
 info:
   description: |-
     Urbs 灰度平台灰度策略服务
-  version: 1.2.3
+  version: 1.3.0
   title: urbs-setting
 servers:
   - url: https://urbs-setting:8443
@@ -43,7 +43,7 @@ components:
     PathHID:
       in: path
       name: uid
-      description: 标签/配置项 hid
+      description: 标签/配置项/发布规则 hid
       required: true
       schema:
         type: string
@@ -102,6 +102,15 @@ components:
         type: string
         default: ""
         example: "2020-03-13T11%3A59%3A48Z"
+    QueryQ:
+      in: query
+      name: q
+      description: 部分列表类 API 支持搜索，q 为搜索关键词
+      required: false
+      schema:
+        title: q
+        type: string
+        default: ""
   securitySchemes:
     HeaderAuthorizationJWT:
       name: Authorization
@@ -194,24 +203,57 @@ components:
         status:
           type: integer
           format: int64
-          description: 灰度标签状态（暂未支持）
-          example: 0
-        created_at:
+          description: 使用用户计数（被动异步计算，非精确值）
+          example: 100
+        release:
+          type: integer
+          format: int64
+          description: 标签发布（被设置）计数
+          example: 2
+        createdAt:
           type: string
           format: date-time
           description: 灰度标签创建时间
           example: 2020-03-25T06:24:25Z
-        updated_at:
+        updatedAt:
           type: string
           format: date-time
           description: 灰度标签更新时间
           example: 2020-03-25T06:24:25Z
-        offline_at:
+        offlineAt:
           type: string
           format: date-time
           description: 灰度标签下线时间
           default: null
           example: null
+    MyLabel:
+      type: object
+      properties:
+        hid:
+          type: string
+          description: 灰度标签的 hid
+          example: AwAAAAAAAAB25V_QnbhCuRwF
+        product:
+          type: string
+          description: 灰度标签所属的产品名称
+          example: teambition
+        name:
+          type: string
+          description: 灰度标签名称
+          example: task-share
+        desc:
+          type: string
+          description: 灰度标签描述
+        release:
+          type: integer
+          format: int64
+          description: 被设置批次
+          example: 1
+        assignedAt:
+          type: string
+          format: date-time
+          description: 被设置时间
+          example: 2020-03-25T06:24:25Z
     MySetting:
       type: object
       properties:
@@ -219,31 +261,59 @@ components:
           type: string
           description: 配置项的 hid
           example: AwAAAAAAAAB25V_QnbhCuRwF
+        product:
+          type: string
+          description: 配置项所属的产品名称
+          example: teambition
         module:
           type: string
           description: 配置项所属的功能模块名称
           example: task
         name:
           type: string
-          description: 配置项名称，同一产品功能模块下唯一（不能重名）
+          description: 配置项名称
           example: task-share
+        desc:
+          type: string
+          description: 配置项描述，
         value:
           type: string
           description: 配置项值
           example: disable
-        last_value:
+        lastValue:
           type: string
           description: 配置项值
           example: ""
-        created_at:
+        release:
+          type: integer
+          format: int64
+          description: 被设置批次
+          example: 1
+        assignedAt:
           type: string
           format: date-time
-          description: 灰度标签创建时间
+          description: 被设置时间
           example: 2020-03-25T06:24:25Z
-        updated_at:
+    User:
+      type: object
+      properties:
+        uid:
+          type: string
+          description: 用户的 uid
+          example: 5e82d747fe02a50021d339f3
+        labels:
+          type: string
+          description: 缓存的用户当前被设置的 labels
+          example: '{"teambition":[{"l":"dev"}]}'
+        activeAt:
+          type: integer
+          format: int64
+          description: 用户活跃时间戳，1970 以来的秒数，非精确值
+          example: 1585636012
+        createdAt:
           type: string
           format: date-time
-          description: 灰度标签更新时间
+          description: 用户创建时间
           example: 2020-03-25T06:24:25Z
     Group:
       type: object
@@ -259,17 +329,22 @@ components:
         desc:
           type: string
           description: 群组的描述
-        sync_at:
+        syncAt:
           type: integer
           format: int64
           description: 群组成员同步时间点，1970 以来的秒数
           example: 1585636012
-        created_at:
+        status:
+          type: integer
+          format: int64
+          description: 群组成员数量，非精确值
+          example: 99
+        createdAt:
           type: string
           format: date-time
           description: 灰度标签创建时间
           example: 2020-03-25T06:24:25Z
-        updated_at:
+        updatedAt:
           type: string
           format: date-time
           description: 灰度标签更新时间
@@ -281,12 +356,12 @@ components:
           type: string
           description: 群组成员的用户 uid
           example: 5e82d747fe02a50021d339f3
-        sync_at:
+        syncAt:
           type: integer
           format: int64
           description: 该群组成员同步时间，1970 以来的秒数
           example: 1585636012
-        created_at:
+        createdAt:
           type: string
           format: date-time
           description: 该群组成员添加时间
@@ -305,26 +380,49 @@ components:
           type: integer
           format: int64
           description: 产品状态值
-        created_at:
+        createdAt:
           type: string
           format: date-time
           description: 产品创建时间
           example: 2020-03-25T06:24:25Z
-        updated_at:
+        updatedAt:
           type: string
           format: date-time
           description: 产品更新时间
           example: 2020-03-25T06:24:25Z
-        deleted_at:
+        deletedAt:
           type: string
           format: date-time
           description: 产品删除时间
           default: null
-        offline_at:
+        offlineAt:
           type: string
           format: date-time
           description: 产品下线时间
           default: null
+    ProductStatistics:
+      type: object
+      properties:
+        labels:
+          type: integer
+          format: int64
+          description: 产品下灰度标签数量
+        modules:
+          type: integer
+          format: int64
+          description: 产品下功能模块数量
+        settings:
+          type: integer
+          format: int64
+          description: 产品下配置项数量
+        release:
+          type: integer
+          format: int64
+          description: 产品下灰度标签和配置项总发布次数
+        status:
+          type: integer
+          format: int64
+          description: 产品下灰度标签和配置项总作用人数（非精确值）
     Module:
       type: object
       properties:
@@ -338,18 +436,18 @@ components:
         status:
           type: integer
           format: int64
-          description: 功能模块状态值
-        created_at:
+          description: 有效配置项计数（被动异步计算，非精确值）
+        createdAt:
           type: string
           format: date-time
           description: 功能模块创建时间
           example: 2020-03-25T06:24:25Z
-        updated_at:
+        updatedAt:
           type: string
           format: date-time
           description: 功能模块更新时间
           example: 2020-03-25T06:24:25Z
-        offline_at:
+        offlineAt:
           type: string
           format: date-time
           description: 功能模块下线时间
@@ -379,7 +477,11 @@ components:
         status:
           type: integer
           format: int64
-          description: 配置项状态值
+          description: 使用用户计数（被动异步计算，非精确值）
+        release:
+          type: integer
+          format: int64
+          description: 配置项发布（被设置）计数
         channels:
           type: array
           description: 该配置项适用的产品版本通道，是服务端配置的可用版本通道的子集，为空表示适用所有
@@ -401,21 +503,271 @@ components:
           example: ["true", "false"]
           items:
             type: string
-        created_at:
+        createdAt:
           type: string
           format: date-time
           description: 配置项创建时间
           example: 2020-03-25T06:24:25Z
-        updated_at:
+        updatedAt:
           type: string
           format: date-time
           description: 配置项更新时间
           example: 2020-03-25T06:24:25Z
-        offline_at:
+        offlineAt:
           type: string
           format: date-time
           description: 配置项下线时间
           default: null
+    LabelReleaseInfo:
+      type: object
+      properties:
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        users:
+          type: array
+          description: 用户 uid 数组
+          example: ["50c32afae8cf1439d35a87e6", "5e69a9bd6ac3cd00213ea969"]
+          items:
+            type: string
+        groups:
+          type: array
+          description: 群组 uid 数组
+          items:
+            type: string
+    LabelGroupInfo:
+      type: object
+      properties:
+        labelHID:
+          type: string
+          description: 灰度标签 hid
+          example: urbs
+        assignedAt:
+          type: string
+          format: date-time
+          description: 灰度标签设置时间
+          example: 2020-03-25T06:24:25Z
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        group:
+          type: string
+          description: 群组的 uid
+          example: 50c32afae8cf1439d35a87e6
+        kind:
+          type: string
+          description: 群组类型
+          example: organization
+        desc:
+          type: string
+          description: 群组的描述
+        status:
+          type: integer
+          format: int64
+          description: 群组成员数量，非精确值
+          example: 99
+    LabelUserInfo:
+      type: object
+      properties:
+        labelHID:
+          type: string
+          description: 灰度标签 hid
+          example: urbs
+        assignedAt:
+          type: string
+          format: date-time
+          description: 灰度标签设置时间
+          example: 2020-03-25T06:24:25Z
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        user:
+          type: string
+          description: 用户的 uid
+          example: 50c32afae8cf1439d35a87e6
+    LabelRuleInfo:
+      type: object
+      properties:
+        hid:
+          type: string
+          description: 发布规则的 hid
+          example: urbs
+        labelHID:
+          type: string
+          description: 发布规则所属灰度标签的 hid
+          example: urbs
+        kind:
+          type: string
+          description: 发布规则类型，目前仅支持 "userPercent"
+          example: userPercent
+        rule:
+          type: object
+          description: 发布规则内容，JSON 对象，具体格式取决于 kind
+          properties:
+            value:
+              type: integer
+              format: int64
+              description: 当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]
+              example: 10
+          example: '{"value": 10}'
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间
+          example: 2020-03-25T06:24:25Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新时间
+          example: 2020-03-25T06:24:25Z
+    SettingReleaseInfo:
+      type: object
+      properties:
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        users:
+          type: array
+          description: 用户 uid 数组
+          example: ["50c32afae8cf1439d35a87e6", "5e69a9bd6ac3cd00213ea969"]
+          items:
+            type: string
+        groups:
+          type: array
+          description: 群组 uid 数组
+          items:
+            type: string
+        value:
+          type: string
+          description: 配置项值
+          example: x
+    SettingGroupInfo:
+      type: object
+      properties:
+        settingHID:
+          type: string
+          description: 配置项的 hid
+          example: urbs
+        assignedAt:
+          type: string
+          format: date-time
+          description: 配置项设置时间
+          example: 2020-03-25T06:24:25Z
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        group:
+          type: string
+          description: 群组的 uid
+          example: 50c32afae8cf1439d35a87e6
+        kind:
+          type: string
+          description: 群组类型
+          example: organization
+        desc:
+          type: string
+          description: 群组的描述
+        status:
+          type: integer
+          format: int64
+          description: 群组成员数量，非精确值
+          example: 99
+        value:
+          type: string
+          description: 配置项值
+          example: b
+        lastValue:
+          type: string
+          description: 上一个配置项值
+          example: a
+    SettingUserInfo:
+      type: object
+      properties:
+        settingHID:
+          type: string
+          description: 配置项的 hid
+          example: urbs
+        assignedAt:
+          type: string
+          format: date-time
+          description: 配置项设置时间
+          example: 2020-03-25T06:24:25Z
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        user:
+          type: string
+          description: 用户的 uid
+          example: 50c32afae8cf1439d35a87e6
+        value:
+          type: string
+          description: 配置项值
+          example: b
+        lastValue:
+          type: string
+          description: 上一个配置项值
+          example: a
+      SettingRuleInfo:
+      type: object
+      properties:
+        hid:
+          type: string
+          description: 发布规则的 hid
+          example: urbs
+        settingHID:
+          type: string
+          description: 发布规则所属配置项的 hid
+          example: urbs
+        kind:
+          type: string
+          description: 发布规则类型，目前仅支持 "userPercent"
+          example: userPercent
+        rule:
+          type: object
+          description: 发布规则内容，JSON 对象，具体格式取决于 kind
+          properties:
+            value:
+              type: integer
+              format: int64
+              description: 当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]
+              example: 10
+          example: '{"value": 10}'
+        value:
+          type: string
+          description: 发布规则的配置项值
+          example: x
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间
+          example: 2020-03-25T06:24:25Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新时间
+          example: 2020-03-25T06:24:25Z
   requestBodies:
     UsersBody:
       required: true
@@ -468,16 +820,16 @@ components:
           schema:
             type: object
             properties:
-              sync_at:
+              syncAt:
                 type: integer
-                title: sync_at
+                title: syncAt
                 format: int64
                 description: 群组成员同步时间点，1970 以来的秒数
               desc:
                 type: string
                 title: desc
                 description: 群组描述
-            example: {"sync_at": 1585638012}
+            example: {"syncAt": 1585638012}
     NameDescBody:
       required: true
       description: 创建产品、功能模块、配置项的请求数据
@@ -611,6 +963,67 @@ components:
                 items:
                   type: string
                 default: null
+    RecallBody:
+      required: true
+      description: 撤销/回滚指定发布批次的灰度标签或配置项
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              release:
+                type: integer
+                format: int64
+                description: 发布批次（被设置）计数
+                example: 2
+    LabelRuleBody:
+      required: true
+      description: 创建/更新灰度标签的发布规则
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              kind:
+                type: string
+                description: 发布规则类型，目前仅支持 "userPercent"
+                example: userPercent
+              rule:
+                type: object
+                description: 发布规则内容，JSON 对象，具体格式取决于 kind
+                properties:
+                  value:
+                    type: integer
+                    format: int64
+                    description: 当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]
+                    example: 10
+                example: '{"value": 10}'
+      SettingRuleBody:
+      required: true
+      description: 创建/更新配置项的发布规则
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              kind:
+                type: string
+                description: 发布规则类型，目前仅支持 "userPercent"
+                example: userPercent
+              rule:
+                type: object
+                description: 发布规则内容，JSON 对象，具体格式取决于 kind
+                properties:
+                  value:
+                    type: integer
+                    format: int64
+                    description: 当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]
+                    example: 10
+                example: '{"value": 10}'
+              value:
+                type: string
+                description: 发布规则的配置项值
+                example: x
   responses:
     ErrorResponse:
       description: 标准错误返回结果
@@ -651,7 +1064,7 @@ components:
           schema:
             type: object
             properties:
-              db_connect:
+              dbConnect:
                 type: boolean
                 description: 是否连接了数据库
                 example: true
@@ -696,6 +1109,19 @@ components:
             properties:
               result:
                 $ref: "#/components/schemas/LabelInfo"
+    MyLabelsRes:
+      description: 用户或群组被指派的灰度标签列表返回结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              nextPageToken:
+                $ref: "#/components/schemas/NextPageToken"
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MyLabel"
     MySettingsRes:
       description: 用户或群组被指派的配置项列表返回结果
       content:
@@ -812,7 +1238,7 @@ components:
                 items:
                   $ref: "#/components/schemas/SettingInfo"
     SettingInfoRes:
-      description: 单个产品返回结果
+      description: 单个配置项返回结果
       content:
         application/json:
           schema:
@@ -820,6 +1246,137 @@ components:
             properties:
               result:
                 $ref: "#/components/schemas/SettingInfo"
+    ProductStatisticsRes:
+      description: 产品统计数据结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/ProductStatistics"
+    LabelReleaseInfoRes:
+      description: 设置灰度标签返回结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/LabelReleaseInfo"
+    LabelGroupsInfoRes:
+      description: 灰度标签作用的群组列表
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LabelGroupInfo"
+    LabelUsersInfoRes:
+      description: 灰度标签作用的用户列表
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LabelUserInfo"
+    LabelRulesInfoRes:
+      description: 灰度标签的发布规则列表
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LabelRuleInfo"
+    LabelRuleInfoRes:
+      description: 灰度标签的发布规则结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/LabelRuleInfo"
+    SettingReleaseInfoRes:
+      description: 设置配置项返回结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/SettingReleaseInfo"
+    SettingGroupsInfoRes:
+      description: 配置项作用的群组列表
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SettingGroupInfo"
+    SettingUsersInfoRes:
+      description: 配置项作用的用户列表
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SettingUserInfo"
+    SettingRulesInfoRes:
+      description: 配置项的发布规则列表
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SettingRuleInfo"
+    SettingRuleInfoRes:
+      description: 配置项的发布规则结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/SettingRuleInfo"
+    UsersRes:
+      description: 用户列表
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    UserRes:
+      description: 单个用户结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/User"
 paths:
   /version:
     get:
@@ -850,11 +1407,27 @@ paths:
         '200':
           $ref: "#/components/responses/CacheLabelsInfo"
 
+  /v1/users:
+    get:
+      tags:
+        - User
+      summary: 获取用户列表，支持分页，按照标签指派时间倒序
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
+      responses:
+        '200':
+          $ref: '#/components/responses/UsersRes'
+
   /v1/users/{uid}/settings:unionAll:
     get:
       tags:
         - User
-      summary: 该接口为客户端提供用户的产品功能模块配置项信息，用于客户端功能灰度。获取指定 uid 用户在指定 product 产品下的功能模块配置项信息列表，包括从 group 群组继承的配置项信息列表，按照 setting 值更新时间 updated_at 反序。该 API 支持分页，默认获取最新更新的前 10 条，分页参数 nextPageToken 为更新时间 updated_at 值（进行了 encodeURI 转义）。如果客户端本地缓存了 setting 列表，可以判断 nextPageToken 的值，如果 **为空** 或者其值小于本地缓存的最大 updated_at 值，就不用读取下一页了。该 API 还支持 channel 和 client 参数，让客户端只读取匹配 client 和 channel 的 setting 列表。当 uid 对应用户不存在时，该接口会返回空配置项列表
+      summary: 该接口为客户端提供用户的产品功能模块配置项信息，用于客户端功能灰度。获取指定 uid 用户在指定 product 产品下的功能模块配置项信息列表，包括从 group 群组继承的配置项信息列表，按照 setting 值更新时间 updatedAt 反序。该 API 支持分页，默认获取最新更新的前 10 条，分页参数 nextPageToken 为更新时间 updatedAt 值（进行了 encodeURI 转义）。如果客户端本地缓存了 setting 列表，可以判断 nextPageToken 的值，如果 **为空** 或者其值小于本地缓存的最大 updatedAt 值，就不用读取下一页了。该 API 还支持 channel 和 client 参数，让客户端只读取匹配 client 和 channel 的 setting 列表。当 uid 对应用户不存在时，该接口会返回空配置项列表
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -880,16 +1453,12 @@ paths:
       responses:
         '200':
           $ref: "#/components/responses/MySettingsRes"
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/users/{uid}/labels:
     get:
       tags:
         - User
-      summary: 获取指定 uid 用户灰度标签列表，不包括从群组继承的灰度标签，支持分页，按照标签指派时间正序。考虑到灰度标签不会很多，暂未支持根据 product 过滤
+      summary: 获取指定 uid 用户灰度标签列表，不包括从群组继承的灰度标签，支持分页，按照标签指派时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -897,13 +1466,10 @@ paths:
         - $ref: "#/components/parameters/PathUID"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
-          $ref: '#/components/responses/LabelsInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/MyLabelsRes'
 
   /v1/users/{uid}/labels:cache:
     put:
@@ -917,17 +1483,13 @@ paths:
         - $ref: "#/components/parameters/PathUID"
       responses:
         '200':
-          $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/UserRes'
 
   /v1/users/{uid}/settings:
     get:
       tags:
         - User
-      summary: 获取指定 uid 用户在指定产品线下的功能模块配置项列表，不包括从群组继承的配置项，支持分页，按照配置项指派时间正序
+      summary: 获取指定 uid 用户在指定产品线下的功能模块配置项列表，不包括从群组继承的配置项，支持分页，按照配置项指派时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -935,13 +1497,10 @@ paths:
         - $ref: "#/components/parameters/PathUID"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/MySettingsRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/users/{uid}/exists:
     get:
@@ -956,8 +1515,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/users:batch:
     post:
@@ -973,10 +1530,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '400':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/users/{uid}/labels/{hid}:
     delete:
@@ -992,10 +1545,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/users/{uid}/settings/{hid}:rollback:
     put:
@@ -1011,10 +1560,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/users/{uid}/settings/{hid}:
     delete:
@@ -1029,16 +1574,12 @@ paths:
         - $ref: "#/components/parameters/PathHID"
       responses:
         '200':
-          $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'  # Group API
+          $ref: '#/components/responses/BoolRes'  # Group API
   /v1/groups/{uid}/labels:
     get:
       tags:
         - Group
-      summary: 获取指定 uid 群组灰度标签列表，支持分页，按照标签指派时间正序。考虑到灰度标签不会很多，暂未支持根据 product 过滤
+      summary: 获取指定 uid 群组灰度标签列表，支持分页，按照标签指派时间倒序。
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -1046,19 +1587,16 @@ paths:
         - $ref: "#/components/parameters/PathUID"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
-          $ref: '#/components/responses/LabelsInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/MyLabelsRes'
 
   /v1/groups/{uid}/settings:
     get:
       tags:
         - Group
-      summary: 获取指定 uid 群组在指定产品线下的功能模块配置项列表，支持分页，按照配置项指派时间正序
+      summary: 获取指定 uid 群组的功能模块配置项列表，支持分页，按照配置项指派时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -1066,19 +1604,16 @@ paths:
         - $ref: "#/components/parameters/PathUID"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/MySettingsRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups:
     get:
       tags:
         - Group
-      summary: 读取群组列表，支持分页，按照创建时间正序。
+      summary: 读取群组列表，支持分页，按照创建时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -1091,11 +1626,10 @@ paths:
             type: string
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/GroupsRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups/{uid}/exists:
     get:
@@ -1110,8 +1644,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups:batch:
     post:
@@ -1127,10 +1659,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '400':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups/{uid}:
     put:
@@ -1147,8 +1675,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/GroupRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
     delete:
       tags:
         - Group
@@ -1161,10 +1687,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups/{uid}/labels/{hid}:
     delete:
@@ -1180,10 +1702,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups/{uid}/settings/{hid}:rollback:
     put:
@@ -1199,10 +1717,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups/{uid}/settings/{hid}:
     delete:
@@ -1218,16 +1732,12 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups/{uid}/members:batch:
     post:
       tags:
         - Group
-      summary: 批量添加群组成员，如果群组成员已存在，则会更新成员的 sync_at 值为 group 的 sync_at 值
+      summary: 批量添加群组成员，如果群组成员已存在，则会更新成员的 syncAt 值为 group 的 syncAt 值
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -1237,16 +1747,12 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '400':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups/{uid}/members:
     get:
       tags:
         - Group
-      summary: 获取指定 uid 群组的成员列表，支持分页，按照成员添加时间正序
+      summary: 获取指定 uid 群组的成员列表，支持分页，按照成员添加时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -1254,17 +1760,14 @@ paths:
         - $ref: "#/components/parameters/PathUID"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/GroupMembersRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
     delete:
       tags:
         - Group
-      summary: 移除群组指定 user 的成员或批量移除同步时间点小于 sync_lt 的成员
+      summary: 移除群组指定 user 的成员或批量移除同步时间点小于 syncLt 的成员
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -1277,30 +1780,27 @@ paths:
           schema:
             type: string
         - in: query
-          name: sync_lt
-          description: 批量移除同步时间点小于 sync_lt 的成员
+          name: syncLt
+          description: 批量移除同步时间点小于 syncLt 的成员
           required: false
           schema:
             type: string
             format: date-time
       responses:
         '200':
-          $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'  # Product API
+          $ref: '#/components/responses/BoolRes'  # Product API
   /v1/products:
     get:
       tags:
         - Product
-      summary: 读取产品列表，支持分页，按照创建时间正序
+      summary: 读取产品列表，支持分页，按照创建时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
         - $ref: '#/components/parameters/HeaderAuthorization'
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/ProductsRes'
@@ -1339,8 +1839,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/GroupRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
     delete:
       tags:
         - Product
@@ -1353,10 +1851,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}:offline:
     put:
@@ -1371,16 +1865,25 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
-  # Module API
+
+  /v1/products/{product}/statistics:
+    put:
+      tags:
+        - Product
+      summary: 将指定 product name 的产品的统计数据
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductStatisticsRes'  # Module API
   /v1/products/{product}/labels:
     get:
       tags:
         - Label
-      summary: 读取产品下灰度标签列表，支持分页，按照创建时间正序
+      summary: 读取产品下灰度标签列表，支持分页，按照创建时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -1388,11 +1891,10 @@ paths:
         - $ref: "#/components/parameters/PathProduct"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/LabelsInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
     post:
       tags:
         - Label
@@ -1406,10 +1908,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/LabelInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '400':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/labels/{label}:
     put:
@@ -1427,8 +1925,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/LabelInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/labels/{label}:offline:
     put:
@@ -1444,15 +1940,11 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/labels/{label}:assign:
     post:
       tags:
-        - Setting
+        - Label
       summary: 批量为用户或群组设置灰度标签
       security:
         - HeaderAuthorizationJWT: {}
@@ -1464,17 +1956,127 @@ paths:
         $ref: '#/components/requestBodies/UsersGroupsBody'
       responses:
         '200':
+          $ref: '#/components/responses/LabelReleaseInfoRes'
+
+  /v1/products/{product}/labels/{label}:recall:
+    post:
+      tags:
+        - Label
+      summary: 批量撤销对用户或群组设置的产品灰度标签
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+      requestBody:
+        $ref: '#/components/requestBodies/RecallBody'
+      responses:
+        '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
-  # Module API
+
+  /v1/products/{product}/labels/{label}/users:
+    get:
+      tags:
+        - Label
+      summary: 读取指定产品灰度标签的用户列表
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
+      responses:
+        '200':
+          $ref: '#/components/responses/LabelUsersInfoRes'
+
+  /v1/products/{product}/labels/{label}/groups:
+    get:
+      tags:
+        - Label
+      summary: 读取指定产品灰度标签的群组列表
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
+      responses:
+        '200':
+          $ref: '#/components/responses/LabelGroupsInfoRes'
+
+  /v1/products/{product}/labels/{label}/rules:
+    get:
+      tags:
+        - Label
+      summary: 读取指定产品灰度标签的灰度发布规则列表
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+      responses:
+        '200':
+          $ref: '#/components/responses/LabelRulesInfoRes'
+    post:
+      tags:
+        - Label
+      summary: 创建指定产品灰度标签的灰度发布规则，同一个灰度标签同一种 kind 的发布规则只能创建一个
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+      requestBody:
+        $ref: '#/components/requestBodies/LabelRuleBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/LabelRuleInfoRes'
+
+  /v1/products/{product}/labels/{label}/rules/{hid}:
+    put:
+      tags:
+        - Label
+      summary: 更新指定产品灰度标签的灰度发布规则
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+        - $ref: "#/components/parameters/PathHID"
+      requestBody:
+        $ref: '#/components/requestBodies/LabelRuleBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/LabelRuleInfoRes'
+    delete:
+      tags:
+        - Label
+      summary: 删除指定产品灰度标签的灰度发布规则
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+        - $ref: "#/components/parameters/PathHID"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'  # Module API
   /v1/products/{product}/modules:
     get:
       tags:
         - Module
-      summary: 读取产品功能模块列表，支持分页，按照创建时间正序
+      summary: 读取产品功能模块列表，支持分页，按照创建时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -1482,11 +2084,10 @@ paths:
         - $ref: "#/components/parameters/PathProduct"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/ModulesRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
     post:
       tags:
         - Module
@@ -1501,10 +2102,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/ModuleRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '400':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/modules/{module}:
     put:
@@ -1522,8 +2119,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/ModuleRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/modules/{module}:offline:
     put:
@@ -1538,17 +2133,29 @@ paths:
         - $ref: "#/components/parameters/PathModule"
       responses:
         '200':
-          $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
-  # Module API
+          $ref: '#/components/responses/BoolRes'  # Module API
+  /v1/products/{product}/settings:
+    get:
+      tags:
+        - Setting
+      summary: 读取产品的配置项列表，支持分页，按照创建时间倒序
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
+      responses:
+        '200':
+          $ref: '#/components/responses/SettingsInfoRes'
+
   /v1/products/{product}/modules/{module}/settings:
     get:
       tags:
         - Setting
-      summary: 读取产品功能模块配置项列表，支持分页，按照创建时间正序
+      summary: 读取产品功能模块配置项列表，支持分页，按照创建时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -1557,11 +2164,10 @@ paths:
         - $ref: "#/components/parameters/PathModule"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
           $ref: '#/components/responses/SettingsInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
     post:
       tags:
         - Setting
@@ -1577,10 +2183,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/SettingsInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '400':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/modules/{module}/settings/{setting}:
     get:
@@ -1597,8 +2199,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/SettingInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
     put:
       tags:
         - Setting
@@ -1615,8 +2215,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/SettingInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/modules/{module}/settings/{setting}:offline:
     put:
@@ -1633,10 +2231,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/modules/{module}/settings/{setting}:assign:
     post:
@@ -1654,8 +2248,126 @@ paths:
         $ref: '#/components/requestBodies/UsersGroupsBody'
       responses:
         '200':
+          $ref: '#/components/responses/SettingReleaseInfoRes'
+
+  /v1/products/{product}/modules/{module}/settings/{setting}:recall:
+    post:
+      tags:
+        - Setting
+      summary: 批量撤销对用户或群组设置的产品功能配置项
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+      requestBody:
+        $ref: '#/components/requestBodies/RecallBody'
+      responses:
+        '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/products/{product}/modules/{module}/settings/{setting}/users:
+    get:
+      tags:
+        - Setting
+      summary: 读取指定产品功能配置项的用户列表
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
+      responses:
+        '200':
+          $ref: '#/components/responses/SettingUsersInfoRes'
+
+  /v1/products/{product}/modules/{module}/settings/{setting}/groups:
+    get:
+      tags:
+        - Setting
+      summary: 读取指定产品功能配置项的群组列表
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
+      responses:
+        '200':
+          $ref: '#/components/responses/SettingGroupsInfoRes'
+
+  /v1/products/{product}/modules/{module}/settings/{setting}/rules:
+    get:
+      tags:
+        - Setting
+      summary: 读取指定产品功能配置项发布规则列表
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+      responses:
+        '200':
+          $ref: '#/components/responses/SettingRulesInfoRes'
+    post:
+      tags:
+        - Setting
+      summary: 创建指定产品功能配置项的灰度发布规则，同一个功能配置项同一种 kind 的发布规则只能创建一个
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+      requestBody:
+        $ref: '#/components/requestBodies/SettingRuleBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/SettingRuleInfoRes'
+
+  /v1/products/{product}/modules/{module}/settings/{setting}/rules/{hid}:
+    put:
+      tags:
+        - Setting
+      summary: 更新指定产品功能配置项的灰度发布规则
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+        - $ref: "#/components/parameters/PathHID"
+      requestBody:
+        $ref: '#/components/requestBodies/SettingRuleBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/SettingRuleInfoRes'
+    delete:
+      tags:
+        - Setting
+      summary: 删除指定产品功能配置项的灰度发布规则
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+        - $ref: "#/components/parameters/PathHID"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'

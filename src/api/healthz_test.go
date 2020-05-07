@@ -21,6 +21,6 @@ func TestHealthzAPIs(t *testing.T) {
 
 		json := map[string]interface{}{}
 		res.JSON(&json)
-		assert.True(json["db_connect"].(bool))
+		assert.True(json["dbConnect"].(bool))
 	})
 }

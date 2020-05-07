@@ -17,10 +17,7 @@ var validHIDReg = regexp.MustCompile(`^[0-9A-Za-z_=-]{24}$`)
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
 var validNameReg = regexp.MustCompile(`^[0-9a-z][0-9a-z.-]{0,61}[0-9a-z]$`)
 
-// Should be subset of
-// https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
-var validValueReg1 = regexp.MustCompile(`^[0-9A-Za-z]*$`)
-var validValueReg2 = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z._-]{0,61}[0-9A-Za-z]$`)
+var validValueReg = regexp.MustCompile(`^\S+$`)
 
 // Should be subset of DNS-1035 label
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
@@ -161,7 +158,7 @@ func (t *UsersGroupsBody) Validate() error {
 			return gear.ErrBadRequest.WithMsgf("invalid group: %s", uid)
 		}
 	}
-	if !validValueReg1.MatchString(t.Value) && !validValueReg2.MatchString(t.Value) {
+	if t.Value != "" && !validValueReg.MatchString(t.Value) {
 		return gear.ErrBadRequest.WithMsgf("invalid value: %s", t.Value)
 	}
 	return nil

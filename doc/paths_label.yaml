@@ -3,7 +3,7 @@
     get:
       tags:
         - Label
-      summary: 读取产品下灰度标签列表，支持分页，按照创建时间正序
+      summary: 读取产品下灰度标签列表，支持分页，按照创建时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -15,8 +15,6 @@
       responses:
         '200':
           $ref: '#/components/responses/LabelsInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
     post:
       tags:
         - Label
@@ -30,10 +28,6 @@
       responses:
         '200':
           $ref: '#/components/responses/LabelInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '400':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/labels/{label}:
     put:
@@ -51,8 +45,6 @@
       responses:
         '200':
           $ref: '#/components/responses/LabelInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/labels/{label}:offline:
     put:
@@ -68,15 +60,11 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/labels/{label}:assign:
     post:
       tags:
-        - Setting
+        - Label
       summary: 批量为用户或群组设置灰度标签
       security:
         - HeaderAuthorizationJWT: {}
@@ -88,8 +76,119 @@
         $ref: '#/components/requestBodies/UsersGroupsBody'
       responses:
         '200':
+          $ref: '#/components/responses/LabelReleaseInfoRes'
+
+  /v1/products/{product}/labels/{label}:recall:
+    post:
+      tags:
+        - Label
+      summary: 批量撤销对用户或群组设置的产品灰度标签
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+      requestBody:
+        $ref: '#/components/requestBodies/RecallBody'
+      responses:
+        '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/products/{product}/labels/{label}/users:
+    get:
+      tags:
+        - Label
+      summary: 读取指定产品灰度标签的用户列表
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
+      responses:
+        '200':
+          $ref: '#/components/responses/LabelUsersInfoRes'
+
+  /v1/products/{product}/labels/{label}/groups:
+    get:
+      tags:
+        - Label
+      summary: 读取指定产品灰度标签的群组列表
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
+      responses:
+        '200':
+          $ref: '#/components/responses/LabelGroupsInfoRes'
+
+  /v1/products/{product}/labels/{label}/rules:
+    get:
+      tags:
+        - Label
+      summary: 读取指定产品灰度标签的灰度发布规则列表
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+      responses:
+        '200':
+          $ref: '#/components/responses/LabelRulesInfoRes'
+    post:
+      tags:
+        - Label
+      summary: 创建指定产品灰度标签的灰度发布规则，同一个灰度标签同一种 kind 的发布规则只能创建一个
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+      requestBody:
+        $ref: '#/components/requestBodies/LabelRuleBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/LabelRuleInfoRes'
+
+  /v1/products/{product}/labels/{label}/rules/{hid}:
+    put:
+      tags:
+        - Label
+      summary: 更新指定产品灰度标签的灰度发布规则
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+        - $ref: "#/components/parameters/PathHID"
+      requestBody:
+        $ref: '#/components/requestBodies/LabelRuleBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/LabelRuleInfoRes'
+    delete:
+      tags:
+        - Label
+      summary: 删除指定产品灰度标签的灰度发布规则
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathLabel"
+        - $ref: "#/components/parameters/PathHID"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'

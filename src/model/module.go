@@ -70,7 +70,7 @@ func (m *Module) AcquireID(ctx context.Context, productID int64, moduleName stri
 // Find 根据条件查找 modules
 func (m *Module) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Module, int, error) {
 	modules := make([]schema.Module, 0)
-	cursor := pg.TokenToID(true)
+	cursor := pg.TokenToID()
 	db := m.DB.Where("`id` <= ? and `product_id` = ? and `offline_at` is null", cursor, productID)
 	if pg.Q != "" {
 		db = m.DB.Where("`id` <= ? and `product_id` = ? and `offline_at` is null and `name` like ?", cursor, productID, pg.Q)
@@ -105,7 +105,7 @@ func (m *Module) FindIDsByProductID(ctx context.Context, productID int64) ([]int
 func (m *Module) Create(ctx context.Context, module *schema.Module) error {
 	err := m.DB.Create(module).Error
 	if err == nil {
-		go m.increaseStatisticStatus(ctx, schema.ModulesTotalSize, 1)
+		go m.tryIncreaseStatisticStatus(ctx, schema.ModulesTotalSize, 1)
 	}
 	return err
 }
@@ -140,8 +140,8 @@ func (m *Module) Offline(ctx context.Context, moduleID int64) error {
 				OfflineAt: &now,
 				Status:    -1,
 			}).Error
-			go m.deleteSettingsRules(ctx, settingIDs)
-			go m.deleteUserAndGroupSettings(ctx, settingIDs)
+			go m.tryDeleteSettingsRules(ctx, settingIDs)
+			go m.tryDeleteUserAndGroupSettings(ctx, settingIDs)
 		}
 	}
 	return err

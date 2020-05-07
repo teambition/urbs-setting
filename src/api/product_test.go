@@ -227,6 +227,37 @@ func TestProductAPIs(t *testing.T) {
 		})
 	})
 
+	t.Run(`"GET /v1/products/:product/statistics"`, func(t *testing.T) {
+		product, err := createProduct(tt)
+		assert.Nil(t, err)
+
+		_, err = createLabel(tt, product.Name)
+		assert.Nil(t, err)
+
+		module, err := createModule(tt, product.Name)
+		assert.Nil(t, err)
+
+		_, err = createSetting(tt, product.Name, module.Name)
+		assert.Nil(t, err)
+
+		t.Run("should work", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Get(fmt.Sprintf("%s/v1/products/%s/statistics", tt.Host, product.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.ProductStatisticsRes{}
+			res.JSON(&json)
+			assert.True(json.Result.Labels > 0)
+			assert.True(json.Result.Modules > 0)
+			assert.True(json.Result.Settings > 0)
+			assert.True(json.Result.Release >= 0)
+			assert.True(json.Result.Status >= 0)
+		})
+	})
+
 	t.Run(`"PUT /v1/products/:product+:offline"`, func(t *testing.T) {
 		product, err := createProduct(tt)
 		assert.Nil(t, err)

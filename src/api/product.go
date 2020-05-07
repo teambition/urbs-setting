@@ -96,5 +96,5 @@ func (a *Product) Statistics(ctx *gear.Context) error {
 	if err != nil {
 		return err
 	}
-	return ctx.OkJSON(tpl.SuccessResponseType{Result: res})
+	return ctx.OkJSON(tpl.ProductStatisticsRes{Result: *res})
 }

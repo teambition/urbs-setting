@@ -11,11 +11,27 @@
         '200':
           $ref: "#/components/responses/CacheLabelsInfo"
 
+  /v1/users:
+    get:
+      tags:
+        - User
+      summary: 获取用户列表，支持分页，按照标签指派时间倒序
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/QueryPageSize"
+        - $ref: "#/components/parameters/QueryPageToken"
+        - $ref: "#/components/parameters/QueryQ"
+      responses:
+        '200':
+          $ref: '#/components/responses/UsersRes'
+
   /v1/users/{uid}/settings:unionAll:
     get:
       tags:
         - User
-      summary: 该接口为客户端提供用户的产品功能模块配置项信息，用于客户端功能灰度。获取指定 uid 用户在指定 product 产品下的功能模块配置项信息列表，包括从 group 群组继承的配置项信息列表，按照 setting 值更新时间 updated_at 反序。该 API 支持分页，默认获取最新更新的前 10 条，分页参数 nextPageToken 为更新时间 updated_at 值（进行了 encodeURI 转义）。如果客户端本地缓存了 setting 列表，可以判断 nextPageToken 的值，如果 **为空** 或者其值小于本地缓存的最大 updated_at 值，就不用读取下一页了。该 API 还支持 channel 和 client 参数，让客户端只读取匹配 client 和 channel 的 setting 列表。当 uid 对应用户不存在时，该接口会返回空配置项列表
+      summary: 该接口为客户端提供用户的产品功能模块配置项信息，用于客户端功能灰度。获取指定 uid 用户在指定 product 产品下的功能模块配置项信息列表，包括从 group 群组继承的配置项信息列表，按照 setting 值更新时间 updatedAt 反序。该 API 支持分页，默认获取最新更新的前 10 条，分页参数 nextPageToken 为更新时间 updatedAt 值（进行了 encodeURI 转义）。如果客户端本地缓存了 setting 列表，可以判断 nextPageToken 的值，如果 **为空** 或者其值小于本地缓存的最大 updatedAt 值，就不用读取下一页了。该 API 还支持 channel 和 client 参数，让客户端只读取匹配 client 和 channel 的 setting 列表。当 uid 对应用户不存在时，该接口会返回空配置项列表
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -41,16 +57,12 @@
       responses:
         '200':
           $ref: "#/components/responses/MySettingsRes"
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/users/{uid}/labels:
     get:
       tags:
         - User
-      summary: 获取指定 uid 用户灰度标签列表，不包括从群组继承的灰度标签，支持分页，按照标签指派时间正序。考虑到灰度标签不会很多，暂未支持根据 product 过滤
+      summary: 获取指定 uid 用户灰度标签列表，不包括从群组继承的灰度标签，支持分页，按照标签指派时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -61,11 +73,7 @@
         - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
-          $ref: '#/components/responses/LabelsInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/MyLabelsRes'
 
   /v1/users/{uid}/labels:cache:
     put:
@@ -79,17 +87,13 @@
         - $ref: "#/components/parameters/PathUID"
       responses:
         '200':
-          $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/UserRes'
 
   /v1/users/{uid}/settings:
     get:
       tags:
         - User
-      summary: 获取指定 uid 用户在指定产品线下的功能模块配置项列表，不包括从群组继承的配置项，支持分页，按照配置项指派时间正序
+      summary: 获取指定 uid 用户在指定产品线下的功能模块配置项列表，不包括从群组继承的配置项，支持分页，按照配置项指派时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -101,10 +105,6 @@
       responses:
         '200':
           $ref: '#/components/responses/MySettingsRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/users/{uid}/exists:
     get:
@@ -119,8 +119,6 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/users:batch:
     post:
@@ -136,10 +134,6 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '400':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/users/{uid}/labels/{hid}:
     delete:
@@ -155,10 +149,6 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/users/{uid}/settings/{hid}:rollback:
     put:
@@ -174,10 +164,6 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/users/{uid}/settings/{hid}:
     delete:
@@ -193,7 +179,3 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'

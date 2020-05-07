@@ -3,7 +3,7 @@
     get:
       tags:
         - Group
-      summary: 获取指定 uid 群组灰度标签列表，支持分页，按照标签指派时间正序。考虑到灰度标签不会很多，暂未支持根据 product 过滤
+      summary: 获取指定 uid 群组灰度标签列表，支持分页，按照标签指派时间倒序。
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -14,17 +14,13 @@
         - $ref: "#/components/parameters/QueryQ"
       responses:
         '200':
-          $ref: '#/components/responses/LabelsInfoRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
+          $ref: '#/components/responses/MyLabelsRes'
 
   /v1/groups/{uid}/settings:
     get:
       tags:
         - Group
-      summary: 获取指定 uid 群组在指定产品线下的功能模块配置项列表，支持分页，按照配置项指派时间正序
+      summary: 获取指定 uid 群组的功能模块配置项列表，支持分页，按照配置项指派时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -36,16 +32,12 @@
       responses:
         '200':
           $ref: '#/components/responses/MySettingsRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups:
     get:
       tags:
         - Group
-      summary: 读取群组列表，支持分页，按照创建时间正序。
+      summary: 读取群组列表，支持分页，按照创建时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -62,8 +54,6 @@
       responses:
         '200':
           $ref: '#/components/responses/GroupsRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups/{uid}/exists:
     get:
@@ -78,8 +68,6 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups:batch:
     post:
@@ -95,10 +83,6 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '400':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups/{uid}:
     put:
@@ -115,8 +99,6 @@
       responses:
         '200':
           $ref: '#/components/responses/GroupRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
     delete:
       tags:
         - Group
@@ -129,10 +111,6 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups/{uid}/labels/{hid}:
     delete:
@@ -148,10 +126,6 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups/{uid}/settings/{hid}:rollback:
     put:
@@ -167,10 +141,6 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups/{uid}/settings/{hid}:
     delete:
@@ -186,16 +156,12 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups/{uid}/members:batch:
     post:
       tags:
         - Group
-      summary: 批量添加群组成员，如果群组成员已存在，则会更新成员的 sync_at 值为 group 的 sync_at 值
+      summary: 批量添加群组成员，如果群组成员已存在，则会更新成员的 syncAt 值为 group 的 syncAt 值
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -205,16 +171,12 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '400':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/groups/{uid}/members:
     get:
       tags:
         - Group
-      summary: 获取指定 uid 群组的成员列表，支持分页，按照成员添加时间正序
+      summary: 获取指定 uid 群组的成员列表，支持分页，按照成员添加时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -226,14 +188,10 @@
       responses:
         '200':
           $ref: '#/components/responses/GroupMembersRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
     delete:
       tags:
         - Group
-      summary: 移除群组指定 user 的成员或批量移除同步时间点小于 sync_lt 的成员
+      summary: 移除群组指定 user 的成员或批量移除同步时间点小于 syncLt 的成员
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -246,8 +204,8 @@
           schema:
             type: string
         - in: query
-          name: sync_lt
-          description: 批量移除同步时间点小于 sync_lt 的成员
+          name: syncLt
+          description: 批量移除同步时间点小于 syncLt 的成员
           required: false
           schema:
             type: string
@@ -255,7 +213,3 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'

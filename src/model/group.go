@@ -66,7 +66,7 @@ func (m *Group) AcquireID(ctx context.Context, uid string) (int64, error) {
 // Find 根据条件查找 groups
 func (m *Group) Find(ctx context.Context, kind string, pg tpl.Pagination) ([]schema.Group, int, error) {
 	groups := make([]schema.Group, 0)
-	cursor := pg.TokenToID(true)
+	cursor := pg.TokenToID()
 	db := m.DB.Where("`id` <= ?", cursor)
 	if pg.Q != "" {
 		db = m.DB.Where("`id` <= ? and `uid` like ?", cursor, pg.Q)
@@ -89,8 +89,8 @@ func (m *Group) Find(ctx context.Context, kind string, pg tpl.Pagination) ([]sch
 	return groups, total, nil
 }
 
-const listGroupLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`offline_at`, t2.`name`, " +
-	"t2.`description`, t2.`status`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
+const listGroupLabelsSQL = "select t1.`rls`, t1.`created_at`, t2.`id`, t2.`name`, " +
+	"t2.`description`, t3.`name` as `product` " +
 	"from `group_label` t1, `urbs_label` t2, `urbs_product` t3 " +
 	"where t1.`group_id` = ? and t1.`id` <= ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.`id` " +
 	"order by t1.`id` desc " +
@@ -100,8 +100,8 @@ const countGroupLabelsSQL = "select count(t2.`id`) " +
 	"from `group_label` t1, `urbs_label` t2  " +
 	"where t1.`group_id` = ? and t1.`label_id` = t2.`id`"
 
-const searchGroupLabelsSQL = "select t2.`id`, t2.`created_at`, t2.`updated_at`, t2.`offline_at`, t2.`name`, " +
-	"t2.`description`, t2.`status`, t2.`channels`, t2.`clients`, t3.`name` as `product` " +
+const searchGroupLabelsSQL = "select t1.`rls`, t1.`created_at`, t2.`id`, t2.`name`, " +
+	"t2.`description`, t3.`name` as `product` " +
 	"from `group_label` t1, `urbs_label` t2, `urbs_product` t3 " +
 	"where t1.`group_id` = ? and t1.`id` <= ? and t1.`label_id` = t2.`id` and t2.`name` like ? and t2.`product_id` = t3.`id` " +
 	"order by t1.`id` desc " +
@@ -112,9 +112,9 @@ const countSearchGroupLabelsSQL = "select count(t2.`id`) " +
 	"where t1.`group_id` = ? and t1.`label_id` = t2.`id` and t2.`name` like ?"
 
 // FindLabels 根据群组 ID 返回其 labels 数据。TODO：支持更多筛选条件和分页
-func (m *Group) FindLabels(ctx context.Context, groupID int64, pg tpl.Pagination) ([]tpl.LabelInfo, int, error) {
-	data := make([]tpl.LabelInfo, 0)
-	cursor := pg.TokenToID(true)
+func (m *Group) FindLabels(ctx context.Context, groupID int64, pg tpl.Pagination) ([]tpl.MyLabel, int, error) {
+	data := make([]tpl.MyLabel, 0)
+	cursor := pg.TokenToID()
 	total := 0
 
 	if pg.Q == "" {
@@ -141,23 +141,18 @@ func (m *Group) FindLabels(ctx context.Context, groupID int64, pg tpl.Pagination
 	}
 
 	for rows.Next() {
-		var clients string
-		var channels string
-		labelInfo := tpl.LabelInfo{}
-		if err := rows.Scan(&labelInfo.ID, &labelInfo.CreatedAt, &labelInfo.UpdatedAt, &labelInfo.OfflineAt,
-			&labelInfo.Name, &labelInfo.Desc, &labelInfo.Status, &channels, &clients, &labelInfo.Product); err != nil {
+		myLabel := tpl.MyLabel{}
+		if err := rows.Scan(&myLabel.Release, &myLabel.AssignedAt, &myLabel.ID, &myLabel.Name, &myLabel.Desc, &myLabel.Product); err != nil {
 			return nil, 0, err
 		}
-		labelInfo.Channels = tpl.StringToSlice(channels)
-		labelInfo.Clients = tpl.StringToSlice(clients)
-		labelInfo.HID = service.IDToHID(labelInfo.ID, "label")
-		data = append(data, labelInfo)
+		myLabel.HID = service.IDToHID(myLabel.ID, "label")
+		data = append(data, myLabel)
 	}
 
 	return data, total, nil
 }
 
-const listGroupSettingsSQL = "select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
+const listGroupSettingsSQL = "select t1.`rls`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
 	"t2.`id`, t2.`name`, t3.`name` as `module`, t4.`name` as `product` " +
 	"from `group_setting` t1, `urbs_setting` t2, `urbs_module` t3, `urbs_product` t4 " +
 	"where t1.`group_id` = ? and t1.`id` <= ? and t1.`setting_id` = t2.`id` and t2.`module_id` = t3.`id` and t3.`product_id` = t4.`id` " +
@@ -168,7 +163,7 @@ const countGroupSettingsSQL = "select count(t2.`id`) " +
 	"from `group_setting` t1, `urbs_setting` t2 " +
 	"where t1.`group_id` = ? and t1.`setting_id` = t2.`id`"
 
-const searchGroupSettingsSQL = "select t1.`created_at`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
+const searchGroupSettingsSQL = "select t1.`rls`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
 	"t2.`id`, t2.`name`, t3.`name` as `module`, t4.`name` as `product` " +
 	"from `group_setting` t1, `urbs_setting` t2, `urbs_module` t3, `urbs_product` t4 " +
 	"where t1.`group_id` = ? and t1.`id` <= ? and t1.`setting_id` = t2.`id` and t2.`name` like ? and t2.`module_id` = t3.`id` and t3.`product_id` = t4.`id` " +
@@ -182,7 +177,7 @@ const countSearchGroupSettingsSQL = "select count(t2.`id`) " +
 // FindSettings 根据 Group ID, updateGt, productName 返回其 settings 数据。
 func (m *Group) FindSettings(ctx context.Context, groupID int64, pg tpl.Pagination) ([]tpl.MySetting, int, error) {
 	data := []tpl.MySetting{}
-	cursor := pg.TokenToID(true)
+	cursor := pg.TokenToID()
 	total := 0
 
 	if pg.Q == "" {
@@ -211,7 +206,7 @@ func (m *Group) FindSettings(ctx context.Context, groupID int64, pg tpl.Paginati
 
 	for rows.Next() {
 		mySetting := tpl.MySetting{}
-		if err := rows.Scan(&mySetting.CreatedAt, &mySetting.UpdatedAt, &mySetting.Value, &mySetting.LastValue,
+		if err := rows.Scan(&mySetting.Release, &mySetting.AssignedAt, &mySetting.Value, &mySetting.LastValue,
 			&mySetting.ID, &mySetting.Name, &mySetting.Module, &mySetting.Product); err != nil {
 			return nil, 0, err
 		}
@@ -240,7 +235,7 @@ func (m *Group) BatchAdd(ctx context.Context, groups []tpl.GroupBody) error {
 			return err
 		}
 	}
-	go m.refreshGroupsTotalSize(ctx)
+	go m.tryRefreshGroupsTotalSize(ctx)
 	return nil
 }
 
@@ -271,7 +266,7 @@ func (m *Group) Delete(ctx context.Context, groupID int64) error {
 	if err == nil {
 		res := m.DB.Where("`id` = ?", groupID).Delete(&schema.Group{})
 		if res.RowsAffected > 0 {
-			go m.increaseStatisticStatus(ctx, schema.GroupsTotalSize, -1)
+			go m.tryIncreaseStatisticStatus(ctx, schema.GroupsTotalSize, -1)
 		}
 		err = res.Error
 	}
@@ -289,7 +284,7 @@ func (m *Group) BatchAddMembers(ctx context.Context, group *schema.Group, users 
 	}
 
 	err := m.DB.Exec(batchAddGroupMemberSQL, group.ID, group.SyncAt, users, group.SyncAt).Error
-	go m.refreshGroupStatus(ctx, group.ID)
+	go m.tryRefreshGroupStatus(ctx, group.ID)
 	return err
 }
 
@@ -316,7 +311,7 @@ const countSearchGroupMembersSQL = "select count(t2.`id`) " +
 // FindMembers 根据条件查找群组成员
 func (m *Group) FindMembers(ctx context.Context, groupID int64, pg tpl.Pagination) ([]tpl.GroupMember, int, error) {
 	data := []tpl.GroupMember{}
-	cursor := pg.TokenToID(true)
+	cursor := pg.TokenToID()
 	total := 0
 
 	if pg.Q == "" {
@@ -377,6 +372,6 @@ func (m *Group) RemoveMembers(ctx context.Context, groupID, userID int64, syncLt
 	if err == nil && userID > 0 {
 		err = m.DB.Where("`user_id` = ? and `group_id` = ?", userID, groupID).Delete(&schema.UserGroup{}).Error
 	}
-	go m.refreshGroupStatus(ctx, groupID)
+	go m.tryRefreshGroupStatus(ctx, groupID)
 	return err
 }

@@ -57,8 +57,8 @@ func (pg *Pagination) Validate() error {
 }
 
 // TokenToID 把 pageToken 转换为 int64
-func (pg *Pagination) TokenToID(defaultMaxInt64 ...bool) int64 {
-	return PageTokenToID(pg.PageToken, defaultMaxInt64...)
+func (pg *Pagination) TokenToID() int64 {
+	return PageTokenToID(pg.PageToken)
 }
 
 // TokenToTime 把 pageToken 转换为 time
@@ -67,12 +67,9 @@ func (pg *Pagination) TokenToTime(defaultTime ...time.Time) time.Time {
 }
 
 // PageTokenToID 把 pageToken 转换为 int64
-func PageTokenToID(pageToken string, defaultMaxInt64 ...bool) int64 {
+func PageTokenToID(pageToken string) int64 {
 	if !strings.HasPrefix(pageToken, "hid.") {
-		if len(defaultMaxInt64) > 0 && defaultMaxInt64[0] {
-			return 9223372036854775807
-		}
-		return 0
+		return 9223372036854775807
 	}
 	return service.HIDToID(pageToken[4:])
 }

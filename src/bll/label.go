@@ -199,7 +199,9 @@ func (b *Label) ListRules(ctx context.Context, productName, labelName string) (*
 		return nil, err
 	}
 
-	return &tpl.LabelRulesInfoRes{Result: tpl.LabelRulesInfoFrom(labelRules)}, nil
+	res := &tpl.LabelRulesInfoRes{Result: tpl.LabelRulesInfoFrom(labelRules)}
+	res.TotalSize = len(labelRules)
+	return res, nil
 }
 
 // UpdateRule ...
@@ -266,12 +268,11 @@ func (b *Label) DeleteRule(ctx context.Context, productName, labelName string, r
 		return nil, gear.ErrNotFound.WithMsgf("label rule not matched!")
 	}
 
-	err = b.ms.LabelRule.Delete(ctx, labelRule.ID)
+	rowsAffected, err := b.ms.LabelRule.Delete(ctx, labelRule.ID)
 	if err != nil {
 		return nil, err
 	}
-	res.Result = true
-
+	res.Result = rowsAffected > 0
 	return res, nil
 }
 

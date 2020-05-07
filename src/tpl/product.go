@@ -188,3 +188,9 @@ type ProductStatistics struct {
 	Release  int64 `json:"release"`
 	Status   int64 `json:"status"`
 }
+
+// ProductStatisticsRes ...
+type ProductStatisticsRes struct {
+	SuccessResponseType
+	Result ProductStatistics `json:"result"`
+}

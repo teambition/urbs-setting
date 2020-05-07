@@ -299,7 +299,9 @@ func (b *Setting) ListRules(ctx context.Context, productName, moduleName, settin
 		return nil, err
 	}
 
-	return &tpl.SettingRulesInfoRes{Result: tpl.SettingRulesInfoFrom(settingRules)}, nil
+	res := &tpl.SettingRulesInfoRes{Result: tpl.SettingRulesInfoFrom(settingRules)}
+	res.TotalSize = len(settingRules)
+	return res, nil
 }
 
 // UpdateRule ...
@@ -386,12 +388,11 @@ func (b *Setting) DeleteRule(ctx context.Context, productName, moduleName, setti
 		return nil, gear.ErrNotFound.WithMsgf("setting rule not matched!")
 	}
 
-	err = b.ms.SettingRule.Delete(ctx, settingRule.ID)
+	rowsAffected, err := b.ms.SettingRule.Delete(ctx, settingRule.ID)
 	if err != nil {
 		return nil, err
 	}
-	res.Result = true
-
+	res.Result = rowsAffected > 0
 	return res, nil
 }
 

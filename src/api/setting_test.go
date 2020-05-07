@@ -9,6 +9,7 @@ import (
 	"github.com/DavidCai1993/request"
 	"github.com/stretchr/testify/assert"
 	"github.com/teambition/urbs-setting/src/schema"
+	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
 )
 
@@ -111,6 +112,39 @@ func TestSettingAPIs(t *testing.T) {
 		})
 	})
 
+	t.Run(`"GET /v1/products/:product/settings"`, func(t *testing.T) {
+		t.Run("should work", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Get(fmt.Sprintf("%s/v1/products/%s/settings", tt.Host, product.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.True(strings.Contains(text, n1))
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.SettingsInfoRes{}
+			res.JSON(&json)
+			assert.NotNil(json.Result)
+			assert.True(json.TotalSize > 0)
+			data := json.Result[0]
+			assert.NotEqual("", data.HID)
+			assert.NotEqual("", data.Name)
+			assert.Equal(product.Name, data.Product)
+			assert.NotEqual("", data.Module)
+			assert.Equal([]string{}, data.Channels)
+			assert.Equal([]string{}, data.Clients)
+			assert.Equal([]string{}, data.Values)
+			assert.True(data.CreatedAt.UTC().Unix() > int64(0))
+			assert.True(data.UpdatedAt.UTC().Unix() > int64(0))
+			assert.Nil(data.OfflineAt)
+			assert.Equal(int64(0), data.Status)
+		})
+	})
+
 	t.Run(`"GET /v1/products/:product/modules/:module/settings"`, func(t *testing.T) {
 		t.Run("should work", func(t *testing.T) {
 			assert := assert.New(t)
@@ -132,8 +166,8 @@ func TestSettingAPIs(t *testing.T) {
 			data := json.Result[0]
 			assert.NotEqual("", data.HID)
 			assert.NotEqual("", data.Name)
-			assert.NotEqual("", data.Product)
-			assert.NotEqual("", data.Module)
+			assert.Equal(product.Name, data.Product)
+			assert.Equal(module.Name, data.Module)
 			assert.Equal([]string{}, data.Channels)
 			assert.Equal([]string{}, data.Clients)
 			assert.Equal([]string{}, data.Values)
@@ -407,6 +441,148 @@ func TestSettingAPIs(t *testing.T) {
 		})
 	})
 
+	t.Run(`GET "/v1/products/:product/modules/:module/settings/:setting/users"`, func(t *testing.T) {
+		module, err := createModule(tt, product.Name)
+		assert.Nil(t, err)
+
+		setting, err := createSetting(tt, product.Name, module.Name, "x", "y")
+		assert.Nil(t, err)
+
+		users, err := createUsers(tt, 1)
+		assert.Nil(t, err)
+
+		t.Run("should work", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:assign", tt.Host, product.Name, module.Name, setting.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.UsersGroupsBody{
+					Users: schema.GetUsersUID(users),
+					Value: "x",
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.SettingReleaseInfoRes{}
+			res.JSON(&json)
+			assert.Equal(int64(1), json.Result.Release)
+			assert.Equal("x", json.Result.Value)
+			assert.Equal(users[0].UID, json.Result.Users[0])
+
+			res, err = request.Get(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/users", tt.Host, product.Name, module.Name, setting.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json2 := tpl.SettingUsersInfoRes{}
+			res.JSON(&json2)
+			assert.Equal(1, json2.TotalSize)
+			assert.Equal(1, len(json2.Result))
+			assert.Equal(setting.ID, service.HIDToID(json2.Result[0].SettingHID, "setting"))
+			assert.Equal(users[0].UID, json2.Result[0].User)
+			assert.Equal(int64(1), json2.Result[0].Release)
+			assert.Equal("x", json2.Result[0].Value)
+		})
+	})
+
+	t.Run(`GET "/v1/products/:product/modules/:module/settings/:setting/groups"`, func(t *testing.T) {
+		module, err := createModule(tt, product.Name)
+		assert.Nil(t, err)
+
+		setting, err := createSetting(tt, product.Name, module.Name, "x", "y")
+		assert.Nil(t, err)
+
+		group, err := createGroup(tt)
+		assert.Nil(t, err)
+
+		t.Run("should work", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:assign", tt.Host, product.Name, module.Name, setting.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.UsersGroupsBody{
+					Groups: []string{group.UID},
+					Value:  "x",
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.SettingReleaseInfoRes{}
+			res.JSON(&json)
+			assert.Equal(int64(1), json.Result.Release)
+			assert.Equal("x", json.Result.Value)
+			assert.Equal(group.UID, json.Result.Groups[0])
+
+			res, err = request.Get(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/groups", tt.Host, product.Name, module.Name, setting.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json2 := tpl.SettingGroupsInfoRes{}
+			res.JSON(&json2)
+			assert.Equal(1, json2.TotalSize)
+			assert.Equal(1, len(json2.Result))
+			assert.Equal(setting.ID, service.HIDToID(json2.Result[0].SettingHID, "setting"))
+			assert.Equal(group.UID, json2.Result[0].Group)
+			assert.Equal(group.Kind, json2.Result[0].Kind)
+			assert.Equal(int64(1), json2.Result[0].Release)
+			assert.Equal("x", json2.Result[0].Value)
+		})
+	})
+
+	t.Run(`POST "/v1/products/:product/modules/:module/settings/:setting+:recall"`, func(t *testing.T) {
+		module, err := createModule(tt, product.Name)
+		assert.Nil(t, err)
+
+		setting, err := createSetting(tt, product.Name, module.Name, "x", "y")
+		assert.Nil(t, err)
+
+		group, err := createGroup(tt)
+		assert.Nil(t, err)
+
+		t.Run("should work", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:assign", tt.Host, product.Name, module.Name, setting.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.UsersGroupsBody{
+					Groups: []string{group.UID},
+					Value:  "x",
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.SettingReleaseInfoRes{}
+			res.JSON(&json)
+			assert.Equal(int64(1), json.Result.Release)
+			assert.Equal("x", json.Result.Value)
+			assert.Equal(group.UID, json.Result.Groups[0])
+
+			var count int64
+			assert.Nil(tt.DB.Table(`group_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
+			assert.Equal(int64(1), count)
+
+			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:recall", tt.Host, product.Name, module.Name, setting.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.RecallBody{
+					Release: 1,
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json2 := tpl.BoolRes{}
+			res.JSON(&json2)
+			assert.True(json2.Result)
+
+			assert.Nil(tt.DB.Table(`group_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
+			assert.Equal(int64(0), count)
+		})
+	})
+
 	t.Run(`"PUT /v1/products/:product/modules/:module/settings/:setting+:offline"`, func(t *testing.T) {
 		product, err := createProduct(tt)
 		assert.Nil(t, err)
@@ -482,6 +658,208 @@ func TestSettingAPIs(t *testing.T) {
 
 			json := tpl.BoolRes{}
 			res.JSON(&json)
+			assert.False(json.Result)
+		})
+	})
+
+	t.Run(`setting rules`, func(t *testing.T) {
+		product, err := createProduct(tt)
+		assert.Nil(t, err)
+
+		module, err := createModule(tt, product.Name)
+		assert.Nil(t, err)
+
+		setting, err := createSetting(tt, product.Name, module.Name, "x", "y")
+		assert.Nil(t, err)
+
+		users, err := createUsers(tt, 1)
+		assert.Nil(t, err)
+		user := users[0]
+
+		var rule tpl.SettingRuleInfo
+
+		t.Run(`"POST /v1/products/:product/modules/:module/settings/:setting/rules" should work`, func(t *testing.T) {
+			assert := assert.New(t)
+			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/rules", tt.Host, product.Name, module.Name, setting.Name)).
+				Set("Content-Type", "application/json").
+				Send(map[string]interface{}{
+					"kind":  "userPercent",
+					"value": "y",
+					"rule": map[string]interface{}{
+						"value": 100,
+					},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.True(strings.Contains(text, `"rule":{"value":100}`))
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.SettingRuleInfoRes{}
+			res.JSON(&json)
+			data := json.Result
+			assert.True(service.HIDToID(data.HID, "setting_rule") > int64(0))
+			assert.Equal(setting.ID, service.HIDToID(data.SettingHID, "setting"))
+			assert.Equal("userPercent", data.Kind)
+			assert.True(data.CreatedAt.UTC().Unix() > int64(0))
+			assert.True(data.UpdatedAt.UTC().Unix() > int64(0))
+			assert.Equal(int64(1), data.Release)
+			assert.Equal("y", data.Value)
+
+			rule = data
+		})
+
+		t.Run(`"POST /v1/products/:product/modules/:module/settings/:setting/rules" should return 409`, func(t *testing.T) {
+			assert := assert.New(t)
+			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/rules", tt.Host, product.Name, module.Name, setting.Name)).
+				Set("Content-Type", "application/json").
+				Send(map[string]interface{}{
+					"kind":  "userPercent",
+					"value": "y",
+					"rule": map[string]interface{}{
+						"value": 100,
+					},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(409, res.StatusCode)
+			res.Content() // close http client
+		})
+
+		t.Run(`"GET /v1/users/:uid/settings:unionAll" should apply rules`, func(t *testing.T) {
+			assert := assert.New(t)
+			res, err := request.Get(fmt.Sprintf("%s/v1/users/%s/settings:unionAll?product=%s", tt.Host, user.UID, product.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.MySettingsRes{}
+			_, err = res.JSON(&json)
+
+			assert.Nil(err)
+			assert.Equal(0, len(json.Result))
+
+			time.Sleep(time.Millisecond * 100)
+			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings:unionAll?product=%s", tt.Host, user.UID, product.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.False(strings.Contains(text, `"id"`))
+
+			json = tpl.MySettingsRes{}
+			_, err = res.JSON(&json)
+
+			assert.Nil(err)
+			assert.Equal(1, len(json.Result))
+			assert.Equal("", json.NextPageToken)
+
+			data := json.Result[0]
+			assert.Equal(service.IDToHID(setting.ID, "setting"), data.HID)
+			assert.Equal(module.Name, data.Module)
+			assert.Equal(setting.Name, data.Name)
+			assert.Equal("y", data.Value)
+			assert.True(data.AssignedAt.After(time2020))
+		})
+
+		t.Run(`"GET /v1/products/:product/modules/:module/settings/:setting/rules" should work`, func(t *testing.T) {
+			assert := assert.New(t)
+			res, err := request.Get(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/rules", tt.Host, product.Name, module.Name, setting.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.SettingRulesInfoRes{}
+			_, err = res.JSON(&json)
+
+			assert.Nil(err)
+			assert.Equal(1, json.TotalSize)
+			assert.Equal(1, len(json.Result))
+			assert.Equal("", json.NextPageToken)
+
+			data := json.Result[0]
+			assert.True(service.HIDToID(data.HID, "setting_rule") > int64(0))
+			assert.Equal(setting.ID, service.HIDToID(data.SettingHID, "setting"))
+			assert.Equal("userPercent", data.Kind)
+			assert.True(data.CreatedAt.UTC().Unix() > int64(0))
+			assert.True(data.UpdatedAt.UTC().Unix() > int64(0))
+			assert.Equal(int64(1), data.Release)
+			assert.Equal("y", data.Value)
+		})
+
+		t.Run(`"PUT /v1/products/:product/modules/:module/settings/:setting/rules/:hid" should work`, func(t *testing.T) {
+			assert := assert.New(t)
+			res, err := request.Put(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/rules/%s", tt.Host, product.Name, module.Name, setting.Name, rule.HID)).
+				Set("Content-Type", "application/json").
+				Send(map[string]interface{}{
+					"kind":  "userPercent",
+					"value": "x",
+					"rule": map[string]interface{}{
+						"value": 0,
+					},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.True(strings.Contains(text, `"rule":{"value":0}`))
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.SettingRuleInfoRes{}
+			_, err = res.JSON(&json)
+
+			assert.Nil(err)
+
+			data := json.Result
+			assert.Equal(rule.HID, data.HID)
+			assert.Equal(rule.SettingHID, data.SettingHID)
+			assert.Equal("userPercent", data.Kind)
+			assert.Equal(int64(2), data.Release)
+			assert.Equal("x", data.Value)
+		})
+
+		t.Run(`"DELETE /v1/products/:product/modules/:module/settings/:setting/rules/:hid" should work`, func(t *testing.T) {
+			assert := assert.New(t)
+			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/rules/%s", tt.Host, product.Name, module.Name, setting.Name, rule.HID)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.BoolRes{}
+			_, err = res.JSON(&json)
+			assert.Nil(err)
+			assert.True(json.Result)
+
+			res, err = request.Get(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/rules", tt.Host, product.Name, module.Name, setting.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json2 := tpl.SettingRulesInfoRes{}
+			_, err = res.JSON(&json2)
+
+			assert.Nil(err)
+			assert.Equal(0, len(json2.Result))
+
+			res, err = request.Delete(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/rules/%s", tt.Host, product.Name, module.Name, setting.Name, rule.HID)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json = tpl.BoolRes{}
+			_, err = res.JSON(&json)
+			assert.Nil(err)
 			assert.False(json.Result)
 		})
 	})

@@ -28,7 +28,7 @@ func (b *Group) List(ctx context.Context, kind string, pg tpl.Pagination) (*tpl.
 }
 
 // ListLabels ...
-func (b *Group) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.LabelsInfoRes, error) {
+func (b *Group) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.MyLabelsRes, error) {
 	group, err := b.ms.Group.Acquire(ctx, uid)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (b *Group) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (
 		return nil, err
 	}
 
-	res := &tpl.LabelsInfoRes{Result: labels}
+	res := &tpl.MyLabelsRes{Result: labels}
 	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)

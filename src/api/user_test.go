@@ -94,6 +94,31 @@ func TestUserAPIs(t *testing.T) {
 		})
 	})
 
+	t.Run(`"GET /v1/users"`, func(t *testing.T) {
+		t.Run(`should work`, func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Get(fmt.Sprintf("%s/v1/users", tt.Host)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.UsersRes{}
+			_, err = res.JSON(&json)
+
+			assert.Nil(err)
+			assert.True(len(json.Result) > 0)
+			assert.True(json.TotalSize > 0)
+			assert.NotEqual("", json.Result[0].UID)
+			assert.True(json.Result[0].ActiveAt >= 0)
+			assert.True(json.Result[0].CreatedAt.After(time2020))
+		})
+	})
+
 	t.Run(`"GET /v1/users/:uid+:exists"`, func(t *testing.T) {
 		t.Run(`should work`, func(t *testing.T) {
 			assert := assert.New(t)
@@ -318,7 +343,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.False(strings.Contains(text, `"id"`))
 
-			json := tpl.LabelsInfoRes{}
+			json := tpl.MyLabelsRes{}
 			_, err = res.JSON(&json)
 
 			assert.Nil(err)
@@ -328,9 +353,8 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(service.IDToHID(label.ID, "label"), json.Result[0].HID)
 			assert.Equal(product.Name, json.Result[0].Product)
 			assert.Equal(label.Name, json.Result[0].Name)
-			assert.Equal(0, len(json.Result[0].Clients))
-			assert.Equal(0, len(json.Result[0].Channels))
-			assert.True(json.Result[0].CreatedAt.After(time2020))
+			assert.True(json.Result[0].AssignedAt.After(time2020))
+			assert.True(json.Result[0].Release > 0)
 		})
 
 		t.Run(`"DELETE /v1/users/:uid/labels/:hid" should work`, func(t *testing.T) {
@@ -454,7 +478,8 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(setting0.Name, data.Name)
 			assert.Equal("a", data.Value)
 			assert.Equal("", data.LastValue)
-			assert.True(data.CreatedAt.After(time2020))
+			assert.True(data.AssignedAt.After(time2020))
+			assert.True(data.Release > 0)
 		})
 
 		t.Run(`"GET /v1/users/:uid/settings:unionAll" for invalid user`, func(t *testing.T) {
@@ -502,7 +527,8 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(setting0.Name, data.Name)
 			assert.Equal("a", data.Value)
 			assert.Equal("", data.LastValue)
-			assert.True(data.CreatedAt.After(time2020))
+			assert.True(data.AssignedAt.After(time2020))
+			assert.True(data.Release > 0)
 
 			time.Sleep(time.Millisecond * 10)
 			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:assign", tt.Host, product.Name, module.Name, setting1.Name)).
@@ -554,7 +580,8 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(setting1.Name, data.Name)
 			assert.Equal("true", data.Value)
 			assert.Equal("", data.LastValue)
-			assert.True(data.CreatedAt.After(time2020))
+			assert.True(data.AssignedAt.After(time2020))
+			assert.True(data.Release > 0)
 
 			assert.Equal(service.IDToHID(setting0.ID, "setting"), json.Result[1].HID)
 		})

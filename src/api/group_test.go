@@ -625,7 +625,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
 
-			json := tpl.LabelsInfoRes{}
+			json := tpl.MyLabelsRes{}
 			_, err = res.JSON(&json)
 
 			assert.Nil(err)
@@ -651,7 +651,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.False(strings.Contains(text, `"id"`))
 
-			json = tpl.LabelsInfoRes{}
+			json = tpl.MyLabelsRes{}
 			_, err = res.JSON(&json)
 
 			assert.Nil(err)
@@ -661,9 +661,8 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal(service.IDToHID(label1.ID, "label"), json.Result[0].HID)
 			assert.Equal(product.Name, json.Result[0].Product)
 			assert.Equal(label1.Name, json.Result[0].Name)
-			assert.Equal(0, len(json.Result[0].Clients))
-			assert.Equal(0, len(json.Result[0].Channels))
-			assert.True(json.Result[0].CreatedAt.After(time2020))
+			assert.True(json.Result[0].AssignedAt.After(time2020))
+			assert.True(json.Result[0].Release > 0)
 
 			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s:assign", tt.Host, product.Name, label2.Name)).
 				Set("Content-Type", "application/json").
@@ -684,7 +683,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.False(strings.Contains(text, `"id"`))
 
-			json = tpl.LabelsInfoRes{}
+			json = tpl.MyLabelsRes{}
 			_, err = res.JSON(&json)
 
 			assert.Nil(err)
@@ -819,7 +818,8 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal(setting1.Name, data.Name)
 			assert.Equal("a", data.Value)
 			assert.Equal("", data.LastValue)
-			assert.True(data.CreatedAt.After(time2020))
+			assert.True(data.AssignedAt.After(time2020))
+			assert.True(data.Release > 0)
 
 			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:assign", tt.Host, product.Name, module.Name, setting2.Name)).
 				Set("Content-Type", "application/json").
@@ -854,7 +854,8 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal(setting2.Name, data.Name)
 			assert.Equal("x", data.Value)
 			assert.Equal("", data.LastValue)
-			assert.True(data.CreatedAt.After(time2020))
+			assert.True(data.AssignedAt.After(time2020))
+			assert.True(data.Release > 0)
 		})
 	})
 
@@ -907,7 +908,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal(setting.Name, data.Name)
 			assert.Equal("x", data.Value)
 			assert.Equal("", data.LastValue)
-			assert.True(data.CreatedAt.After(time2020))
+			assert.True(data.AssignedAt.After(time2020))
 
 			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:assign", tt.Host, product.Name, module.Name, setting.Name)).
 				Set("Content-Type", "application/json").
@@ -942,7 +943,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal(setting.Name, data.Name)
 			assert.Equal("y", data.Value)
 			assert.Equal("x", data.LastValue)
-			assert.True(data.CreatedAt.After(time2020))
+			assert.True(data.AssignedAt.After(time2020))
 
 			res, err = request.Put(fmt.Sprintf("%s/v1/groups/%s/settings/%s:rollback", tt.Host, group.UID, service.IDToHID(setting.ID, "setting"))).
 				End()

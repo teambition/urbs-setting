@@ -3,7 +3,7 @@
     get:
       tags:
         - Module
-      summary: 读取产品功能模块列表，支持分页，按照创建时间正序
+      summary: 读取产品功能模块列表，支持分页，按照创建时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -15,8 +15,6 @@
       responses:
         '200':
           $ref: '#/components/responses/ModulesRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
     post:
       tags:
         - Module
@@ -31,10 +29,6 @@
       responses:
         '200':
           $ref: '#/components/responses/ModuleRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '400':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/modules/{module}:
     put:
@@ -52,8 +46,6 @@
       responses:
         '200':
           $ref: '#/components/responses/ModuleRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}/modules/{module}:offline:
     put:
@@ -69,7 +61,3 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'

@@ -19,7 +19,7 @@ const applyLabelRulesSQL = "insert ignore into `user_label` (`user_id`, `label_i
 func (m *LabelRule) ApplyRules(ctx context.Context, userID int64, excludeLabels []int64) (int, error) {
 	rules := []schema.LabelRule{}
 	// 不把 excludeLabels 放入查询条件，从而尽量复用查询缓存
-	err := m.DB.Order("`updated_at` desc").Limit(200).Find(&rules).Error
+	err := m.DB.Where("`kind` = 'userPercent'").Order("`updated_at` desc").Limit(200).Find(&rules).Error
 	if err != nil {
 		return 0, err
 	}
@@ -44,7 +44,7 @@ func (m *LabelRule) ApplyRules(ctx context.Context, userID int64, excludeLabels 
 			return 0, err
 		}
 
-		go m.increaseLabelsStatus(ctx, labelIDs, 1)
+		go m.tryIncreaseLabelsStatus(ctx, labelIDs, 1)
 	}
 	return len(ids), nil
 }
@@ -88,7 +88,7 @@ func (m *LabelRule) Update(ctx context.Context, labelRuleID int64, changed map[s
 }
 
 // Delete ...
-func (m *LabelRule) Delete(ctx context.Context, labelRuleID int64) error {
+func (m *LabelRule) Delete(ctx context.Context, labelRuleID int64) (int64, error) {
 	res := m.DB.Delete(&schema.LabelRule{ID: labelRuleID})
-	return res.Error
+	return res.RowsAffected, res.Error
 }

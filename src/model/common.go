@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -57,8 +58,8 @@ func NewModels(sql *service.SQL) *Models {
 // ***** 以下为需要组合多个 model 接口能力而对外暴露的接口 *****
 
 // ApplyLabelRulesAndRefreshUserLabels ...
-func (ms *Models) ApplyLabelRulesAndRefreshUserLabels(ctx context.Context, userID int64, now int64, force bool) (*schema.User, error) {
-	user, labelIDs, ok, err := ms.User.RefreshLabels(ctx, userID, now, force)
+func (ms *Models) ApplyLabelRulesAndRefreshUserLabels(ctx context.Context, userID int64, now time.Time, force bool) (*schema.User, error) {
+	user, labelIDs, ok, err := ms.User.RefreshLabels(ctx, userID, now.Unix(), force)
 	if ok {
 		hit, err := ms.LabelRule.ApplyRules(ctx, userID, labelIDs)
 		if err != nil {
@@ -66,10 +67,25 @@ func (ms *Models) ApplyLabelRulesAndRefreshUserLabels(ctx context.Context, userI
 		}
 		if hit > 0 {
 			// refresh label again
-			user, labelIDs, ok, err = ms.User.RefreshLabels(ctx, userID, now, true)
+			user, labelIDs, ok, err = ms.User.RefreshLabels(ctx, userID, now.Unix(), true)
 		}
 	}
+
+	if elapsed := time.Now().UTC().Sub(now) / time.Millisecond; elapsed > 100 {
+		logging.Warningf("ApplyLabelRulesAndRefreshUserLabels: userID %d, consumed %d ms, refreshed %v, start %v\n",
+			userID, elapsed, ok, now)
+	}
 	return user, err
+}
+
+// TryApplyLabelRulesAndRefreshUserLabels ...
+func (ms *Models) TryApplyLabelRulesAndRefreshUserLabels(ctx context.Context, userID int64, now time.Time, force bool) *schema.User {
+	user, err := ms.ApplyLabelRulesAndRefreshUserLabels(ctx, userID, now, force)
+	if err != nil {
+		logging.Errf("ApplyLabelRulesAndRefreshUserLabels: userID %d, error %v", userID, err)
+		return nil
+	}
+	return user
 }
 
 // TryApplySettingRules ...
@@ -110,7 +126,9 @@ func (m *Model) lock(ctx context.Context, key string, expire time.Duration) erro
 }
 
 func (m *Model) unlock(ctx context.Context, key string) {
-	_ = m.DB.Where("`name` = ?", key).Delete(&schema.Lock{})
+	if err := m.DB.Where("`name` = ?", key).Delete(&schema.Lock{}).Error; err != nil {
+		logging.Errf("unlock: key %s, error %v", key, err)
+	}
 }
 
 const refreshLabelStatusSQL = "select sum(t2.`status`) as Status " +
@@ -118,8 +136,13 @@ const refreshLabelStatusSQL = "select sum(t2.`status`) as Status " +
 	"where t1.`label_id` = ? and t1.`group_id` = t2.`id` " +
 	"group by t1.`label_id`"
 
-// refreshLabelStatus 更新指定 label 的 Status（灰度标签灰度进度，被作用的用户数，非精确）值
+// tryRefreshLabelStatus 更新指定 label 的 Status（灰度标签灰度进度，被作用的用户数，非精确）值
 // 比如用户因为属于 n 个群组而被重复设置灰度标签
+func (m *Model) tryRefreshLabelStatus(ctx context.Context, labelID int64) {
+	if err := m.refreshLabelStatus(ctx, labelID); err != nil {
+		logging.Errf("tryRefreshLabelStatus: labelID %d, error %v", labelID, err)
+	}
+}
 func (m *Model) refreshLabelStatus(ctx context.Context, labelID int64) error {
 	key := fmt.Sprintf("refreshLabelStatus:%d", labelID)
 	if err := m.lock(ctx, key, time.Minute); err != nil {
@@ -133,9 +156,11 @@ func (m *Model) refreshLabelStatus(ctx context.Context, labelID int64) error {
 		return err
 	}
 
-	row := m.DB.Exec(refreshLabelStatusSQL, labelID).Row()
+	row := m.DB.Raw(refreshLabelStatusSQL, labelID).Row()
 	var status int64
-	_ = row.Scan(&status)
+	if err = row.Scan(&status); err != nil && err != sql.ErrNoRows {
+		return err
+	}
 
 	label := &schema.Label{ID: labelID}
 	err = m.DB.Model(label).UpdateColumn("status", count+status).Error
@@ -147,8 +172,13 @@ const refreshSettingStatus = "select sum(t2.`status`) as Status " +
 	"where t1.`setting_id` = ? and t1.`group_id` = t2.`id` " +
 	"group by t1.`setting_id`"
 
-// refreshSettingStatus 更新指定 setting 的 Status（配置项灰度进度，被作用的用户数，非精确）值
+// tryRefreshSettingStatus 更新指定 setting 的 Status（配置项灰度进度，被作用的用户数，非精确）值
 // 比如用户因为属于 n 个群组而被重复设置配置项
+func (m *Model) tryRefreshSettingStatus(ctx context.Context, settingID int64) {
+	if err := m.refreshSettingStatus(ctx, settingID); err != nil {
+		logging.Errf("tryRefreshSettingStatus: settingID %d, error %v", settingID, err)
+	}
+}
 func (m *Model) refreshSettingStatus(ctx context.Context, settingID int64) error {
 	key := fmt.Sprintf("refreshSettingStatus:%d", settingID)
 	if err := m.lock(ctx, key, time.Minute); err != nil {
@@ -162,16 +192,23 @@ func (m *Model) refreshSettingStatus(ctx context.Context, settingID int64) error
 		return err
 	}
 
-	row := m.DB.Exec(refreshSettingStatus, settingID).Row()
+	row := m.DB.Raw(refreshSettingStatus, settingID).Row()
 	var status int64
-	_ = row.Scan(&status)
+	if err = row.Scan(&status); err != nil && err != sql.ErrNoRows {
+		return err
+	}
 
 	setting := &schema.Setting{ID: settingID}
 	err = m.DB.Model(setting).UpdateColumn("status", count+status).Error
 	return err
 }
 
-// refreshGroupStatus 更新指定 group 的 Status（成员数量统计）值
+// tryRefreshGroupStatus 更新指定 group 的 Status（成员数量统计）值
+func (m *Model) tryRefreshGroupStatus(ctx context.Context, groupID int64) {
+	if err := m.refreshGroupStatus(ctx, groupID); err != nil {
+		logging.Errf("tryRefreshGroupStatus: groupID %d, error %v", groupID, err)
+	}
+}
 func (m *Model) refreshGroupStatus(ctx context.Context, groupID int64) error {
 	key := fmt.Sprintf("refreshGroupStatus:%d", groupID)
 	if err := m.lock(ctx, key, time.Minute); err != nil {
@@ -189,7 +226,12 @@ func (m *Model) refreshGroupStatus(ctx context.Context, groupID int64) error {
 	return err
 }
 
-// refreshModuleStatus 更新指定 module 的 Status（功能模块的配置项统计）值
+// tryRefreshModuleStatus 更新指定 module 的 Status（功能模块的配置项统计）值
+func (m *Model) tryRefreshModuleStatus(ctx context.Context, moduleID int64) {
+	if err := m.refreshModuleStatus(ctx, moduleID); err != nil {
+		logging.Errf("tryRefreshModuleStatus: moduleID %d, error %v", moduleID, err)
+	}
+}
 func (m *Model) refreshModuleStatus(ctx context.Context, moduleID int64) error {
 	key := fmt.Sprintf("refreshModuleStatus:%d", moduleID)
 	if err := m.lock(ctx, key, time.Minute); err != nil {
@@ -207,7 +249,12 @@ func (m *Model) refreshModuleStatus(ctx context.Context, moduleID int64) error {
 	return err
 }
 
-// increaseStatisticStatus 加减指定 key 的统计值
+// tryIncreaseStatisticStatus 加减指定 key 的统计值
+func (m *Model) tryIncreaseStatisticStatus(ctx context.Context, key schema.StatisticKey, delta int) {
+	if err := m.increaseStatisticStatus(ctx, key, delta); err != nil {
+		logging.Errf("tryIncreaseStatisticStatus: key %s, delta: %d, error %v", key, delta, err)
+	}
+}
 func (m *Model) increaseStatisticStatus(ctx context.Context, key schema.StatisticKey, delta int) error {
 	exp := gorm.Expr("`status` + ?", delta)
 	if delta < 0 {
@@ -221,7 +268,6 @@ func (m *Model) increaseStatisticStatus(ctx context.Context, key schema.Statisti
 	return m.DB.Exec(sql, key, 1, exp).Error
 }
 
-// updateStatisticStatus 更新指定 key 的统计值
 func (m *Model) updateStatisticStatus(ctx context.Context, key schema.StatisticKey, status int64) error {
 	const sql = "insert ignore into `urbs_statistic` (`name`, `status`) values (?, ?) " +
 		"on duplicate key update `status` = ?"
@@ -237,7 +283,12 @@ func (m *Model) updateStatisticValue(ctx context.Context, key schema.StatisticKe
 	return m.DB.Exec(sql, key, value, value).Error
 }
 
-// refreshUsersTotalSize 更新用户总数
+// tryRefreshUsersTotalSize 更新用户总数
+func (m *Model) tryRefreshUsersTotalSize(ctx context.Context) {
+	if err := m.refreshUsersTotalSize(ctx); err != nil {
+		logging.Errf("refreshUsersTotalSize: error %v", err)
+	}
+}
 func (m *Model) refreshUsersTotalSize(ctx context.Context) error {
 	key := string(schema.UsersTotalSize)
 	if err := m.lock(ctx, key, 5*time.Minute); err != nil {
@@ -254,7 +305,12 @@ func (m *Model) refreshUsersTotalSize(ctx context.Context) error {
 	return m.updateStatisticStatus(ctx, schema.UsersTotalSize, count)
 }
 
-// refreshGroupsTotalSize 更新群组总数
+// tryRefreshGroupsTotalSize 更新群组总数
+func (m *Model) tryRefreshGroupsTotalSize(ctx context.Context) {
+	if err := m.refreshGroupsTotalSize(ctx); err != nil {
+		logging.Errf("refreshGroupsTotalSize: error %v", err)
+	}
+}
 func (m *Model) refreshGroupsTotalSize(ctx context.Context) error {
 	key := string(schema.GroupsTotalSize)
 	if err := m.lock(ctx, key, time.Minute); err != nil {
@@ -271,7 +327,12 @@ func (m *Model) refreshGroupsTotalSize(ctx context.Context) error {
 	return m.updateStatisticStatus(ctx, schema.GroupsTotalSize, count)
 }
 
-// refreshProductsTotalSize 更新产品总数
+// tryRefreshProductsTotalSize 更新产品总数
+func (m *Model) tryRefreshProductsTotalSize(ctx context.Context) {
+	if err := m.refreshProductsTotalSize(ctx); err != nil {
+		logging.Errf("refreshProductsTotalSize: error %v", err)
+	}
+}
 func (m *Model) refreshProductsTotalSize(ctx context.Context) error {
 	key := string(schema.ProductsTotalSize)
 	if err := m.lock(ctx, key, time.Minute); err != nil {
@@ -288,7 +349,12 @@ func (m *Model) refreshProductsTotalSize(ctx context.Context) error {
 	return m.updateStatisticStatus(ctx, schema.ProductsTotalSize, count)
 }
 
-// refreshLabelsTotalSize 更新标签总数
+// tryRefreshLabelsTotalSize 更新标签总数
+func (m *Model) tryRefreshLabelsTotalSize(ctx context.Context) {
+	if err := m.refreshLabelsTotalSize(ctx); err != nil {
+		logging.Errf("refreshLabelsTotalSize: error %v", err)
+	}
+}
 func (m *Model) refreshLabelsTotalSize(ctx context.Context) error {
 	key := string(schema.LabelsTotalSize)
 	if err := m.lock(ctx, key, time.Minute); err != nil {
@@ -305,7 +371,12 @@ func (m *Model) refreshLabelsTotalSize(ctx context.Context) error {
 	return m.updateStatisticStatus(ctx, schema.LabelsTotalSize, count)
 }
 
-// refreshModulesTotalSize 更新模块总数
+// tryRefreshModulesTotalSize 更新模块总数
+func (m *Model) tryRefreshModulesTotalSize(ctx context.Context) {
+	if err := m.refreshModulesTotalSize(ctx); err != nil {
+		logging.Errf("refreshModulesTotalSize: error %v", err)
+	}
+}
 func (m *Model) refreshModulesTotalSize(ctx context.Context) error {
 	key := string(schema.ModulesTotalSize)
 	if err := m.lock(ctx, key, time.Minute); err != nil {
@@ -322,7 +393,12 @@ func (m *Model) refreshModulesTotalSize(ctx context.Context) error {
 	return m.updateStatisticStatus(ctx, schema.ModulesTotalSize, count)
 }
 
-// refreshSettingsTotalSize 更新配置项总数
+// tryRefreshSettingsTotalSize 更新配置项总数
+func (m *Model) tryRefreshSettingsTotalSize(ctx context.Context) {
+	if err := m.refreshSettingsTotalSize(ctx); err != nil {
+		logging.Errf("refreshSettingsTotalSize: error %v", err)
+	}
+}
 func (m *Model) refreshSettingsTotalSize(ctx context.Context) error {
 	key := string(schema.SettingsTotalSize)
 	if err := m.lock(ctx, key, time.Minute); err != nil {
@@ -339,40 +415,11 @@ func (m *Model) refreshSettingsTotalSize(ctx context.Context) error {
 	return m.updateStatisticStatus(ctx, schema.SettingsTotalSize, count)
 }
 
-// refreshLabelRulesTotalSize 更新灰度标签发布规则总数
-func (m *Model) refreshLabelRulesTotalSize(ctx context.Context) error {
-	key := string(schema.LabelRulesTotalSize)
-	if err := m.lock(ctx, key, time.Minute); err != nil {
-		return err
+func (m *Model) tryIncreaseLabelsStatus(ctx context.Context, labelIDs []int64, delta int) {
+	if err := m.increaseLabelsStatus(ctx, labelIDs, delta); err != nil {
+		logging.Errf("increaseLabelsStatus: labelIDs [%v], delta: %d, error %v", labelIDs, delta, err)
 	}
-	defer m.unlock(ctx, key)
-
-	count := int64(0)
-	err := m.DB.Model(&schema.LabelRule{}).Count(&count).Error
-	if err != nil {
-		return err
-	}
-
-	return m.updateStatisticStatus(ctx, schema.LabelRulesTotalSize, count)
 }
-
-// refreshSettingRulesTotalSize 更新配置项发布规则总数
-func (m *Model) refreshSettingRulesTotalSize(ctx context.Context) error {
-	key := string(schema.SettingRulesTotalSize)
-	if err := m.lock(ctx, key, time.Minute); err != nil {
-		return err
-	}
-	defer m.unlock(ctx, key)
-
-	count := int64(0)
-	err := m.DB.Model(&schema.SettingRule{}).Count(&count).Error
-	if err != nil {
-		return err
-	}
-
-	return m.updateStatisticStatus(ctx, schema.SettingRulesTotalSize, count)
-}
-
 func (m *Model) increaseLabelsStatus(ctx context.Context, labelIDs []int64, delta int) error {
 	exp := gorm.Expr("`status` + ?", delta)
 	if delta < 0 {
@@ -380,9 +427,14 @@ func (m *Model) increaseLabelsStatus(ctx context.Context, labelIDs []int64, delt
 	} else if delta == 0 {
 		return nil
 	}
-	return m.DB.Model(&schema.Label{}).Where("`id` in (?)", labelIDs).Update("status", exp).Error
+	return m.DB.Model(&schema.Label{}).Where("`id` in ( ? )", labelIDs).Update("status", exp).Error
 }
 
+func (m *Model) tryIncreaseSettingsStatus(ctx context.Context, settingIDs []int64, delta int) {
+	if err := m.increaseSettingsStatus(ctx, settingIDs, delta); err != nil {
+		logging.Errf("increaseSettingsStatus: settingIDs [%v], delta: %d, error %v", settingIDs, delta, err)
+	}
+}
 func (m *Model) increaseSettingsStatus(ctx context.Context, settingIDs []int64, delta int) error {
 	exp := gorm.Expr("`status` + ?", delta)
 	if delta < 0 {
@@ -390,9 +442,14 @@ func (m *Model) increaseSettingsStatus(ctx context.Context, settingIDs []int64, 
 	} else if delta == 0 {
 		return nil
 	}
-	return m.DB.Model(&schema.Setting{}).Where("`id` in (?)", settingIDs).Update("status", exp).Error
+	return m.DB.Model(&schema.Setting{}).Where("`id` in ( ? )", settingIDs).Update("status", exp).Error
 }
 
+func (m *Model) tryIncreaseModulesStatus(ctx context.Context, moduleIDs []int64, delta int) {
+	if err := m.increaseModulesStatus(ctx, moduleIDs, delta); err != nil {
+		logging.Errf("increaseModulesStatus: moduleIDs [%v], delta: %d, error %v", moduleIDs, delta, err)
+	}
+}
 func (m *Model) increaseModulesStatus(ctx context.Context, moduleIDs []int64, delta int) error {
 	exp := gorm.Expr("`status` + ?", delta)
 	if delta < 0 {
@@ -400,10 +457,10 @@ func (m *Model) increaseModulesStatus(ctx context.Context, moduleIDs []int64, de
 	} else if delta == 0 {
 		return nil
 	}
-	return m.DB.Model(&schema.Module{}).Where("`id` in (?)", moduleIDs).Update("status", exp).Error
+	return m.DB.Model(&schema.Module{}).Where("`id` in ( ? )", moduleIDs).Update("status", exp).Error
 }
 
-func (m *Model) deleteUserAndGroupLabels(ctx context.Context, labelIDs []int64) {
+func (m *Model) tryDeleteUserAndGroupLabels(ctx context.Context, labelIDs []int64) {
 	var err error
 	if len(labelIDs) > 0 {
 		if err = m.DB.Exec("delete from `user_label` where `label_id` in ( ? )", labelIDs).Error; err == nil {
@@ -411,21 +468,21 @@ func (m *Model) deleteUserAndGroupLabels(ctx context.Context, labelIDs []int64) 
 		}
 	}
 	if err != nil {
-		logging.Errf("deleteUserAndGroupLabels with label_id(%v) error: %v", labelIDs, err)
+		logging.Errf("deleteUserAndGroupLabels with label_id [%v] error: %v", labelIDs, err)
 	}
 }
 
-func (m *Model) deleteLabelsRules(ctx context.Context, labelIDs []int64) {
+func (m *Model) tryDeleteLabelsRules(ctx context.Context, labelIDs []int64) {
 	var err error
 	if len(labelIDs) > 0 {
 		err = m.DB.Exec("delete from `label_rule` where `label_id` in ( ? )", labelIDs).Error
 	}
 	if err != nil {
-		logging.Errf("deleteLabelsRules with label_id(%v) error: %v", labelIDs, err)
+		logging.Errf("deleteLabelsRules with label_id [%v] error: %v", labelIDs, err)
 	}
 }
 
-func (m *Model) deleteUserAndGroupSettings(ctx context.Context, settingIDs []int64) {
+func (m *Model) tryDeleteUserAndGroupSettings(ctx context.Context, settingIDs []int64) {
 	var err error
 	if len(settingIDs) > 0 {
 		if err = m.DB.Exec("delete from `user_setting` where `setting_id` in ( ? )", settingIDs).Error; err == nil {
@@ -433,16 +490,16 @@ func (m *Model) deleteUserAndGroupSettings(ctx context.Context, settingIDs []int
 		}
 	}
 	if err != nil {
-		logging.Errf("deleteUserAndGroupSettings with setting_id(%v) error: %v", settingIDs, err)
+		logging.Errf("deleteUserAndGroupSettings with setting_id [%v] error: %v", settingIDs, err)
 	}
 }
 
-func (m *Model) deleteSettingsRules(ctx context.Context, settingIDs []int64) {
+func (m *Model) tryDeleteSettingsRules(ctx context.Context, settingIDs []int64) {
 	var err error
 	if len(settingIDs) > 0 {
 		err = m.DB.Exec("delete from `setting_rule` where `setting_id` in ( ? )", settingIDs).Error
 	}
 	if err != nil {
-		logging.Errf("deleteSettingsRules with setting_id(%v) error: %v", settingIDs, err)
+		logging.Errf("deleteSettingsRules with setting_id [%v] error: %v", settingIDs, err)
 	}
 }

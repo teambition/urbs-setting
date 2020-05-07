@@ -104,7 +104,7 @@ const countSearchSettingsByProductIDSQL = "select count(t1.`id`) " +
 // FindByProductID 根据条件查找 settings
 func (m *Setting) FindByProductID(ctx context.Context, product string, productID int64, pg tpl.Pagination) ([]tpl.SettingInfo, int, error) {
 	data := make([]tpl.SettingInfo, 0)
-	cursor := pg.TokenToID(true)
+	cursor := pg.TokenToID()
 	total := 0
 
 	if pg.Q == "" {
@@ -146,7 +146,7 @@ func (m *Setting) FindByProductID(ctx context.Context, product string, productID
 // Find 根据条件查找 settings
 func (m *Setting) Find(ctx context.Context, moduleID int64, pg tpl.Pagination) ([]schema.Setting, int, error) {
 	settings := make([]schema.Setting, 0)
-	cursor := pg.TokenToID(true)
+	cursor := pg.TokenToID()
 	db := m.DB.Where("`id` <= ? and `module_id` = ? and `offline_at` is null", cursor, moduleID)
 	if pg.Q != "" {
 		db = m.DB.Where("`id` <= ? and `module_id` = ? and `offline_at` is null and `name` like ?", cursor, moduleID, pg.Q)
@@ -167,8 +167,8 @@ func (m *Setting) Find(ctx context.Context, moduleID int64, pg tpl.Pagination) (
 func (m *Setting) Create(ctx context.Context, setting *schema.Setting) error {
 	err := m.DB.Create(setting).Error
 	if err == nil {
-		go m.increaseModulesStatus(ctx, []int64{setting.ModuleID}, 1)
-		go m.increaseStatisticStatus(ctx, schema.SettingsTotalSize, 1)
+		go m.tryIncreaseModulesStatus(ctx, []int64{setting.ModuleID}, 1)
+		go m.tryIncreaseStatisticStatus(ctx, schema.SettingsTotalSize, 1)
 	}
 	return err
 }
@@ -196,10 +196,10 @@ func (m *Setting) Offline(ctx context.Context, moduleID, settingID int64) error 
 		Status:    -1,
 	})
 	if res.RowsAffected > 0 {
-		go m.deleteSettingsRules(ctx, []int64{settingID})
-		go m.deleteUserAndGroupSettings(ctx, []int64{settingID})
-		go m.increaseModulesStatus(ctx, []int64{moduleID}, -1)
-		go m.increaseStatisticStatus(ctx, schema.SettingsTotalSize, -1)
+		go m.tryDeleteSettingsRules(ctx, []int64{settingID})
+		go m.tryDeleteUserAndGroupSettings(ctx, []int64{settingID})
+		go m.tryIncreaseModulesStatus(ctx, []int64{moduleID}, -1)
+		go m.tryIncreaseStatisticStatus(ctx, schema.SettingsTotalSize, -1)
 	}
 	return res.Error
 }
@@ -278,7 +278,7 @@ func (m *Setting) Assign(ctx context.Context, settingID int64, value string, use
 	}
 
 	if rowsAffected > 0 {
-		go m.refreshSettingStatus(ctx, settingID)
+		go m.tryRefreshSettingStatus(ctx, settingID)
 	}
 	return releaseInfo, err
 }
@@ -293,7 +293,7 @@ func (m *Setting) Delete(ctx context.Context, settingID int64) error {
 func (m *Setting) RemoveUserSetting(ctx context.Context, userID, settingID int64) error {
 	res := m.DB.Where("`user_id` = ? and `setting_id` = ?", userID, settingID).Delete(&schema.UserSetting{})
 	if res.RowsAffected > 0 {
-		go m.increaseSettingsStatus(ctx, []int64{settingID}, -1)
+		go m.tryIncreaseSettingsStatus(ctx, []int64{settingID}, -1)
 	}
 	return res.Error
 }
@@ -310,7 +310,7 @@ func (m *Setting) RollbackUserSetting(ctx context.Context, userID, settingID int
 func (m *Setting) RemoveGroupSetting(ctx context.Context, groupID, settingID int64) error {
 	res := m.DB.Where("`group_id` = ? and `setting_id` = ?", groupID, settingID).Delete(&schema.GroupSetting{})
 	if res.RowsAffected > 0 {
-		go m.refreshSettingStatus(ctx, settingID)
+		go m.tryRefreshSettingStatus(ctx, settingID)
 	}
 	return res.Error
 }
@@ -334,7 +334,7 @@ func (m *Setting) Recall(ctx context.Context, settingID, release int64) error {
 		rowsAffected += res.RowsAffected
 	}
 	if rowsAffected > 0 {
-		go m.refreshSettingStatus(ctx, settingID)
+		go m.tryRefreshSettingStatus(ctx, settingID)
 	}
 	return res.Error
 }
@@ -375,7 +375,7 @@ const countSearchSettingUsersSQL = "select count(t2.`id`) " +
 // ListUsers ...
 func (m *Setting) ListUsers(ctx context.Context, settingID int64, pg tpl.Pagination) ([]tpl.SettingUserInfo, int, error) {
 	data := []tpl.SettingUserInfo{}
-	cursor := pg.TokenToID(true)
+	cursor := pg.TokenToID()
 	total := 0
 
 	if pg.Q == "" {
@@ -435,7 +435,7 @@ const countSearchSettingGroupsSQL = "select count(t2.`id`) " +
 // ListGroups ...
 func (m *Setting) ListGroups(ctx context.Context, settingID int64, pg tpl.Pagination) ([]tpl.SettingGroupInfo, int, error) {
 	data := []tpl.SettingGroupInfo{}
-	cursor := pg.TokenToID(true)
+	cursor := pg.TokenToID()
 	total := 0
 
 	if pg.Q == "" {

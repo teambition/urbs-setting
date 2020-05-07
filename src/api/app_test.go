@@ -51,6 +51,10 @@ func TestMain(m *testing.M) {
 	tt.DB.Exec("TRUNCATE TABLE user_setting;")
 	tt.DB.Exec("TRUNCATE TABLE group_label;")
 	tt.DB.Exec("TRUNCATE TABLE group_setting;")
+	tt.DB.Exec("TRUNCATE TABLE label_rule;")
+	tt.DB.Exec("TRUNCATE TABLE setting_rule;")
+	tt.DB.Exec("TRUNCATE TABLE urbs_statistic;")
+	tt.DB.Exec("TRUNCATE TABLE urbs_lock;")
 	cleanup()
 	os.Exit(m.Run())
 }

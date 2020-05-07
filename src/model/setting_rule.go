@@ -15,14 +15,13 @@ const applySettingRulesSQL = "insert ignore into `user_setting` (`user_id`, `set
 	"select ?, t1.`setting_id`, t1.`rls`, t1.`value` from `setting_rule` t1 where t1.`id` in ( ? )"
 
 const findSettingRulesResultSQL = "select t1.`setting_id` " +
-	"from `setting_rule` t1 `user_setting` t2 " +
-	"where t1.`id` in ( ? ) and t2.`user_id` = ? and t1.`setting_id` = t2.`setting_id` and t1.`rls` = t2.`rls`"
+	"from `setting_rule` t1, `user_setting` t2 " +
+	"where t1.`id` in ( ? ) and t1.`setting_id` = t2.`setting_id` and t1.`rls` = t2.`rls` and t2.`user_id` = ?"
 
 // ApplyRules ...
 func (m *SettingRule) ApplyRules(ctx context.Context, productID, userID int64) error {
 	rules := []schema.SettingRule{}
-	// 不把 excludeSettings 放入查询条件，从而尽量复用查询缓存
-	err := m.DB.Where("`product_id` = ?", productID).Order("`updated_at` desc").Limit(1000).Find(&rules).Error
+	err := m.DB.Where("`product_id` = ? and `kind` = 'userPercent'", productID).Order("`updated_at` desc").Limit(1000).Find(&rules).Error
 	if err != nil {
 		return err
 	}
@@ -59,7 +58,7 @@ func (m *SettingRule) ApplyRules(ctx context.Context, productID, userID int64) e
 				settingIDs = append(settingIDs, settingID)
 			}
 			if len(settingIDs) > 0 {
-				m.increaseSettingsStatus(ctx, settingIDs, 1)
+				m.tryIncreaseSettingsStatus(ctx, settingIDs, 1)
 			}
 		}
 	}
@@ -79,7 +78,7 @@ func (m *SettingRule) Acquire(ctx context.Context, settingRuleID int64) (*schema
 func (m *SettingRule) Find(ctx context.Context, productID, settingID int64) ([]schema.SettingRule, error) {
 	settingRules := make([]schema.SettingRule, 0)
 	err := m.DB.Where("`product_id` = ? and `setting_id` = ?", productID, settingID).
-		Order("`id`").Limit(10).Find(&settingRules).Error
+		Order("`id` desc").Limit(10).Find(&settingRules).Error
 	return settingRules, err
 }
 
@@ -105,7 +104,7 @@ func (m *SettingRule) Update(ctx context.Context, settingRuleID int64, changed m
 }
 
 // Delete ...
-func (m *SettingRule) Delete(ctx context.Context, settingRuleID int64) error {
+func (m *SettingRule) Delete(ctx context.Context, settingRuleID int64) (int64, error) {
 	res := m.DB.Delete(&schema.SettingRule{ID: settingRuleID})
-	return res.Error
+	return res.RowsAffected, res.Error
 }

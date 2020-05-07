@@ -85,7 +85,7 @@ func (m *Label) AcquireByID(ctx context.Context, labelID int64) (*schema.Label, 
 // Find 根据条件查找 labels
 func (m *Label) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Label, int, error) {
 	labels := make([]schema.Label, 0)
-	cursor := pg.TokenToID(true)
+	cursor := pg.TokenToID()
 	db := m.DB.Where("`id` <= ? and `product_id` = ? and `offline_at` is null", cursor, productID)
 	if pg.Q != "" {
 		db = m.DB.Where("`id` <= ? and `product_id` = ? and `offline_at` is null and `name` like ?", cursor, productID, pg.Q)
@@ -106,7 +106,7 @@ func (m *Label) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([
 func (m *Label) Create(ctx context.Context, label *schema.Label) error {
 	err := m.DB.Create(label).Error
 	if err == nil {
-		go m.increaseStatisticStatus(ctx, schema.LabelsTotalSize, 1)
+		go m.tryIncreaseStatisticStatus(ctx, schema.LabelsTotalSize, 1)
 	}
 	return err
 }
@@ -134,9 +134,9 @@ func (m *Label) Offline(ctx context.Context, labelID int64) error {
 		Status:    -1,
 	})
 	if res.RowsAffected > 0 {
-		go m.deleteLabelsRules(ctx, []int64{labelID})
-		go m.deleteUserAndGroupLabels(ctx, []int64{labelID})
-		go m.increaseStatisticStatus(ctx, schema.LabelsTotalSize, -1)
+		go m.tryDeleteLabelsRules(ctx, []int64{labelID})
+		go m.tryDeleteUserAndGroupLabels(ctx, []int64{labelID})
+		go m.tryIncreaseStatisticStatus(ctx, schema.LabelsTotalSize, -1)
 	}
 	return res.Error
 }
@@ -215,7 +215,7 @@ func (m *Label) Assign(ctx context.Context, labelID int64, users, groups []strin
 	}
 
 	if rowsAffected > 0 {
-		go m.refreshLabelStatus(ctx, labelID)
+		go m.tryRefreshLabelStatus(ctx, labelID)
 	}
 	return releaseInfo, err
 }
@@ -230,7 +230,7 @@ func (m *Label) Delete(ctx context.Context, labelID int64) error {
 func (m *Label) RemoveUserLabel(ctx context.Context, userID, labelID int64) error {
 	res := m.DB.Where("`user_id` = ? and `label_id` = ?", userID, labelID).Delete(&schema.UserLabel{})
 	if res.RowsAffected > 0 {
-		go m.increaseLabelsStatus(ctx, []int64{labelID}, -1)
+		go m.tryIncreaseLabelsStatus(ctx, []int64{labelID}, -1)
 	}
 	return res.Error
 }
@@ -239,7 +239,7 @@ func (m *Label) RemoveUserLabel(ctx context.Context, userID, labelID int64) erro
 func (m *Label) RemoveGroupLabel(ctx context.Context, groupID, labelID int64) error {
 	res := m.DB.Where("`group_id` = ? and `label_id` = ?", groupID, labelID).Delete(&schema.GroupLabel{})
 	if res.RowsAffected > 0 {
-		go m.refreshLabelStatus(ctx, labelID)
+		go m.tryRefreshLabelStatus(ctx, labelID)
 	}
 	return res.Error
 }
@@ -255,7 +255,7 @@ func (m *Label) Recall(ctx context.Context, labelID, release int64) error {
 		rowsAffected += res.RowsAffected
 	}
 	if rowsAffected > 0 {
-		go m.refreshLabelStatus(ctx, labelID)
+		go m.tryRefreshLabelStatus(ctx, labelID)
 	}
 	return res.Error
 }
@@ -296,7 +296,7 @@ const countSearchLabelUsersSQL = "select count(t2.`id`) " +
 // ListUsers ...
 func (m *Label) ListUsers(ctx context.Context, labelID int64, pg tpl.Pagination) ([]tpl.LabelUserInfo, int, error) {
 	data := []tpl.LabelUserInfo{}
-	cursor := pg.TokenToID(true)
+	cursor := pg.TokenToID()
 	total := 0
 
 	if pg.Q == "" {
@@ -356,7 +356,7 @@ const countSearchLabelGroupsSQL = "select count(t2.`id`) " +
 // ListGroups ...
 func (m *Label) ListGroups(ctx context.Context, labelID int64, pg tpl.Pagination) ([]tpl.LabelGroupInfo, int, error) {
 	data := []tpl.LabelGroupInfo{}
-	cursor := pg.TokenToID(true)
+	cursor := pg.TokenToID()
 	total := 0
 
 	if pg.Q == "" {

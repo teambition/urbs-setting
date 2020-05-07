@@ -3,7 +3,7 @@
     get:
       tags:
         - Product
-      summary: 读取产品列表，支持分页，按照创建时间正序
+      summary: 读取产品列表，支持分页，按照创建时间倒序
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -49,8 +49,6 @@
       responses:
         '200':
           $ref: '#/components/responses/GroupRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
     delete:
       tags:
         - Product
@@ -63,10 +61,6 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
 
   /v1/products/{product}:offline:
     put:
@@ -81,7 +75,17 @@
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'
-        '401':
-          $ref: '#/components/responses/ErrorResponse'
-        '404':
-          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/products/{product}/statistics:
+    put:
+      tags:
+        - Product
+      summary: 将指定 product name 的产品的统计数据
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductStatisticsRes'

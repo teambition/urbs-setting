@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   description: |-
     Urbs 灰度平台灰度策略服务
-  version: 1.2.3
+  version: 1.3.0
   title: urbs-setting
 servers:
   - url: https://urbs-setting:8443
@@ -41,7 +41,7 @@ components:
     PathHID:
       in: path
       name: uid
-      description: 标签/配置项 hid
+      description: 标签/配置项/发布规则 hid
       required: true
       schema:
         type: string
@@ -201,24 +201,57 @@ components:
         status:
           type: integer
           format: int64
-          description: 灰度标签状态（暂未支持）
-          example: 0
-        created_at:
+          description: 使用用户计数（被动异步计算，非精确值）
+          example: 100
+        release:
+          type: integer
+          format: int64
+          description: 标签发布（被设置）计数
+          example: 2
+        createdAt:
           type: string
           format: date-time
           description: 灰度标签创建时间
           example: 2020-03-25T06:24:25Z
-        updated_at:
+        updatedAt:
           type: string
           format: date-time
           description: 灰度标签更新时间
           example: 2020-03-25T06:24:25Z
-        offline_at:
+        offlineAt:
           type: string
           format: date-time
           description: 灰度标签下线时间
           default: null
           example: null
+    MyLabel:
+      type: object
+      properties:
+        hid:
+          type: string
+          description: 灰度标签的 hid
+          example: AwAAAAAAAAB25V_QnbhCuRwF
+        product:
+          type: string
+          description: 灰度标签所属的产品名称
+          example: teambition
+        name:
+          type: string
+          description: 灰度标签名称
+          example: task-share
+        desc:
+          type: string
+          description: 灰度标签描述
+        release:
+          type: integer
+          format: int64
+          description: 被设置批次
+          example: 1
+        assignedAt:
+          type: string
+          format: date-time
+          description: 被设置时间
+          example: 2020-03-25T06:24:25Z
     MySetting:
       type: object
       properties:
@@ -236,25 +269,49 @@ components:
           example: task
         name:
           type: string
-          description: 配置项名称，同一产品功能模块下唯一（不能重名）
+          description: 配置项名称
           example: task-share
+        desc:
+          type: string
+          description: 配置项描述，
         value:
           type: string
           description: 配置项值
           example: disable
-        last_value:
+        lastValue:
           type: string
           description: 配置项值
           example: ""
-        created_at:
+        release:
+          type: integer
+          format: int64
+          description: 被设置批次
+          example: 1
+        assignedAt:
           type: string
           format: date-time
-          description: 灰度标签创建时间
+          description: 被设置时间
           example: 2020-03-25T06:24:25Z
-        updated_at:
+    User:
+      type: object
+      properties:
+        uid:
+          type: string
+          description: 用户的 uid
+          example: 5e82d747fe02a50021d339f3
+        labels:
+          type: string
+          description: 缓存的用户当前被设置的 labels
+          example: '{"teambition":[{"l":"dev"}]}'
+        activeAt:
+          type: integer
+          format: int64
+          description: 用户活跃时间戳，1970 以来的秒数，非精确值
+          example: 1585636012
+        createdAt:
           type: string
           format: date-time
-          description: 灰度标签更新时间
+          description: 用户创建时间
           example: 2020-03-25T06:24:25Z
     Group:
       type: object
@@ -270,17 +327,22 @@ components:
         desc:
           type: string
           description: 群组的描述
-        sync_at:
+        syncAt:
           type: integer
           format: int64
           description: 群组成员同步时间点，1970 以来的秒数
           example: 1585636012
-        created_at:
+        status:
+          type: integer
+          format: int64
+          description: 群组成员数量，非精确值
+          example: 99
+        createdAt:
           type: string
           format: date-time
           description: 灰度标签创建时间
           example: 2020-03-25T06:24:25Z
-        updated_at:
+        updatedAt:
           type: string
           format: date-time
           description: 灰度标签更新时间
@@ -292,12 +354,12 @@ components:
           type: string
           description: 群组成员的用户 uid
           example: 5e82d747fe02a50021d339f3
-        sync_at:
+        syncAt:
           type: integer
           format: int64
           description: 该群组成员同步时间，1970 以来的秒数
           example: 1585636012
-        created_at:
+        createdAt:
           type: string
           format: date-time
           description: 该群组成员添加时间
@@ -316,26 +378,49 @@ components:
           type: integer
           format: int64
           description: 产品状态值
-        created_at:
+        createdAt:
           type: string
           format: date-time
           description: 产品创建时间
           example: 2020-03-25T06:24:25Z
-        updated_at:
+        updatedAt:
           type: string
           format: date-time
           description: 产品更新时间
           example: 2020-03-25T06:24:25Z
-        deleted_at:
+        deletedAt:
           type: string
           format: date-time
           description: 产品删除时间
           default: null
-        offline_at:
+        offlineAt:
           type: string
           format: date-time
           description: 产品下线时间
           default: null
+    ProductStatistics:
+      type: object
+      properties:
+        labels:
+          type: integer
+          format: int64
+          description: 产品下灰度标签数量
+        modules:
+          type: integer
+          format: int64
+          description: 产品下功能模块数量
+        settings:
+          type: integer
+          format: int64
+          description: 产品下配置项数量
+        release:
+          type: integer
+          format: int64
+          description: 产品下灰度标签和配置项总发布次数
+        status:
+          type: integer
+          format: int64
+          description: 产品下灰度标签和配置项总作用人数（非精确值）
     Module:
       type: object
       properties:
@@ -349,18 +434,18 @@ components:
         status:
           type: integer
           format: int64
-          description: 功能模块状态值
-        created_at:
+          description: 有效配置项计数（被动异步计算，非精确值）
+        createdAt:
           type: string
           format: date-time
           description: 功能模块创建时间
           example: 2020-03-25T06:24:25Z
-        updated_at:
+        updatedAt:
           type: string
           format: date-time
           description: 功能模块更新时间
           example: 2020-03-25T06:24:25Z
-        offline_at:
+        offlineAt:
           type: string
           format: date-time
           description: 功能模块下线时间
@@ -390,7 +475,11 @@ components:
         status:
           type: integer
           format: int64
-          description: 配置项状态值
+          description: 使用用户计数（被动异步计算，非精确值）
+        release:
+          type: integer
+          format: int64
+          description: 配置项发布（被设置）计数
         channels:
           type: array
           description: 该配置项适用的产品版本通道，是服务端配置的可用版本通道的子集，为空表示适用所有
@@ -412,21 +501,271 @@ components:
           example: ["true", "false"]
           items:
             type: string
-        created_at:
+        createdAt:
           type: string
           format: date-time
           description: 配置项创建时间
           example: 2020-03-25T06:24:25Z
-        updated_at:
+        updatedAt:
           type: string
           format: date-time
           description: 配置项更新时间
           example: 2020-03-25T06:24:25Z
-        offline_at:
+        offlineAt:
           type: string
           format: date-time
           description: 配置项下线时间
           default: null
+    LabelReleaseInfo:
+      type: object
+      properties:
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        users:
+          type: array
+          description: 用户 uid 数组
+          example: ["50c32afae8cf1439d35a87e6", "5e69a9bd6ac3cd00213ea969"]
+          items:
+            type: string
+        groups:
+          type: array
+          description: 群组 uid 数组
+          items:
+            type: string
+    LabelGroupInfo:
+      type: object
+      properties:
+        labelHID:
+          type: string
+          description: 灰度标签 hid
+          example: urbs
+        assignedAt:
+          type: string
+          format: date-time
+          description: 灰度标签设置时间
+          example: 2020-03-25T06:24:25Z
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        group:
+          type: string
+          description: 群组的 uid
+          example: 50c32afae8cf1439d35a87e6
+        kind:
+          type: string
+          description: 群组类型
+          example: organization
+        desc:
+          type: string
+          description: 群组的描述
+        status:
+          type: integer
+          format: int64
+          description: 群组成员数量，非精确值
+          example: 99
+    LabelUserInfo:
+      type: object
+      properties:
+        labelHID:
+          type: string
+          description: 灰度标签 hid
+          example: urbs
+        assignedAt:
+          type: string
+          format: date-time
+          description: 灰度标签设置时间
+          example: 2020-03-25T06:24:25Z
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        user:
+          type: string
+          description: 用户的 uid
+          example: 50c32afae8cf1439d35a87e6
+    LabelRuleInfo:
+      type: object
+      properties:
+        hid:
+          type: string
+          description: 发布规则的 hid
+          example: urbs
+        labelHID:
+          type: string
+          description: 发布规则所属灰度标签的 hid
+          example: urbs
+        kind:
+          type: string
+          description: 发布规则类型，目前仅支持 "userPercent"
+          example: userPercent
+        rule:
+          type: object
+          description: 发布规则内容，JSON 对象，具体格式取决于 kind
+          properties:
+            value:
+              type: integer
+              format: int64
+              description: 当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]
+              example: 10
+          example: '{"value": 10}'
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间
+          example: 2020-03-25T06:24:25Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新时间
+          example: 2020-03-25T06:24:25Z
+    SettingReleaseInfo:
+      type: object
+      properties:
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        users:
+          type: array
+          description: 用户 uid 数组
+          example: ["50c32afae8cf1439d35a87e6", "5e69a9bd6ac3cd00213ea969"]
+          items:
+            type: string
+        groups:
+          type: array
+          description: 群组 uid 数组
+          items:
+            type: string
+        value:
+          type: string
+          description: 配置项值
+          example: x
+    SettingGroupInfo:
+      type: object
+      properties:
+        settingHID:
+          type: string
+          description: 配置项的 hid
+          example: urbs
+        assignedAt:
+          type: string
+          format: date-time
+          description: 配置项设置时间
+          example: 2020-03-25T06:24:25Z
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        group:
+          type: string
+          description: 群组的 uid
+          example: 50c32afae8cf1439d35a87e6
+        kind:
+          type: string
+          description: 群组类型
+          example: organization
+        desc:
+          type: string
+          description: 群组的描述
+        status:
+          type: integer
+          format: int64
+          description: 群组成员数量，非精确值
+          example: 99
+        value:
+          type: string
+          description: 配置项值
+          example: b
+        lastValue:
+          type: string
+          description: 上一个配置项值
+          example: a
+    SettingUserInfo:
+      type: object
+      properties:
+        settingHID:
+          type: string
+          description: 配置项的 hid
+          example: urbs
+        assignedAt:
+          type: string
+          format: date-time
+          description: 配置项设置时间
+          example: 2020-03-25T06:24:25Z
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        user:
+          type: string
+          description: 用户的 uid
+          example: 50c32afae8cf1439d35a87e6
+        value:
+          type: string
+          description: 配置项值
+          example: b
+        lastValue:
+          type: string
+          description: 上一个配置项值
+          example: a
+      SettingRuleInfo:
+      type: object
+      properties:
+        hid:
+          type: string
+          description: 发布规则的 hid
+          example: urbs
+        settingHID:
+          type: string
+          description: 发布规则所属配置项的 hid
+          example: urbs
+        kind:
+          type: string
+          description: 发布规则类型，目前仅支持 "userPercent"
+          example: userPercent
+        rule:
+          type: object
+          description: 发布规则内容，JSON 对象，具体格式取决于 kind
+          properties:
+            value:
+              type: integer
+              format: int64
+              description: 当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]
+              example: 10
+          example: '{"value": 10}'
+        value:
+          type: string
+          description: 发布规则的配置项值
+          example: x
+        release:
+          type: integer
+          format: int64
+          description: 发布批次（被设置）计数
+          example: 2
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间
+          example: 2020-03-25T06:24:25Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新时间
+          example: 2020-03-25T06:24:25Z
   requestBodies:
     UsersBody:
       required: true
@@ -479,16 +818,16 @@ components:
           schema:
             type: object
             properties:
-              sync_at:
+              syncAt:
                 type: integer
-                title: sync_at
+                title: syncAt
                 format: int64
                 description: 群组成员同步时间点，1970 以来的秒数
               desc:
                 type: string
                 title: desc
                 description: 群组描述
-            example: {"sync_at": 1585638012}
+            example: {"syncAt": 1585638012}
     NameDescBody:
       required: true
       description: 创建产品、功能模块、配置项的请求数据
@@ -622,6 +961,67 @@ components:
                 items:
                   type: string
                 default: null
+    RecallBody:
+      required: true
+      description: 撤销/回滚指定发布批次的灰度标签或配置项
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              release:
+                type: integer
+                format: int64
+                description: 发布批次（被设置）计数
+                example: 2
+    LabelRuleBody:
+      required: true
+      description: 创建/更新灰度标签的发布规则
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              kind:
+                type: string
+                description: 发布规则类型，目前仅支持 "userPercent"
+                example: userPercent
+              rule:
+                type: object
+                description: 发布规则内容，JSON 对象，具体格式取决于 kind
+                properties:
+                  value:
+                    type: integer
+                    format: int64
+                    description: 当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]
+                    example: 10
+                example: '{"value": 10}'
+      SettingRuleBody:
+      required: true
+      description: 创建/更新配置项的发布规则
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              kind:
+                type: string
+                description: 发布规则类型，目前仅支持 "userPercent"
+                example: userPercent
+              rule:
+                type: object
+                description: 发布规则内容，JSON 对象，具体格式取决于 kind
+                properties:
+                  value:
+                    type: integer
+                    format: int64
+                    description: 当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]
+                    example: 10
+                example: '{"value": 10}'
+              value:
+                type: string
+                description: 发布规则的配置项值
+                example: x
   responses:
     ErrorResponse:
       description: 标准错误返回结果
@@ -662,7 +1062,7 @@ components:
           schema:
             type: object
             properties:
-              db_connect:
+              dbConnect:
                 type: boolean
                 description: 是否连接了数据库
                 example: true
@@ -707,6 +1107,19 @@ components:
             properties:
               result:
                 $ref: "#/components/schemas/LabelInfo"
+    MyLabelsRes:
+      description: 用户或群组被指派的灰度标签列表返回结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              nextPageToken:
+                $ref: "#/components/schemas/NextPageToken"
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MyLabel"
     MySettingsRes:
       description: 用户或群组被指派的配置项列表返回结果
       content:
@@ -823,7 +1236,7 @@ components:
                 items:
                   $ref: "#/components/schemas/SettingInfo"
     SettingInfoRes:
-      description: 单个产品返回结果
+      description: 单个配置项返回结果
       content:
         application/json:
           schema:
@@ -831,4 +1244,135 @@ components:
             properties:
               result:
                 $ref: "#/components/schemas/SettingInfo"
+    ProductStatisticsRes:
+      description: 产品统计数据结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/ProductStatistics"
+    LabelReleaseInfoRes:
+      description: 设置灰度标签返回结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/LabelReleaseInfo"
+    LabelGroupsInfoRes:
+      description: 灰度标签作用的群组列表
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LabelGroupInfo"
+    LabelUsersInfoRes:
+      description: 灰度标签作用的用户列表
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LabelUserInfo"
+    LabelRulesInfoRes:
+      description: 灰度标签的发布规则列表
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LabelRuleInfo"
+    LabelRuleInfoRes:
+      description: 灰度标签的发布规则结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/LabelRuleInfo"
+    SettingReleaseInfoRes:
+      description: 设置配置项返回结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/SettingReleaseInfo"
+    SettingGroupsInfoRes:
+      description: 配置项作用的群组列表
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SettingGroupInfo"
+    SettingUsersInfoRes:
+      description: 配置项作用的用户列表
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SettingUserInfo"
+    SettingRulesInfoRes:
+      description: 配置项的发布规则列表
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SettingRuleInfo"
+    SettingRuleInfoRes:
+      description: 配置项的发布规则结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/SettingRuleInfo"
+    UsersRes:
+      description: 用户列表
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    UserRes:
+      description: 单个用户结果
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              result:
+                $ref: "#/components/schemas/User"
 paths:
