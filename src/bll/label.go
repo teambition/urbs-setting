@@ -2,6 +2,7 @@ package bll
 
 import (
 	"context"
+	"strings"
 
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/model"
@@ -37,13 +38,19 @@ func (b *Label) List(ctx context.Context, productName string, pg tpl.Pagination)
 }
 
 // Create 创建标签
-func (b *Label) Create(ctx context.Context, productName, labelName, desc string) (*tpl.LabelInfoRes, error) {
+func (b *Label) Create(ctx context.Context, productName string, body *tpl.LabelBody) (*tpl.LabelInfoRes, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
 	}
 
-	label := &schema.Label{ProductID: productID, Name: labelName, Desc: desc}
+	label := &schema.Label{ProductID: productID, Name: body.Name, Desc: body.Desc}
+	if body.Channels != nil {
+		label.Channels = strings.Join(*body.Channels, ",")
+	}
+	if body.Clients != nil {
+		label.Clients = strings.Join(*body.Clients, ",")
+	}
 	if err = b.ms.Label.Create(ctx, label); err != nil {
 		return nil, err
 	}
