@@ -37,7 +37,7 @@ func (a *Label) Create(ctx *gear.Context) error {
 		return err
 	}
 
-	res, err := a.blls.Label.Create(ctx, req.Product, body.Name, body.Desc)
+	res, err := a.blls.Label.Create(ctx, req.Product, &body)
 	if err != nil {
 		return err
 	}
