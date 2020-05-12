@@ -2,6 +2,7 @@ package bll
 
 import (
 	"context"
+	"strings"
 
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/model"
@@ -83,7 +84,7 @@ func (b *Setting) Get(ctx context.Context, productName, moduleName, settingName 
 }
 
 // Create 创建功能模块配置项
-func (b *Setting) Create(ctx context.Context, productName, moduleName, settingName, desc string) (*tpl.SettingInfoRes, error) {
+func (b *Setting) Create(ctx context.Context, productName, moduleName string, body *tpl.SettingCreateBody) (*tpl.SettingInfoRes, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
@@ -94,7 +95,17 @@ func (b *Setting) Create(ctx context.Context, productName, moduleName, settingNa
 		return nil, err
 	}
 
-	setting := &schema.Setting{ModuleID: module.ID, Name: settingName, Desc: desc}
+	setting := &schema.Setting{ModuleID: module.ID, Name: body.Name, Desc: body.Desc}
+	if body.Channels != nil {
+		setting.Channels = strings.Join(*body.Channels, ",")
+	}
+	if body.Clients != nil {
+		setting.Clients = strings.Join(*body.Clients, ",")
+	}
+	if body.Values != nil {
+		setting.Values = strings.Join(*body.Values, ",")
+	}
+
 	if err = b.ms.Setting.Create(ctx, setting); err != nil {
 		return nil, err
 	}
