@@ -24,7 +24,7 @@
       parameters:
         - $ref: '#/components/parameters/HeaderAuthorization'
       requestBody:
-        $ref: '#/components/requestBodies/NameDescBody'
+        $ref: '#/components/requestBodies/LabelBody'
       responses:
         '200':
           $ref: '#/components/responses/LabelInfoRes'

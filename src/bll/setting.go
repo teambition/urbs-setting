@@ -84,7 +84,7 @@ func (b *Setting) Get(ctx context.Context, productName, moduleName, settingName 
 }
 
 // Create 创建功能模块配置项
-func (b *Setting) Create(ctx context.Context, productName, moduleName string, body *tpl.SettingCreateBody) (*tpl.SettingInfoRes, error) {
+func (b *Setting) Create(ctx context.Context, productName, moduleName string, body *tpl.SettingBody) (*tpl.SettingInfoRes, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err

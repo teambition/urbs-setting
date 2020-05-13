@@ -58,7 +58,7 @@ Accept: application/json
   "name": "urbs-setting",
   "version": "v1.2.0",
   "gitSHA1": "cd7e82a",
-  "buildTime": "2020-05-08T05:38:45.231Z"
+  "buildTime": "2020-05-13T06:41:11.814Z"
 }
 ```
 
@@ -240,7 +240,7 @@ Authorization: string
       "uid": "5e82d747fe02a50021d339f3",
       "labels": "{\"teambition\":[{\"l\":\"dev\"}]}",
       "activeAt": 1585636012,
-      "createdAt": "2020-05-08T05:38:45.237Z"
+      "createdAt": "2020-05-13T06:41:11.821Z"
     }
   ]
 }
@@ -320,7 +320,7 @@ Authorization: string
       "value": "disable",
       "lastValue": "",
       "release": 1,
-      "assignedAt": "2020-05-08T05:38:45.237Z"
+      "assignedAt": "2020-05-13T06:41:11.822Z"
     }
   ]
 }
@@ -401,7 +401,7 @@ Authorization: string
       "name": "task-share",
       "desc": "string",
       "release": 1,
-      "assignedAt": "2020-05-08T05:38:45.238Z"
+      "assignedAt": "2020-05-13T06:41:11.823Z"
     }
   ]
 }
@@ -472,7 +472,7 @@ Authorization: string
     "uid": "5e82d747fe02a50021d339f3",
     "labels": "{\"teambition\":[{\"l\":\"dev\"}]}",
     "activeAt": 1585636012,
-    "createdAt": "2020-05-08T05:38:45.238Z"
+    "createdAt": "2020-05-13T06:41:11.823Z"
   }
 }
 ```
@@ -549,7 +549,7 @@ Authorization: string
       "value": "disable",
       "lastValue": "",
       "release": 1,
-      "assignedAt": "2020-05-08T05:38:45.239Z"
+      "assignedAt": "2020-05-13T06:41:11.824Z"
     }
   ]
 }
@@ -938,7 +938,7 @@ Authorization: string
       "name": "task-share",
       "desc": "string",
       "release": 1,
-      "assignedAt": "2020-05-08T05:38:45.240Z"
+      "assignedAt": "2020-05-13T06:41:11.826Z"
     }
   ]
 }
@@ -1019,7 +1019,7 @@ Authorization: string
       "value": "disable",
       "lastValue": "",
       "release": 1,
-      "assignedAt": "2020-05-08T05:38:45.241Z"
+      "assignedAt": "2020-05-13T06:41:11.826Z"
     }
   ]
 }
@@ -1101,8 +1101,8 @@ Authorization: string
       "desc": "string",
       "syncAt": 1585636012,
       "status": 99,
-      "createdAt": "2020-05-08T05:38:45.241Z",
-      "updatedAt": "2020-05-08T05:38:45.241Z"
+      "createdAt": "2020-05-13T06:41:11.827Z",
+      "updatedAt": "2020-05-13T06:41:11.827Z"
     }
   ]
 }
@@ -1325,8 +1325,8 @@ Authorization: string
     "desc": "string",
     "syncAt": 1585636012,
     "status": 99,
-    "createdAt": "2020-05-08T05:38:45.243Z",
-    "updatedAt": "2020-05-08T05:38:45.243Z"
+    "createdAt": "2020-05-13T06:41:11.828Z",
+    "updatedAt": "2020-05-13T06:41:11.828Z"
   }
 }
 ```
@@ -1705,7 +1705,7 @@ Authorization: string
     {
       "user": "5e82d747fe02a50021d339f3",
       "syncAt": 1585636012,
-      "createdAt": "2020-05-08T05:38:45.245Z"
+      "createdAt": "2020-05-13T06:41:11.829Z"
     }
   ]
 }
@@ -1843,8 +1843,8 @@ Authorization: string
       "name": "urbs",
       "desc": "string",
       "status": 0,
-      "createdAt": "2020-05-08T05:38:45.248Z",
-      "updatedAt": "2020-05-08T05:38:45.248Z",
+      "createdAt": "2020-05-13T06:41:11.831Z",
+      "updatedAt": "2020-05-13T06:41:11.831Z",
       "deletedAt": null,
       "offlineAt": null
     }
@@ -1925,7 +1925,7 @@ Authorization: string
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
-|body|body|[NameDescBody](#schemanamedescbody)|true|创建产品、功能模块、配置项的请求数据|
+|body|body|[NameDescBody](#schemanamedescbody)|true|创建产品、功能模块等的请求数据|
 |» name|body|string|false|名称，必须符合正则 /^[0-9a-z][0-9a-z.-]{0,61}[0-9a-z]$/|
 |» desc|body|string|false|描述|
 
@@ -1939,8 +1939,8 @@ Authorization: string
     "name": "urbs",
     "desc": "string",
     "status": 0,
-    "createdAt": "2020-05-08T05:38:45.248Z",
-    "updatedAt": "2020-05-08T05:38:45.248Z",
+    "createdAt": "2020-05-13T06:41:11.831Z",
+    "updatedAt": "2020-05-13T06:41:11.831Z",
     "deletedAt": null,
     "offlineAt": null
   }
@@ -2042,8 +2042,8 @@ Authorization: string
     "desc": "string",
     "syncAt": 1585636012,
     "status": 99,
-    "createdAt": "2020-05-08T05:38:45.248Z",
-    "updatedAt": "2020-05-08T05:38:45.248Z"
+    "createdAt": "2020-05-13T06:41:11.832Z",
+    "updatedAt": "2020-05-13T06:41:11.832Z"
   }
 }
 ```
@@ -2317,8 +2317,8 @@ Authorization: string
       ],
       "status": 100,
       "release": 2,
-      "createdAt": "2020-05-08T05:38:45.250Z",
-      "updatedAt": "2020-05-08T05:38:45.250Z",
+      "createdAt": "2020-05-13T06:41:11.833Z",
+      "updatedAt": "2020-05-13T06:41:11.833Z",
       "offlineAt": null
     }
   ]
@@ -2385,7 +2385,7 @@ Authorization: string
 
 ```json
 {
-  "name": "product or module or setting"
+  "name": "beta"
 }
 ```
 
@@ -2394,9 +2394,11 @@ Authorization: string
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
-|body|body|[NameDescBody](#schemanamedescbody)|true|创建产品、功能模块、配置项的请求数据|
-|» name|body|string|false|名称，必须符合正则 /^[0-9a-z][0-9a-z.-]{0,61}[0-9a-z]$/|
+|body|body|[LabelBody](#schemalabelbody)|true|创建灰度标签的请求数据|
+|» name|body|string|false|名称，必须符合正则 /^[0-9a-z][0-9a-z-]{0,61}[0-9a-z]$/|
 |» desc|body|string|false|描述|
+|» channels|body|[string]|false|该灰度标签适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有|
+|» clients|body|[string]|false|该灰度标签适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有|
 
 > Example responses
 
@@ -2417,8 +2419,8 @@ Authorization: string
     ],
     "status": 100,
     "release": 2,
-    "createdAt": "2020-05-08T05:38:45.250Z",
-    "updatedAt": "2020-05-08T05:38:45.250Z",
+    "createdAt": "2020-05-13T06:41:11.834Z",
+    "updatedAt": "2020-05-13T06:41:11.834Z",
     "offlineAt": null
   }
 }
@@ -2524,8 +2526,8 @@ Authorization: string
     ],
     "status": 100,
     "release": 2,
-    "createdAt": "2020-05-08T05:38:45.251Z",
-    "updatedAt": "2020-05-08T05:38:45.251Z",
+    "createdAt": "2020-05-13T06:41:11.834Z",
+    "updatedAt": "2020-05-13T06:41:11.834Z",
     "offlineAt": null
   }
 }
@@ -2825,7 +2827,7 @@ Authorization: string
   "result": [
     {
       "labelHID": "urbs",
-      "assignedAt": "2020-05-08T05:38:45.253Z",
+      "assignedAt": "2020-05-13T06:41:11.836Z",
       "release": 2,
       "user": "50c32afae8cf1439d35a87e6"
     }
@@ -2898,7 +2900,7 @@ Authorization: string
   "result": [
     {
       "labelHID": "urbs",
-      "assignedAt": "2020-05-08T05:38:45.253Z",
+      "assignedAt": "2020-05-13T06:41:11.836Z",
       "release": 2,
       "group": "50c32afae8cf1439d35a87e6",
       "kind": "organization",
@@ -2978,8 +2980,8 @@ Authorization: string
       "kind": "userPercent",
       "rule": "{\"value\": 10}",
       "release": 2,
-      "createdAt": "2020-05-08T05:38:45.254Z",
-      "updatedAt": "2020-05-08T05:38:45.254Z"
+      "createdAt": "2020-05-13T06:41:11.837Z",
+      "updatedAt": "2020-05-13T06:41:11.837Z"
     }
   ]
 }
@@ -3071,8 +3073,8 @@ Authorization: string
     "kind": "userPercent",
     "rule": "{\"value\": 10}",
     "release": 2,
-    "createdAt": "2020-05-08T05:38:45.254Z",
-    "updatedAt": "2020-05-08T05:38:45.254Z"
+    "createdAt": "2020-05-13T06:41:11.837Z",
+    "updatedAt": "2020-05-13T06:41:11.837Z"
   }
 }
 ```
@@ -3164,8 +3166,8 @@ Authorization: string
     "kind": "userPercent",
     "rule": "{\"value\": 10}",
     "release": 2,
-    "createdAt": "2020-05-08T05:38:45.255Z",
-    "updatedAt": "2020-05-08T05:38:45.255Z"
+    "createdAt": "2020-05-13T06:41:11.838Z",
+    "updatedAt": "2020-05-13T06:41:11.838Z"
   }
 }
 ```
@@ -3306,8 +3308,8 @@ Authorization: string
       "name": "urbs",
       "desc": "string",
       "status": 0,
-      "createdAt": "2020-05-08T05:38:45.256Z",
-      "updatedAt": "2020-05-08T05:38:45.256Z",
+      "createdAt": "2020-05-13T06:41:11.839Z",
+      "updatedAt": "2020-05-13T06:41:11.839Z",
       "offlineAt": null
     }
   ]
@@ -3379,7 +3381,7 @@ Authorization: string
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
-|body|body|[NameDescBody](#schemanamedescbody)|true|创建产品、功能模块、配置项的请求数据|
+|body|body|[NameDescBody](#schemanamedescbody)|true|创建产品、功能模块等的请求数据|
 |» name|body|string|false|名称，必须符合正则 /^[0-9a-z][0-9a-z.-]{0,61}[0-9a-z]$/|
 |» desc|body|string|false|描述|
 
@@ -3393,8 +3395,8 @@ Authorization: string
     "name": "urbs",
     "desc": "string",
     "status": 0,
-    "createdAt": "2020-05-08T05:38:45.256Z",
-    "updatedAt": "2020-05-08T05:38:45.256Z",
+    "createdAt": "2020-05-13T06:41:11.839Z",
+    "updatedAt": "2020-05-13T06:41:11.839Z",
     "offlineAt": null
   }
 }
@@ -3477,8 +3479,8 @@ Authorization: string
     "name": "urbs",
     "desc": "string",
     "status": 0,
-    "createdAt": "2020-05-08T05:38:45.257Z",
-    "updatedAt": "2020-05-08T05:38:45.257Z",
+    "createdAt": "2020-05-13T06:41:11.839Z",
+    "updatedAt": "2020-05-13T06:41:11.839Z",
     "offlineAt": null
   }
 }
@@ -3632,8 +3634,8 @@ Authorization: string
         "true",
         "false"
       ],
-      "createdAt": "2020-05-08T05:38:45.258Z",
-      "updatedAt": "2020-05-08T05:38:45.258Z",
+      "createdAt": "2020-05-13T06:41:11.841Z",
+      "updatedAt": "2020-05-13T06:41:11.841Z",
       "offlineAt": null
     }
   ]
@@ -3735,8 +3737,8 @@ Authorization: string
         "true",
         "false"
       ],
-      "createdAt": "2020-05-08T05:38:45.259Z",
-      "updatedAt": "2020-05-08T05:38:45.259Z",
+      "createdAt": "2020-05-13T06:41:11.841Z",
+      "updatedAt": "2020-05-13T06:41:11.841Z",
       "offlineAt": null
     }
   ]
@@ -3805,7 +3807,7 @@ Authorization: string
 
 ```json
 {
-  "name": "product or module or setting"
+  "name": "some-setting"
 }
 ```
 
@@ -3816,9 +3818,12 @@ Authorization: string
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
 |module|path|string|true|功能模块名称|
-|body|body|[NameDescBody](#schemanamedescbody)|true|创建产品、功能模块、配置项的请求数据|
+|body|body|[SettingBody](#schemasettingbody)|true|创建配置项的请求数据|
 |» name|body|string|false|名称，必须符合正则 /^[0-9a-z][0-9a-z.-]{0,61}[0-9a-z]$/|
 |» desc|body|string|false|描述|
+|» channels|body|[string]|false|该配置项适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有|
+|» clients|body|[string]|false|该配置项适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有|
+|» values|body|[string]|false|该配置项可选值列表，配置项指派给用户或群组时只能从该列表中选择合法值|
 
 > Example responses
 
@@ -3848,8 +3853,8 @@ Authorization: string
         "true",
         "false"
       ],
-      "createdAt": "2020-05-08T05:38:45.260Z",
-      "updatedAt": "2020-05-08T05:38:45.260Z",
+      "createdAt": "2020-05-13T06:41:11.842Z",
+      "updatedAt": "2020-05-13T06:41:11.842Z",
       "offlineAt": null
     }
   ]
@@ -3946,8 +3951,8 @@ Authorization: string
       "true",
       "false"
     ],
-    "createdAt": "2020-05-08T05:38:45.260Z",
-    "updatedAt": "2020-05-08T05:38:45.260Z",
+    "createdAt": "2020-05-13T06:41:11.842Z",
+    "updatedAt": "2020-05-13T06:41:11.842Z",
     "offlineAt": null
   }
 }
@@ -4059,8 +4064,8 @@ Authorization: string
       "true",
       "false"
     ],
-    "createdAt": "2020-05-08T05:38:45.261Z",
-    "updatedAt": "2020-05-08T05:38:45.261Z",
+    "createdAt": "2020-05-13T06:41:11.843Z",
+    "updatedAt": "2020-05-13T06:41:11.843Z",
     "offlineAt": null
   }
 }
@@ -4373,8 +4378,8 @@ Authorization: string
       "rule": "{\"value\": 10}",
       "value": "x",
       "release": 2,
-      "createdAt": "2020-05-08T05:38:45.264Z",
-      "updatedAt": "2020-05-08T05:38:45.264Z"
+      "createdAt": "2020-05-13T06:41:11.845Z",
+      "updatedAt": "2020-05-13T06:41:11.845Z"
     }
   ]
 }
@@ -4451,7 +4456,7 @@ Authorization: string
   "result": [
     {
       "settingHID": "urbs",
-      "assignedAt": "2020-05-08T05:38:45.265Z",
+      "assignedAt": "2020-05-13T06:41:11.845Z",
       "release": 2,
       "group": "50c32afae8cf1439d35a87e6",
       "kind": "organization",
@@ -4780,7 +4785,7 @@ HeaderAuthorizationJWT
   "name": "urbs-setting",
   "version": "v1.2.0",
   "gitSHA1": "cd7e82a",
-  "buildTime": "2020-05-08T05:38:45.267Z"
+  "buildTime": "2020-05-13T06:41:11.847Z"
 }
 
 ```
@@ -4841,8 +4846,8 @@ HeaderAuthorizationJWT
   ],
   "status": 100,
   "release": 2,
-  "createdAt": "2020-05-08T05:38:45.267Z",
-  "updatedAt": "2020-05-08T05:38:45.267Z",
+  "createdAt": "2020-05-13T06:41:11.847Z",
+  "updatedAt": "2020-05-13T06:41:11.847Z",
   "offlineAt": null
 }
 
@@ -4875,7 +4880,7 @@ HeaderAuthorizationJWT
   "name": "task-share",
   "desc": "string",
   "release": 1,
-  "assignedAt": "2020-05-08T05:38:45.267Z"
+  "assignedAt": "2020-05-13T06:41:11.847Z"
 }
 
 ```
@@ -4905,7 +4910,7 @@ HeaderAuthorizationJWT
   "value": "disable",
   "lastValue": "",
   "release": 1,
-  "assignedAt": "2020-05-08T05:38:45.268Z"
+  "assignedAt": "2020-05-13T06:41:11.847Z"
 }
 
 ```
@@ -4933,7 +4938,7 @@ HeaderAuthorizationJWT
   "uid": "5e82d747fe02a50021d339f3",
   "labels": "{\"teambition\":[{\"l\":\"dev\"}]}",
   "activeAt": 1585636012,
-  "createdAt": "2020-05-08T05:38:45.268Z"
+  "createdAt": "2020-05-13T06:41:11.847Z"
 }
 
 ```
@@ -4958,8 +4963,8 @@ HeaderAuthorizationJWT
   "desc": "string",
   "syncAt": 1585636012,
   "status": 99,
-  "createdAt": "2020-05-08T05:38:45.268Z",
-  "updatedAt": "2020-05-08T05:38:45.268Z"
+  "createdAt": "2020-05-13T06:41:11.848Z",
+  "updatedAt": "2020-05-13T06:41:11.848Z"
 }
 
 ```
@@ -4984,7 +4989,7 @@ HeaderAuthorizationJWT
 {
   "user": "5e82d747fe02a50021d339f3",
   "syncAt": 1585636012,
-  "createdAt": "2020-05-08T05:38:45.268Z"
+  "createdAt": "2020-05-13T06:41:11.848Z"
 }
 
 ```
@@ -5006,8 +5011,8 @@ HeaderAuthorizationJWT
   "name": "urbs",
   "desc": "string",
   "status": 0,
-  "createdAt": "2020-05-08T05:38:45.268Z",
-  "updatedAt": "2020-05-08T05:38:45.268Z",
+  "createdAt": "2020-05-13T06:41:11.848Z",
+  "updatedAt": "2020-05-13T06:41:11.848Z",
   "deletedAt": null,
   "offlineAt": null
 }
@@ -5060,8 +5065,8 @@ HeaderAuthorizationJWT
   "name": "urbs",
   "desc": "string",
   "status": 0,
-  "createdAt": "2020-05-08T05:38:45.268Z",
-  "updatedAt": "2020-05-08T05:38:45.268Z",
+  "createdAt": "2020-05-13T06:41:11.848Z",
+  "updatedAt": "2020-05-13T06:41:11.848Z",
   "offlineAt": null
 }
 
@@ -5102,8 +5107,8 @@ HeaderAuthorizationJWT
     "true",
     "false"
   ],
-  "createdAt": "2020-05-08T05:38:45.268Z",
-  "updatedAt": "2020-05-08T05:38:45.268Z",
+  "createdAt": "2020-05-13T06:41:11.848Z",
+  "updatedAt": "2020-05-13T06:41:11.848Z",
   "offlineAt": null
 }
 
@@ -5160,7 +5165,7 @@ HeaderAuthorizationJWT
 ```json
 {
   "labelHID": "urbs",
-  "assignedAt": "2020-05-08T05:38:45.269Z",
+  "assignedAt": "2020-05-13T06:41:11.849Z",
   "release": 2,
   "group": "50c32afae8cf1439d35a87e6",
   "kind": "organization",
@@ -5189,7 +5194,7 @@ HeaderAuthorizationJWT
 ```json
 {
   "labelHID": "urbs",
-  "assignedAt": "2020-05-08T05:38:45.269Z",
+  "assignedAt": "2020-05-13T06:41:11.849Z",
   "release": 2,
   "user": "50c32afae8cf1439d35a87e6"
 }
@@ -5216,8 +5221,8 @@ HeaderAuthorizationJWT
   "kind": "userPercent",
   "rule": "{\"value\": 10}",
   "release": 2,
-  "createdAt": "2020-05-08T05:38:45.269Z",
-  "updatedAt": "2020-05-08T05:38:45.269Z"
+  "createdAt": "2020-05-13T06:41:11.849Z",
+  "updatedAt": "2020-05-13T06:41:11.849Z"
 }
 
 ```
@@ -5270,7 +5275,7 @@ HeaderAuthorizationJWT
 ```json
 {
   "settingHID": "urbs",
-  "assignedAt": "2020-05-08T05:38:45.270Z",
+  "assignedAt": "2020-05-13T06:41:11.849Z",
   "release": 2,
   "group": "50c32afae8cf1439d35a87e6",
   "kind": "organization",
@@ -5308,8 +5313,8 @@ HeaderAuthorizationJWT
   "rule": "{\"value\": 10}",
   "value": "x",
   "release": 2,
-  "createdAt": "2020-05-08T05:38:45.270Z",
-  "updatedAt": "2020-05-08T05:38:45.270Z"
+  "createdAt": "2020-05-13T06:41:11.849Z",
+  "updatedAt": "2020-05-13T06:41:11.849Z"
 }
 
 ```

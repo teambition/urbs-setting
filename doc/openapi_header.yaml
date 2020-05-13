@@ -830,7 +830,7 @@ components:
             example: {"syncAt": 1585638012}
     NameDescBody:
       required: true
-      description: 创建产品、功能模块、配置项的请求数据
+      description: 创建产品、功能模块等的请求数据
       content:
         application/json:
           schema:
@@ -839,12 +839,84 @@ components:
               name:
                 type: string
                 title: name
+                required: true
                 description: 名称，必须符合正则 /^[0-9a-z][0-9a-z.-]{0,61}[0-9a-z]$/
               desc:
                 type: string
                 title: desc
                 description: 描述
             example: {"name": "product or module or setting"}
+    LabelBody:
+      required: true
+      description: 创建灰度标签的请求数据
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                title: name
+                required: true
+                description: 名称，必须符合正则 /^[0-9a-z][0-9a-z-]{0,61}[0-9a-z]$/
+              desc:
+                type: string
+                title: desc
+                description: 描述
+              channels:
+                type: array
+                description: 该灰度标签适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有
+                example: ["beta"]
+                items:
+                  type: string
+                default: null
+              clients:
+                type: array
+                description: 该灰度标签适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有
+                example: ["ios", "android"]
+                items:
+                  type: string
+                default: null
+            example: {"name": "beta"}
+    SettingBody:
+      required: true
+      description: 创建配置项的请求数据
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                title: name
+                required: true
+                description: 名称，必须符合正则 /^[0-9a-z][0-9a-z.-]{0,61}[0-9a-z]$/
+              desc:
+                type: string
+                title: desc
+                description: 描述
+              channels:
+                type: array
+                description: 该配置项适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有
+                example: ["beta"]
+                items:
+                  type: string
+                default: null
+              clients:
+                type: array
+                description: 该配置项适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有
+                example: ["ios", "android"]
+                items:
+                  type: string
+                default: null
+              values:
+                type: array
+                description: 该配置项可选值列表，配置项指派给用户或群组时只能从该列表中选择合法值
+                example: ["true", "false"]
+                items:
+                  type: string
+                default: null
+            example: {"name": "some-setting"}
     ProductUpdateBody:
       required: true
       description: 更新产品请求数据

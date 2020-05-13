@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file starting fro
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 -----
+## [1.3.2] - 2020-05-13
+
+**Change:**
+
+- Create setting with more params.
+
+**Fixed:**
+
+- Fix `name` field for `urbs_statistic` table and `urbs_lock` table.
+
+## [1.3.1] - 2020-05-11
+
+**Change:**
+
+- Create label with more params.
+
 ## [1.3.0] - 2020-05-08
 
 **Change:**

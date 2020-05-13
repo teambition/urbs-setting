@@ -45,7 +45,7 @@ func (a *Setting) Create(ctx *gear.Context) error {
 		return err
 	}
 
-	body := tpl.SettingCreateBody{}
+	body := tpl.SettingBody{}
 	if err := ctx.ParseBody(&body); err != nil {
 		return err
 	}

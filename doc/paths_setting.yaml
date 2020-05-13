@@ -44,7 +44,7 @@
         - $ref: "#/components/parameters/PathProduct"
         - $ref: "#/components/parameters/PathModule"
       requestBody:
-        $ref: '#/components/requestBodies/NameDescBody'
+        $ref: '#/components/requestBodies/SettingBody'
       responses:
         '200':
           $ref: '#/components/responses/SettingsInfoRes'

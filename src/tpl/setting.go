@@ -10,8 +10,8 @@ import (
 	"github.com/teambition/urbs-setting/src/service"
 )
 
-// SettingCreateBody ...
-type SettingCreateBody struct {
+// SettingBody ...
+type SettingBody struct {
 	Name     string    `json:"name"`
 	Desc     string    `json:"desc"`
 	Channels *[]string `json:"channels"`
@@ -20,7 +20,7 @@ type SettingCreateBody struct {
 }
 
 // Validate 实现 gear.BodyTemplate。
-func (t *SettingCreateBody) Validate() error {
+func (t *SettingBody) Validate() error {
 	if !validNameReg.MatchString(t.Name) {
 		return gear.ErrBadRequest.WithMsgf("invalid name: %s", t.Name)
 	}
