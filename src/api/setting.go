@@ -45,12 +45,12 @@ func (a *Setting) Create(ctx *gear.Context) error {
 		return err
 	}
 
-	body := tpl.NameDescBody{}
+	body := tpl.SettingCreateBody{}
 	if err := ctx.ParseBody(&body); err != nil {
 		return err
 	}
 
-	res, err := a.blls.Setting.Create(ctx, req.Product, req.Module, body.Name, body.Desc)
+	res, err := a.blls.Setting.Create(ctx, req.Product, req.Module, &body)
 	if err != nil {
 		return err
 	}
