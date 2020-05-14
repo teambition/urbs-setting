@@ -147,6 +147,9 @@ func (b *User) ListSettingsUnionAll(ctx context.Context, uid, productName, chann
 	if err != nil {
 		return nil, err
 	}
+	for i := range settings {
+		settings[i].Product = productName
+	}
 	if pg.PageToken == "" { // 请求首页时尝试应用 SettingRules
 		go b.ms.TryApplySettingRules(ctx, productID, user.ID)
 	}
