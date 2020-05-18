@@ -6,6 +6,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/teambition/gear"
+	tracing "github.com/teambition/gear-tracing"
 
 	"github.com/teambition/urbs-setting/src/logging"
 	"github.com/teambition/urbs-setting/src/util"
@@ -64,6 +65,7 @@ func NewApp() *gear.App {
 		return nil
 	})
 
+	app.Use(tracing.New("EntryPoint"))
 	if app.Env() != "test" {
 		app.UseHandler(logging.AccessLogger)
 	}

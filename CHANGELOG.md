@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file starting fro
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 -----
+## [1.3.3] - 2020-05-18
+
+**Fixed:**
+
+- Fix API's totalSize count.
+- Fix tracing middleware.
+
 ## [1.3.2] - 2020-05-13
 
 **Change:**

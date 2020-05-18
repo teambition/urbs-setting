@@ -76,7 +76,7 @@ func (m *User) Find(ctx context.Context, pg tpl.Pagination) ([]schema.User, int,
 	db := m.DB.Where("`id` <= ?", cursor)
 	if pg.Q != "" {
 		db = m.DB.Where("`id` <= ? and `uid` like ?", cursor, pg.Q)
-		err = db.Model(&schema.User{}).Count(&total).Error
+		err = m.DB.Where("`uid` like ?", pg.Q).Model(&schema.User{}).Count(&total).Error
 	}
 
 	if err == nil {

@@ -68,18 +68,22 @@ func (m *Group) Find(ctx context.Context, kind string, pg tpl.Pagination) ([]sch
 	groups := make([]schema.Group, 0)
 	cursor := pg.TokenToID()
 	db := m.DB.Where("`id` <= ?", cursor)
+	dbc := m.DB
 	if pg.Q != "" {
 		db = m.DB.Where("`id` <= ? and `uid` like ?", cursor, pg.Q)
+		dbc = m.DB.Where("`uid` like ?", pg.Q)
 	}
 	if kind != "" {
 		db = m.DB.Where("`id` <= ? and `kind` = ?", cursor, kind)
+		dbc = m.DB.Where("`kind` = ?", kind)
 		if pg.Q != "" {
 			db = m.DB.Where("`id` <= ? and `kind` = ? and `uid` like ?", cursor, kind, pg.Q)
+			dbc = m.DB.Where("`kind` = ? and `uid` like ?", kind, pg.Q)
 		}
 	}
 
 	total := 0
-	err := db.Model(&schema.Group{}).Count(&total).Error
+	err := dbc.Model(&schema.Group{}).Count(&total).Error
 	if err == nil {
 		err = db.Order("`id` desc").Limit(pg.PageSize + 1).Find(&groups).Error
 	}

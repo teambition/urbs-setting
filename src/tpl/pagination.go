@@ -17,6 +17,9 @@ type Search struct {
 // Validate escape and build MySQL LIKE pattern
 func (s *Search) Validate() error {
 	if s.Q != "" {
+		if len(s.Q) <= 2 {
+			return gear.ErrBadRequest.WithMsgf("too small query: %s", s.Q)
+		}
 		s.Q = strings.ReplaceAll(s.Q, `\`, "-")
 		s.Q = strings.ReplaceAll(s.Q, "%", `\%`)
 		s.Q = strings.ReplaceAll(s.Q, "_", `\_`)

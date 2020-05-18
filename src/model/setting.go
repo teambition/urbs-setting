@@ -148,12 +148,14 @@ func (m *Setting) Find(ctx context.Context, moduleID int64, pg tpl.Pagination) (
 	settings := make([]schema.Setting, 0)
 	cursor := pg.TokenToID()
 	db := m.DB.Where("`id` <= ? and `module_id` = ? and `offline_at` is null", cursor, moduleID)
+	dbc := m.DB.Where("`module_id` = ? and `offline_at` is null", moduleID)
 	if pg.Q != "" {
 		db = m.DB.Where("`id` <= ? and `module_id` = ? and `offline_at` is null and `name` like ?", cursor, moduleID, pg.Q)
+		dbc = m.DB.Where("`module_id` = ? and `offline_at` is null and `name` like ?", moduleID, pg.Q)
 	}
 
 	total := 0
-	err := db.Model(&schema.Setting{}).Count(&total).Error
+	err := dbc.Model(&schema.Setting{}).Count(&total).Error
 	if err == nil {
 		err = db.Order("`id` desc").Limit(pg.PageSize + 1).Find(&settings).Error
 	}

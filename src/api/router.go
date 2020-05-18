@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/teambition/gear"
-	tracing "github.com/teambition/gear-tracing"
 
 	"github.com/teambition/urbs-setting/src/bll"
 	"github.com/teambition/urbs-setting/src/middleware"
@@ -43,13 +42,12 @@ func newRouters(apis *APIs) []*gear.Router {
 	// health check
 	router.Get("/healthz", apis.Healthz.Get)
 	// 读取指定用户的灰度标签，包括继承自群组的标签，返回轻量级 labels，无身份验证，用于网关
-	router.Get("/users/:uid/labels:cache", tracing.New(), apis.User.ListCachedLabels)
+	router.Get("/users/:uid/labels:cache", apis.User.ListCachedLabels)
 
 	routerV1 := gear.NewRouter(gear.RouterOptions{
 		Root: "/v1",
 	})
 	routerV1.Use(middleware.Auth)
-	routerV1.Use(tracing.New())
 
 	// ***** user ******
 	// 读取用户列表，支持条件筛选

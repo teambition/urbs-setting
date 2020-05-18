@@ -79,12 +79,14 @@ func (m *Product) Find(ctx context.Context, pg tpl.Pagination) ([]schema.Product
 	products := make([]schema.Product, 0)
 	cursor := pg.TokenToID()
 	db := m.DB.Where("`id` <= ? and `deleted_at` is null and `offline_at` is null", cursor)
+	dbc := m.DB.Where("`deleted_at` is null and `offline_at` is null")
 	if pg.Q != "" {
 		db = m.DB.Where("`id` <= ? and `deleted_at` is null and `offline_at` is null and `name` like ?", cursor, pg.Q)
+		dbc = m.DB.Where("`deleted_at` is null and `offline_at` is null and `name` like ?", pg.Q)
 	}
 
 	total := 0
-	err := db.Model(&schema.Product{}).Count(&total).Error
+	err := dbc.Model(&schema.Product{}).Count(&total).Error
 	if err == nil {
 		err = db.Order("`id` desc").Limit(pg.PageSize + 1).Find(&products).Error
 	}

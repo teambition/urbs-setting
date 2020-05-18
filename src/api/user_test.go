@@ -523,6 +523,7 @@ func TestUserAPIs(t *testing.T) {
 
 			data := json.Result[0]
 			assert.Equal(service.IDToHID(setting0.ID, "setting"), data.HID)
+			assert.Equal(product.Name, data.Product)
 			assert.Equal(module.Name, data.Module)
 			assert.Equal(setting0.Name, data.Name)
 			assert.Equal("a", data.Value)
