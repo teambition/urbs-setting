@@ -172,33 +172,3 @@ func (b *User) CheckExists(ctx context.Context, uid string) bool {
 func (b *User) BatchAdd(ctx context.Context, users []string) error {
 	return b.ms.User.BatchAdd(ctx, users)
 }
-
-// RemoveLabel ...
-func (b *User) RemoveLabel(ctx context.Context, uid string, labelID int64) error {
-	user, err := b.ms.User.Acquire(ctx, uid)
-	if err != nil {
-		return err
-	}
-
-	return b.ms.Label.RemoveUserLabel(ctx, user.ID, labelID)
-}
-
-// RollbackSetting ...
-func (b *User) RollbackSetting(ctx context.Context, uid string, settingID int64) error {
-	user, err := b.ms.User.Acquire(ctx, uid)
-	if err != nil {
-		return err
-	}
-
-	return b.ms.Setting.RollbackUserSetting(ctx, user.ID, settingID)
-}
-
-// RemoveSetting ...
-func (b *User) RemoveSetting(ctx context.Context, uid string, settingID int64) error {
-	user, err := b.ms.User.Acquire(ctx, uid)
-	if err != nil {
-		return err
-	}
-
-	return b.ms.Setting.RemoveUserSetting(ctx, user.ID, settingID)
-}

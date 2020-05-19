@@ -229,21 +229,21 @@ func (m *Label) Delete(ctx context.Context, labelID int64) error {
 }
 
 // RemoveUserLabel 删除用户的 label
-func (m *Label) RemoveUserLabel(ctx context.Context, userID, labelID int64) error {
+func (m *Label) RemoveUserLabel(ctx context.Context, userID, labelID int64) (int64, error) {
 	res := m.DB.Where("`user_id` = ? and `label_id` = ?", userID, labelID).Delete(&schema.UserLabel{})
 	if res.RowsAffected > 0 {
 		go m.tryIncreaseLabelsStatus(ctx, []int64{labelID}, -1)
 	}
-	return res.Error
+	return res.RowsAffected, res.Error
 }
 
 // RemoveGroupLabel 删除群组的 label
-func (m *Label) RemoveGroupLabel(ctx context.Context, groupID, labelID int64) error {
+func (m *Label) RemoveGroupLabel(ctx context.Context, groupID, labelID int64) (int64, error) {
 	res := m.DB.Where("`group_id` = ? and `label_id` = ?", groupID, labelID).Delete(&schema.GroupLabel{})
 	if res.RowsAffected > 0 {
 		go m.tryRefreshLabelStatus(ctx, labelID)
 	}
-	return res.Error
+	return res.RowsAffected, res.Error
 }
 
 // Recall 撤销指定批次的用户或群组的灰度标签

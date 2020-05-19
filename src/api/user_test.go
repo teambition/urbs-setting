@@ -357,10 +357,10 @@ func TestUserAPIs(t *testing.T) {
 			assert.True(json.Result[0].Release > 0)
 		})
 
-		t.Run(`"DELETE /v1/users/:uid/labels/:hid" should work`, func(t *testing.T) {
+		t.Run(`"DELETE /v1/products/:product/labels/:label/users/:uid" should work`, func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Delete(fmt.Sprintf("%s/v1/users/%s/labels/%s", tt.Host, users[3].UID, service.IDToHID(label.ID, "label"))).
+			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s/labels/%s/users/%s", tt.Host, product.Name, label.Name, users[3].UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -370,7 +370,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.True(json.Result)
 
-			res, err = request.Delete(fmt.Sprintf("%s/v1/groups/%s/labels/%s", tt.Host, group.UID, service.IDToHID(label.ID, "label"))).
+			res, err = request.Delete(fmt.Sprintf("%s/v1/products/%s/labels/%s/groups/%s", tt.Host, product.Name, label.Name, group.UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -644,10 +644,10 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(1, len(json.Result))
 		})
 
-		t.Run(`"PUT /v1/users/:uid/settings/:hid+:rollback" should work`, func(t *testing.T) {
+		t.Run(`"PUT /v1/products/:product/modules/:module/settings/:setting/users/:uid+:rollback" should work`, func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Put(fmt.Sprintf("%s/v1/users/%s/settings/%s:rollback", tt.Host, users[0].UID, service.IDToHID(setting0.ID, "setting"))).
+			res, err := request.Put(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/users/%s:rollback", tt.Host, product.Name, module.Name, setting0.Name, users[0].UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -675,10 +675,10 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal("", data.LastValue)
 		})
 
-		t.Run(`"DELETE /v1/users/:uid/settings/:hid" should work`, func(t *testing.T) {
+		t.Run(`"DELETE /v1/products/:product/modules/:module/settings/:setting/users/:uid" should work`, func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Delete(fmt.Sprintf("%s/v1/users/%s/settings/%s", tt.Host, users[0].UID, service.IDToHID(setting0.ID, "setting"))).
+			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/users/%s", tt.Host, product.Name, module.Name, setting0.Name, users[0].UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)

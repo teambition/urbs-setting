@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file starting fro
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 -----
+## [1.4.0] - 2020-05-20
+
+**Change:**
+
+- Change user's setting and label API.
+- Change group's setting and label API.
+
 ## [1.3.3] - 2020-05-18
 
 **Fixed:**

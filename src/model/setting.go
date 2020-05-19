@@ -292,12 +292,12 @@ func (m *Setting) Delete(ctx context.Context, settingID int64) error {
 }
 
 // RemoveUserSetting 删除用户的 setting
-func (m *Setting) RemoveUserSetting(ctx context.Context, userID, settingID int64) error {
+func (m *Setting) RemoveUserSetting(ctx context.Context, userID, settingID int64) (int64, error) {
 	res := m.DB.Where("`user_id` = ? and `setting_id` = ?", userID, settingID).Delete(&schema.UserSetting{})
 	if res.RowsAffected > 0 {
 		go m.tryIncreaseSettingsStatus(ctx, []int64{settingID}, -1)
 	}
-	return res.Error
+	return res.RowsAffected, res.Error
 }
 
 const rollbackUserSettingSQL = "update `user_setting` set `value` = `user_setting`.`last_value` where `user_id` = ? and `setting_id` = ?"
@@ -309,12 +309,12 @@ func (m *Setting) RollbackUserSetting(ctx context.Context, userID, settingID int
 }
 
 // RemoveGroupSetting 删除群组的 setting
-func (m *Setting) RemoveGroupSetting(ctx context.Context, groupID, settingID int64) error {
+func (m *Setting) RemoveGroupSetting(ctx context.Context, groupID, settingID int64) (int64, error) {
 	res := m.DB.Where("`group_id` = ? and `setting_id` = ?", groupID, settingID).Delete(&schema.GroupSetting{})
 	if res.RowsAffected > 0 {
 		go m.tryRefreshSettingStatus(ctx, settingID)
 	}
-	return res.Error
+	return res.RowsAffected, res.Error
 }
 
 const rollbackGroupSettingSQL = "update `group_setting` set `value` = `group_setting`.`last_value` where `group_id` = ? and `setting_id` = ?"

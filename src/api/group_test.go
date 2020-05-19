@@ -694,7 +694,7 @@ func TestGroupAPIs(t *testing.T) {
 		})
 	})
 
-	t.Run(`"DELETE /v1/groups/:uid/labels/:hid"`, func(t *testing.T) {
+	t.Run(`"DELETE /v1/products/:product/labels/:label/groups/:uid"`, func(t *testing.T) {
 		product, err := createProduct(tt)
 		assert.Nil(t, err)
 
@@ -721,7 +721,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Nil(tt.DB.Table(`group_label`).Where("group_id = ?", group.ID).Count(&count).Error)
 			assert.Equal(int64(1), count)
 
-			res, err = request.Delete(fmt.Sprintf("%s/v1/groups/%s/labels/%s", tt.Host, group.UID, service.IDToHID(label.ID, "label"))).
+			res, err = request.Delete(fmt.Sprintf("%s/v1/products/%s/labels/%s/groups/%s", tt.Host, product.Name, label.Name, group.UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -738,7 +738,7 @@ func TestGroupAPIs(t *testing.T) {
 		t.Run("should work idempotent", func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Delete(fmt.Sprintf("%s/v1/groups/%s/labels/%s", tt.Host, group.UID, service.IDToHID(label.ID, "label"))).
+			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s/labels/%s/groups/%s", tt.Host, product.Name, label.Name, group.UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -746,7 +746,7 @@ func TestGroupAPIs(t *testing.T) {
 			json := tpl.BoolRes{}
 			_, err = res.JSON(&json)
 			assert.Nil(err)
-			assert.True(json.Result)
+			assert.False(json.Result)
 		})
 	})
 
@@ -859,7 +859,7 @@ func TestGroupAPIs(t *testing.T) {
 		})
 	})
 
-	t.Run(`"PUT /v1/groups/:uid/settings/:hid+:rollback"`, func(t *testing.T) {
+	t.Run(`"PUT /v1/products/:product/modules/:module/settings/:setting/groups/:uid+:rollback"`, func(t *testing.T) {
 		product, err := createProduct(tt)
 		assert.Nil(t, err)
 
@@ -945,7 +945,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal("x", data.LastValue)
 			assert.True(data.AssignedAt.After(time2020))
 
-			res, err = request.Put(fmt.Sprintf("%s/v1/groups/%s/settings/%s:rollback", tt.Host, group.UID, service.IDToHID(setting.ID, "setting"))).
+			res, err = request.Put(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/groups/%s:rollback", tt.Host, product.Name, module.Name, setting.Name, group.UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -969,7 +969,7 @@ func TestGroupAPIs(t *testing.T) {
 		})
 	})
 
-	t.Run(`"DELETE /v1/groups/:uid/settings/:hid"`, func(t *testing.T) {
+	t.Run(`"DELETE /v1/products/:product/modules/:module/settings/:setting/groups/:uid"`, func(t *testing.T) {
 		product, err := createProduct(tt)
 		assert.Nil(t, err)
 
@@ -1000,7 +1000,7 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Nil(tt.DB.Table(`group_setting`).Where("group_id = ?", group.ID).Count(&count).Error)
 			assert.Equal(int64(1), count)
 
-			res, err = request.Delete(fmt.Sprintf("%s/v1/groups/%s/settings/%s", tt.Host, group.UID, service.IDToHID(setting.ID, "setting"))).
+			res, err = request.Delete(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/groups/%s", tt.Host, product.Name, module.Name, setting.Name, group.UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -1017,7 +1017,7 @@ func TestGroupAPIs(t *testing.T) {
 		t.Run("should work idempotent", func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Delete(fmt.Sprintf("%s/v1/groups/%s/settings/%s", tt.Host, group.UID, service.IDToHID(setting.ID, "setting"))).
+			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/groups/%s", tt.Host, product.Name, module.Name, setting.Name, group.UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -1025,7 +1025,7 @@ func TestGroupAPIs(t *testing.T) {
 			json := tpl.BoolRes{}
 			_, err = res.JSON(&json)
 			assert.Nil(err)
-			assert.True(json.Result)
+			assert.False(json.Result)
 		})
 	})
 }

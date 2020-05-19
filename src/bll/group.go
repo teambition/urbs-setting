@@ -132,35 +132,6 @@ func (b *Group) RemoveMembers(ctx context.Context, uid, userUID string, syncLt i
 	return b.ms.Group.RemoveMembers(ctx, group.ID, userID, syncLt)
 }
 
-// RemoveLabel ...
-func (b *Group) RemoveLabel(ctx context.Context, uid string, labelID int64) error {
-	group, err := b.ms.Group.Acquire(ctx, uid)
-	if err != nil {
-		return err
-	}
-	return b.ms.Label.RemoveGroupLabel(ctx, group.ID, labelID)
-}
-
-// RollbackSetting ...
-func (b *Group) RollbackSetting(ctx context.Context, uid string, settingID int64) error {
-	group, err := b.ms.Group.Acquire(ctx, uid)
-	if err != nil {
-		return err
-	}
-
-	return b.ms.Setting.RollbackGroupSetting(ctx, group.ID, settingID)
-}
-
-// RemoveSetting ...
-func (b *Group) RemoveSetting(ctx context.Context, uid string, settingID int64) error {
-	group, err := b.ms.Group.Acquire(ctx, uid)
-	if err != nil {
-		return err
-	}
-
-	return b.ms.Setting.RemoveGroupSetting(ctx, group.ID, settingID)
-}
-
 // Update ...
 func (b *Group) Update(ctx context.Context, uid string, body tpl.GroupUpdateBody) (*tpl.GroupRes, error) {
 	group, err := b.ms.Group.Acquire(ctx, uid)
