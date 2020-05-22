@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/doug-martin/goqu/v9"
 	"github.com/jinzhu/gorm"
 	"github.com/teambition/urbs-setting/src/logging"
 	"github.com/teambition/urbs-setting/src/schema"
@@ -19,7 +20,9 @@ func init() {
 
 // Model ...
 type Model struct {
-	DB *gorm.DB
+	DB  *gorm.DB
+	GDB *goqu.Database
+	GQ  goqu.DialectWrapper
 }
 
 // Models ...
@@ -39,7 +42,7 @@ type Models struct {
 
 // NewModels ...
 func NewModels(sql *service.SQL) *Models {
-	m := &Model{DB: sql.DB}
+	m := &Model{DB: sql.DB, GDB: sql.GDB, GQ: sql.GQ}
 	return &Models{
 		Model:       m,
 		Healthz:     &Healthz{m},

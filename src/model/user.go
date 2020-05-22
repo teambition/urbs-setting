@@ -1,12 +1,11 @@
 package model
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
+	"github.com/doug-martin/goqu/v9"
 	"github.com/jinzhu/gorm"
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/conf"
@@ -370,14 +369,20 @@ func (m *User) BatchAdd(ctx context.Context, uids []string) error {
 	if len(uids) == 0 {
 		return nil
 	}
-	var buf bytes.Buffer
-	fmt.Fprint(&buf, "insert ignore into `urbs_user` (`uid`) values")
-	for _, uid := range uids {
-		fmt.Fprintf(&buf, " ('%s'),", uid)
+
+	vals := make([][]interface{}, len(uids))
+	for i := range uids {
+		vals[i] = goqu.Vals{uids[i]}
 	}
-	b := buf.Bytes()
-	b[len(b)-1] = ';'
-	err := m.DB.Exec(string(b)).Error
-	go m.tryRefreshUsersTotalSize(ctx)
+
+	insertDataset := m.GDB.Insert("urbs_user").Cols("uid").Vals(vals...).OnConflict(goqu.DoNothing())
+	res, err := insertDataset.Executor().ExecContext(ctx)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if rowsAffected > 0 {
+		go m.tryRefreshUsersTotalSize(ctx)
+	}
 	return err
 }

@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/doug-martin/goqu/v9"
+	_ "github.com/doug-martin/goqu/v9/dialect/mysql" // go-sql-driver
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql" // go-sql-driver
 	"github.com/teambition/urbs-setting/src/conf"
@@ -19,7 +21,9 @@ func init() {
 
 // SQL ...
 type SQL struct {
-	DB *gorm.DB
+	DB  *gorm.DB
+	GDB *goqu.Database
+	GQ  goqu.DialectWrapper
 }
 
 // DBStats ...
@@ -71,7 +75,10 @@ func NewDB() *SQL {
 	// SetConnMaxLifetiment 设置连接的最大可复用时间。
 	// db.DB().SetConnMaxLifetime(time.Hour)
 
+	dialect := goqu.Dialect("mysql")
 	return &SQL{
-		DB: db,
+		DB:  db,
+		GDB: dialect.DB(db.DB()),
+		GQ:  dialect,
 	}
 }

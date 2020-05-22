@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/DavidCai1993/request v0.0.0-20171115020405-aad722fa9b76
+	github.com/doug-martin/goqu/v9 v9.9.0
 	github.com/jinzhu/gorm v1.9.12
 	github.com/stretchr/testify v1.5.1
 	github.com/teambition/gear v1.21.2

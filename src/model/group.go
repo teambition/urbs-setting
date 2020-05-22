@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"github.com/doug-martin/goqu/v9"
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
@@ -19,24 +19,21 @@ type Group struct {
 
 // FindByUID 根据 uid 返回 user 数据
 func (m *Group) FindByUID(ctx context.Context, uid string, selectStr string) (*schema.Group, error) {
-	var err error
 	group := &schema.Group{}
-	db := m.DB.Where("`uid` = ?", uid)
+	sd := m.GDB.From("urbs_group").Where(goqu.C("uid").Eq(uid)).Order(goqu.C("id").Asc()).Limit(1)
 
-	if selectStr == "" {
-		err = db.First(group).Error
-	} else {
-		err = db.Select(selectStr).First(group).Error
+	if selectStr != "" {
+		sd = sd.Select(goqu.L(selectStr))
 	}
 
-	if err == nil {
-		return group, nil
+	ok, err := sd.Executor().ScanStructContext(ctx, group)
+	if err != nil {
+		return nil, err
 	}
-
-	if gorm.IsRecordNotFoundError(err) {
+	if !ok {
 		return nil, nil
 	}
-	return nil, err
+	return group, nil
 }
 
 // Acquire ...
@@ -53,7 +50,7 @@ func (m *Group) Acquire(ctx context.Context, uid string) (*schema.Group, error) 
 
 // AcquireID ...
 func (m *Group) AcquireID(ctx context.Context, uid string) (int64, error) {
-	group, err := m.FindByUID(ctx, uid, "`id`")
+	group, err := m.FindByUID(ctx, uid, "`id`, `uid`")
 	if err != nil {
 		return 0, err
 	}
@@ -67,158 +64,182 @@ func (m *Group) AcquireID(ctx context.Context, uid string) (int64, error) {
 func (m *Group) Find(ctx context.Context, kind string, pg tpl.Pagination) ([]schema.Group, int, error) {
 	groups := make([]schema.Group, 0)
 	cursor := pg.TokenToID()
-	db := m.DB.Where("`id` <= ?", cursor)
-	dbc := m.DB
-	if pg.Q != "" {
-		db = m.DB.Where("`id` <= ? and `uid` like ?", cursor, pg.Q)
-		dbc = m.DB.Where("`uid` like ?", pg.Q)
-	}
+	sdc := m.GDB.From("urbs_group")
+	sd := m.GDB.From("urbs_group").Where(goqu.C("id").Lte(cursor))
 	if kind != "" {
-		db = m.DB.Where("`id` <= ? and `kind` = ?", cursor, kind)
-		dbc = m.DB.Where("`kind` = ?", kind)
-		if pg.Q != "" {
-			db = m.DB.Where("`id` <= ? and `kind` = ? and `uid` like ?", cursor, kind, pg.Q)
-			dbc = m.DB.Where("`kind` = ? and `uid` like ?", kind, pg.Q)
-		}
+		sdc = sdc.Where(goqu.C("kind").Eq(kind))
+		sd = sd.Where(goqu.C("kind").Eq(kind))
 	}
+	if pg.Q != "" {
+		sdc = sdc.Where(goqu.C("uid").Like(pg.Q))
+		sd = sd.Where(goqu.C("uid").Like(pg.Q))
+	}
+	sd = sd.Order(goqu.C("id").Desc()).Limit(uint(pg.PageSize + 1))
 
-	total := 0
-	err := dbc.Model(&schema.Group{}).Count(&total).Error
-	if err == nil {
-		err = db.Order("`id` desc").Limit(pg.PageSize + 1).Find(&groups).Error
-	}
+	total, err := sdc.CountContext(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
-	return groups, total, nil
+	err = sd.Executor().ScanStructsContext(ctx, &groups)
+	if err != nil {
+		return nil, 0, err
+	}
+	return groups, int(total), nil
 }
-
-const listGroupLabelsSQL = "select t1.`rls`, t1.`created_at`, t2.`id`, t2.`name`, " +
-	"t2.`description`, t3.`name` as `product` " +
-	"from `group_label` t1, `urbs_label` t2, `urbs_product` t3 " +
-	"where t1.`group_id` = ? and t1.`id` <= ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.`id` " +
-	"order by t1.`id` desc " +
-	"limit ?"
-
-const countGroupLabelsSQL = "select count(t2.`id`) " +
-	"from `group_label` t1, `urbs_label` t2  " +
-	"where t1.`group_id` = ? and t1.`label_id` = t2.`id`"
-
-const searchGroupLabelsSQL = "select t1.`rls`, t1.`created_at`, t2.`id`, t2.`name`, " +
-	"t2.`description`, t3.`name` as `product` " +
-	"from `group_label` t1, `urbs_label` t2, `urbs_product` t3 " +
-	"where t1.`group_id` = ? and t1.`id` <= ? and t1.`label_id` = t2.`id` and t2.`name` like ? and t2.`product_id` = t3.`id` " +
-	"order by t1.`id` desc " +
-	"limit ?"
-
-const countSearchGroupLabelsSQL = "select count(t2.`id`) " +
-	"from `group_label` t1, `urbs_label` t2 " +
-	"where t1.`group_id` = ? and t1.`label_id` = t2.`id` and t2.`name` like ?"
 
 // FindLabels 根据群组 ID 返回其 labels 数据。TODO：支持更多筛选条件和分页
 func (m *Group) FindLabels(ctx context.Context, groupID int64, pg tpl.Pagination) ([]tpl.MyLabel, int, error) {
 	data := make([]tpl.MyLabel, 0)
 	cursor := pg.TokenToID()
-	total := 0
 
-	if pg.Q == "" {
-		if err := m.DB.Raw(countGroupLabelsSQL, groupID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
-			return nil, 0, err
-		}
-	} else {
-		if err := m.DB.Raw(countSearchGroupLabelsSQL, groupID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
-			return nil, 0, err
-		}
+	sdc := m.GDB.Select().
+		From(
+			goqu.T("group_label").As("t1"),
+			goqu.T("urbs_label").As("t2"),
+			goqu.T("urbs_product").As("t3")).
+		Where(
+			goqu.I("t1.group_id").Eq(groupID),
+			goqu.I("t1.label_id").Eq(goqu.I("t2.id")))
+
+	sd := m.GDB.Select(
+		goqu.I("t1.rls"),
+		goqu.I("t1.created_at").As("assigned_at"),
+		goqu.I("t2.id"),
+		goqu.I("t2.name"),
+		goqu.I("t2.description"),
+		goqu.I("t3.name").As("product")).
+		From(
+			goqu.T("group_label").As("t1"),
+			goqu.T("urbs_label").As("t2"),
+			goqu.T("urbs_product").As("t3")).
+		Where(
+			goqu.I("t1.group_id").Eq(groupID),
+			goqu.I("t1.id").Lte(cursor),
+			goqu.I("t1.label_id").Eq(goqu.I("t2.id")))
+
+	if pg.Q != "" {
+		sdc = sdc.Where(goqu.I("t2.name").Like(pg.Q))
+		sd = sd.Where(goqu.I("t2.name").Like(pg.Q))
 	}
 
-	var err error
-	var rows *sql.Rows
-	if pg.Q == "" {
-		rows, err = m.DB.Raw(listGroupLabelsSQL, groupID, cursor, pg.PageSize+1).Rows()
-	} else {
-		rows, err = m.DB.Raw(searchGroupLabelsSQL, groupID, cursor, pg.Q, pg.PageSize+1).Rows()
-	}
-	defer rows.Close()
+	sdc = sdc.Where(goqu.I("t2.product_id").Eq(goqu.I("t3.id")))
+	sd = sd.Where(goqu.I("t2.product_id").Eq(goqu.I("t3.id"))).
+		Order(goqu.I("t1.id").Desc()).Limit(uint(pg.PageSize + 1))
 
+	total, err := sdc.CountContext(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
+	scanner, err := sd.Executor().ScannerContext(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer scanner.Close()
 
-	for rows.Next() {
+	for scanner.Next() {
 		myLabel := tpl.MyLabel{}
-		if err := rows.Scan(&myLabel.Release, &myLabel.AssignedAt, &myLabel.ID, &myLabel.Name, &myLabel.Desc, &myLabel.Product); err != nil {
+		if err := scanner.ScanStruct(&myLabel); err != nil {
 			return nil, 0, err
 		}
 		myLabel.HID = service.IDToHID(myLabel.ID, "label")
 		data = append(data, myLabel)
 	}
 
-	return data, total, nil
+	if err := scanner.Err(); err != nil {
+		return nil, 0, err
+	}
+	return data, int(total), nil
 }
 
-const listGroupSettingsSQL = "select t1.`rls`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
-	"t2.`id`, t2.`name`, t3.`name` as `module`, t4.`name` as `product` " +
-	"from `group_setting` t1, `urbs_setting` t2, `urbs_module` t3, `urbs_product` t4 " +
-	"where t1.`group_id` = ? and t1.`id` <= ? and t1.`setting_id` = t2.`id` and t2.`module_id` = t3.`id` and t3.`product_id` = t4.`id` " +
-	"order by t1.`id` desc " +
-	"limit ?"
-
-const countGroupSettingsSQL = "select count(t2.`id`) " +
-	"from `group_setting` t1, `urbs_setting` t2 " +
-	"where t1.`group_id` = ? and t1.`setting_id` = t2.`id`"
-
-const searchGroupSettingsSQL = "select t1.`rls`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
-	"t2.`id`, t2.`name`, t3.`name` as `module`, t4.`name` as `product` " +
-	"from `group_setting` t1, `urbs_setting` t2, `urbs_module` t3, `urbs_product` t4 " +
-	"where t1.`group_id` = ? and t1.`id` <= ? and t1.`setting_id` = t2.`id` and t2.`name` like ? and t2.`module_id` = t3.`id` and t3.`product_id` = t4.`id` " +
-	"order by t1.`id` desc " +
-	"limit ?"
-
-const countSearchGroupSettingsSQL = "select count(t2.`id`) " +
-	"from `group_setting` t1, `urbs_setting` t2 " +
-	"where t1.`group_id` = ? and t1.`setting_id` = t2.`id` and t2.`name` like ?"
-
 // FindSettings 根据 Group ID, updateGt, productName 返回其 settings 数据。
-func (m *Group) FindSettings(ctx context.Context, groupID int64, pg tpl.Pagination) ([]tpl.MySetting, int, error) {
+func (m *Group) FindSettings(ctx context.Context, groupID, productID, moduleID, settingID int64, pg tpl.Pagination) ([]tpl.MySetting, int, error) {
 	data := []tpl.MySetting{}
 	cursor := pg.TokenToID()
-	total := 0
 
-	if pg.Q == "" {
-		if err := m.DB.Raw(countGroupSettingsSQL, groupID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
-			return nil, 0, err
-		}
+	sdc := m.GDB.Select().
+		From(
+			goqu.T("group_setting").As("t1"),
+			goqu.T("urbs_setting").As("t2"),
+			goqu.T("urbs_module").As("t3"),
+			goqu.T("urbs_product").As("t4")).
+		Where(goqu.I("t1.group_id").Eq(groupID))
+
+	sd := m.GDB.Select(
+		goqu.I("t1.rls"),
+		goqu.I("t1.updated_at").As("assigned_at"),
+		goqu.I("t1.value"),
+		goqu.I("t1.last_value"),
+		goqu.I("t2.id"),
+		goqu.I("t2.name"),
+		goqu.I("t2.description"),
+		goqu.I("t3.name").As("module"),
+		goqu.I("t4.name").As("product")).
+		From(
+			goqu.T("group_setting").As("t1"),
+			goqu.T("urbs_setting").As("t2"),
+			goqu.T("urbs_module").As("t3"),
+			goqu.T("urbs_product").As("t4")).
+		Where(
+			goqu.I("t1.group_id").Eq(groupID),
+			goqu.I("t1.id").Lte(cursor))
+
+	if settingID > 0 {
+		sdc = sdc.Where(
+			goqu.I("t1.setting_id").Eq(settingID),
+			goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
+		sd = sd.Where(
+			goqu.I("t1.setting_id").Eq(settingID),
+			goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
+	} else if moduleID > 0 {
+		sdc = sdc.Where(
+			goqu.I("t1.setting_id").Eq(goqu.I("t2.id")),
+			goqu.I("t2.module_id").Eq(moduleID))
+		sd = sd.Where(
+			goqu.I("t1.setting_id").Eq(goqu.I("t2.id")),
+			goqu.I("t2.module_id").Eq(moduleID))
 	} else {
-		if err := m.DB.Raw(countSearchGroupSettingsSQL, groupID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
-			return nil, 0, err
-		}
+		sdc = sdc.Where(goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
+		sd = sd.Where(goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
 	}
 
-	var err error
-	var rows *sql.Rows
-	if pg.Q == "" {
-		rows, err = m.DB.Raw(listGroupSettingsSQL, groupID, cursor, pg.PageSize+1).Rows()
-	} else {
-		rows, err = m.DB.Raw(searchGroupSettingsSQL, groupID, cursor, pg.Q, pg.PageSize+1).Rows()
+	if pg.Q != "" {
+		sdc = sdc.Where(goqu.I("t2.name").Like(pg.Q))
+		sd = sd.Where(goqu.I("t2.name").Like(pg.Q))
 	}
 
-	defer rows.Close()
+	sdc = sdc.Where(goqu.I("t2.module_id").Eq(goqu.I("t3.id")))
+	sd = sd.Where(goqu.I("t2.module_id").Eq(goqu.I("t3.id")))
+	if productID > 0 {
+		sdc = sdc.Where(goqu.I("t3.product_id").Eq(productID))
+		sd = sd.Where(goqu.I("t3.product_id").Eq(productID))
+	}
+	sd = sd.Where(goqu.I("t3.product_id").Eq(goqu.I("t4.id"))).
+		Order(goqu.I("t1.id").Desc()).Limit(uint(pg.PageSize + 1))
 
+	total, err := sdc.CountContext(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	for rows.Next() {
+	scanner, err := sd.Executor().ScannerContext(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer scanner.Close()
+
+	for scanner.Next() {
 		mySetting := tpl.MySetting{}
-		if err := rows.Scan(&mySetting.Release, &mySetting.AssignedAt, &mySetting.Value, &mySetting.LastValue,
-			&mySetting.ID, &mySetting.Name, &mySetting.Module, &mySetting.Product); err != nil {
+		if err := scanner.ScanStruct(&mySetting); err != nil {
 			return nil, 0, err
 		}
 		mySetting.HID = service.IDToHID(mySetting.ID, "setting")
 		data = append(data, mySetting)
 	}
 
-	return data, total, nil
+	if err := scanner.Err(); err != nil {
+		return nil, 0, err
+	}
+	return data, int(total), nil
 }
 
 // BatchAdd 批量添加群组
@@ -226,21 +247,23 @@ func (m *Group) BatchAdd(ctx context.Context, groups []tpl.GroupBody) error {
 	if len(groups) == 0 {
 		return nil
 	}
-
 	syncAt := time.Now().UTC().Unix()
-	stmt, err := m.DB.DB().Prepare("insert ignore into `urbs_group` (`uid`, `kind`, `sync_at`, `description`) values (?, ?, ?, ?)")
+	vals := make([][]interface{}, len(groups))
+	for i, g := range groups {
+		vals[i] = goqu.Vals{g.UID, g.Kind, syncAt, g.Desc}
+	}
+
+	insertDataset := m.GDB.Insert("urbs_group").Cols("uid", "kind", "sync_at", "description").
+		Vals(vals...).OnConflict(goqu.DoNothing())
+	res, err := insertDataset.Executor().ExecContext(ctx)
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
-
-	for _, group := range groups {
-		if _, err := stmt.Exec(group.UID, group.Kind, syncAt, group.Desc); err != nil {
-			return err
-		}
+	rowsAffected, err := res.RowsAffected()
+	if rowsAffected > 0 {
+		go m.tryRefreshGroupsTotalSize(ctx)
 	}
-	go m.tryRefreshGroupsTotalSize(ctx)
-	return nil
+	return err
 }
 
 // Update 更新指定群组

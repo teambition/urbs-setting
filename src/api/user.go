@@ -90,7 +90,11 @@ func (a *User) ListSettingsUnionAll(ctx *gear.Context) error {
 		return err
 	}
 
-	res, err := a.blls.User.ListSettingsUnionAll(ctx, req.UID, req.Product, req.Channel, req.Client, req.Pagination)
+	if req.Product == "" {
+		return gear.ErrBadRequest.WithMsgf("product required")
+	}
+
+	res, err := a.blls.User.ListSettingsUnionAll(ctx, req)
 	if err != nil {
 		return err
 	}

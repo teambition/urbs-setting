@@ -206,16 +206,16 @@ type SettingInfoRes struct {
 
 // MySetting ...
 type MySetting struct {
-	ID         int64     `json:"-"`
+	ID         int64     `json:"-" db:"id"`
 	HID        string    `json:"hid"`
-	Product    string    `json:"product"`
-	Module     string    `json:"module"`
-	Name       string    `json:"name"`
-	Desc       string    `json:"desc"`
-	Value      string    `json:"value"`
-	LastValue  string    `json:"lastValue"`
-	Release    int64     `json:"release"`
-	AssignedAt time.Time `json:"assignedAt"`
+	Product    string    `json:"product" db:"product"`
+	Module     string    `json:"module" db:"module"`
+	Name       string    `json:"name" db:"name"`
+	Desc       string    `json:"desc" db:"description"`
+	Value      string    `json:"value" db:"value"`
+	LastValue  string    `json:"lastValue" db:"last_value"`
+	Release    int64     `json:"release" db:"rls"`
+	AssignedAt time.Time `json:"assignedAt" db:"assigned_at"`
 }
 
 // MySettingsRes ...
@@ -229,6 +229,8 @@ type MySettingsQueryURL struct {
 	Pagination
 	UID     string `json:"uid" param:"uid"`
 	Product string `json:"product" query:"product"`
+	Module  string `json:"module" query:"module"`
+	Setting string `json:"setting" query:"setting"`
 	Channel string `json:"channel" query:"channel"`
 	Client  string `json:"client" query:"client"`
 }
@@ -238,8 +240,20 @@ func (t *MySettingsQueryURL) Validate() error {
 	if !validIDReg.MatchString(t.UID) {
 		return gear.ErrBadRequest.WithMsgf("invalid user: %s", t.UID)
 	}
-	if !validNameReg.MatchString(t.Product) {
+	if t.Product != "" && !validNameReg.MatchString(t.Product) {
 		return gear.ErrBadRequest.WithMsgf("invalid product name: %s", t.Product)
+	}
+	if t.Module != "" && !validNameReg.MatchString(t.Module) {
+		return gear.ErrBadRequest.WithMsgf("invalid module name: %s", t.Module)
+	}
+	if t.Module != "" && t.Product == "" {
+		return gear.ErrBadRequest.WithMsgf("product required for module: %s", t.Module)
+	}
+	if t.Setting != "" && !validNameReg.MatchString(t.Setting) {
+		return gear.ErrBadRequest.WithMsgf("invalid setting name: %s", t.Setting)
+	}
+	if t.Setting != "" && t.Module == "" {
+		return gear.ErrBadRequest.WithMsgf("module required for setting: %s", t.Setting)
 	}
 
 	if err := t.Pagination.Validate(); err != nil {
