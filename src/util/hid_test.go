@@ -39,3 +39,12 @@ func TestHID(t *testing.T) {
 		assert.NotEqual(hid1.ToHex(maxInt64), hid2.ToHex(maxInt64))
 	})
 }
+
+func BenchmarkHID(b *testing.B) {
+	hid := NewHID([]byte("abc"))
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			hid.ToHex(9999)
+		}
+	})
+}

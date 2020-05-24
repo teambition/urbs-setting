@@ -7,7 +7,6 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/binary"
-	"hash"
 	"math"
 )
 
@@ -15,13 +14,12 @@ const maxInt64u = uint64(math.MaxInt64)
 
 // HID 基于 HMAC 算法，将内部 int64 的 ID 与 base64 URL 字符串进行相互转换。API 接口不支持 int64 ID 参数。
 type HID struct {
-	hs hash.Hash
+	key []byte
 }
 
 // NewHID 根据给定的秘钥生成 HID 实例。
 func NewHID(key []byte) *HID {
-	hs := hmac.New(sha1.New, key)
-	return &HID{hs: hs}
+	return &HID{key: key}
 }
 
 // ToHex 将内部 ID（大于0的 int64）转换成24位 base64 URL 字符串。
@@ -30,12 +28,14 @@ func (h *HID) ToHex(i int64) string {
 	if i <= 0 {
 		return ""
 	}
-
 	data := make([]byte, 8)
 	binary.LittleEndian.PutUint64(data, uint64(i))
-	h.hs.Write(data)
-	sum := h.hs.Sum(nil)
-	h.hs.Reset()
+
+	hs := hmac.New(sha1.New, h.key)
+	hs.Write(data)
+	sum := hs.Sum(nil)
+	hs.Reset()
+
 	copy(sum[:8], data)
 	return base64.URLEncoding.EncodeToString(sum[0:18])
 }
@@ -54,10 +54,10 @@ func (h *HID) ToInt64(s string) int64 {
 	if x > maxInt64u {
 		return 0
 	}
-
-	h.hs.Write(data[:8])
-	sum := h.hs.Sum(nil)
-	h.hs.Reset()
+	hs := hmac.New(sha1.New, h.key)
+	hs.Write(data[:8])
+	sum := hs.Sum(nil)
+	hs.Reset()
 	if !bytes.Equal(data[8:18], sum[8:18]) {
 		return 0
 	}
