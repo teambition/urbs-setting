@@ -205,3 +205,21 @@ func SortStringsAndCheck(sl []string) (ok bool) {
 	}
 	return true
 }
+
+// Int64SliceToInterface ...
+func Int64SliceToInterface(s []int64) []interface{} {
+	v := make([]interface{}, len(s))
+	for i := range s {
+		v[i] = s[i]
+	}
+	return v
+}
+
+// StrSliceToInterface ...
+func StrSliceToInterface(s []string) []interface{} {
+	v := make([]interface{}, len(s))
+	for i := range s {
+		v[i] = s[i]
+	}
+	return v
+}

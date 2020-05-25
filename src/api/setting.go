@@ -31,7 +31,7 @@ func (a *Setting) ListByProduct(ctx *gear.Context) error {
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
-	res, err := a.blls.Setting.ListByProduct(ctx, req.Product, req.Pagination)
+	res, err := a.blls.Setting.List(ctx, req.Product, "", req.Pagination)
 	if err != nil {
 		return err
 	}

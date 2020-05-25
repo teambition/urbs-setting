@@ -4,15 +4,18 @@ import "time"
 
 // schema 模块不要引入官方库以外的其它模块或内部模块
 
+// TableStatistic is a table name in db.
+const TableStatistic = "urbs_statistic"
+
 // Statistic 详见 ./sql/schema.sql table `urbs_statistic`
 // 内部统计
 type Statistic struct {
-	ID        int64     `gorm:"column:id"`
-	CreatedAt time.Time `gorm:"column:created_at"`
-	UpdatedAt time.Time `gorm:"column:updated_at"`
-	Name      string    `gorm:"column:name"` // varchar(255) 锁键，表内唯一
-	Status    int64     `gorm:"column:status"`
-	Value     string    `gorm:"column:value"` // varchar(8190) json value
+	ID        int64     `db:"id" goqu:"skipinsert"`
+	CreatedAt time.Time `db:"created_at" goqu:"skipinsert"`
+	UpdatedAt time.Time `db:"updated_at" goqu:"skipinsert"`
+	Name      string    `db:"name"` // varchar(255) 锁键，表内唯一
+	Status    int64     `db:"status"`
+	Value     string    `db:"value"` // varchar(8190) json value
 }
 
 // TableName retuns table name

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/DavidCai1993/request"
-	"github.com/jinzhu/gorm"
+	"github.com/doug-martin/goqu/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
@@ -29,14 +29,16 @@ func createUsers(tt *TestTools, count int) (users []schema.User, err error) {
 
 	if err == nil {
 		res.Content() // close http client
-		err = tt.DB.Where("uid in ( ? )", uids).Find(&users).Error
+		err = tt.DB.From("urbs_user").
+			Where(goqu.Ex{"uid": uids}).Order(goqu.C("id").Desc()).
+			Executor().ScanStructs(&users)
 	}
 	return
 }
 
-func cleanupUserLabels(db *gorm.DB, uid string) error {
-	return db.Table("urbs_user").Where("uid = ?", uid).Updates(map[string]interface{}{
-		"labels": "", "active_at": 0}).Error
+func cleanupUserLabels(db *goqu.Database, uid string) error {
+	_, err := db.Exec("update `urbs_user` set `labels` = '', `active_at` = 0 where `uid` = ?", uid)
+	return err
 }
 
 func TestUserAPIs(t *testing.T) {
@@ -608,7 +610,7 @@ func TestUserAPIs(t *testing.T) {
 			_, err = res.JSON(&json)
 
 			assert.Nil(err)
-			assert.Equal(2, len(json.Result))
+			assert.Equal(1, len(json.Result))
 
 			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings:unionAll?product=%s&channel=beta&client=ios", tt.Host, users[0].UID, product.Name)).
 				End()

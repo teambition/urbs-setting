@@ -4,10 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"github.com/doug-martin/goqu/v9"
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/tpl"
+	"github.com/teambition/urbs-setting/src/util"
 )
 
 // Module ...
@@ -17,24 +18,16 @@ type Module struct {
 
 // FindByName 根据 productID 和 name 返回 module 数据
 func (m *Module) FindByName(ctx context.Context, productID int64, name, selectStr string) (*schema.Module, error) {
-	var err error
 	module := &schema.Module{}
-	db := m.DB.Where("`product_id` = ? and `name` = ?", productID, name)
-
-	if selectStr == "" {
-		err = db.First(module).Error
-	} else {
-		err = db.Select(selectStr).First(module).Error
+	ok, err := m.findOneByCols(ctx, schema.TableModule, goqu.Ex{"product_id": productID, "name": name}, selectStr, module)
+	if err != nil {
+		return nil, err
 	}
-
-	if err == nil {
-		return module, nil
-	}
-
-	if gorm.IsRecordNotFoundError(err) {
+	if !ok {
 		return nil, nil
 	}
-	return nil, err
+
+	return module, nil
 }
 
 // Acquire ...
@@ -54,7 +47,7 @@ func (m *Module) Acquire(ctx context.Context, productID int64, moduleName string
 
 // AcquireID ...
 func (m *Module) AcquireID(ctx context.Context, productID int64, moduleName string) (int64, error) {
-	module, err := m.FindByName(ctx, productID, moduleName, "`id`, `offline_at`")
+	module, err := m.FindByName(ctx, productID, moduleName, "id, offline_at")
 	if err != nil {
 		return 0, err
 	}
@@ -71,57 +64,56 @@ func (m *Module) AcquireID(ctx context.Context, productID int64, moduleName stri
 func (m *Module) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Module, int, error) {
 	modules := make([]schema.Module, 0)
 	cursor := pg.TokenToID()
-	db := m.DB.Where("`id` <= ? and `product_id` = ? and `offline_at` is null", cursor, productID)
-	dbc := m.DB.Where("`product_id` = ? and `offline_at` is null", productID)
+	sdc := m.DB.Select().
+		From(goqu.T(schema.TableModule)).
+		Where(
+			goqu.C("product_id").Eq(productID),
+			goqu.C("offline_at").IsNull())
+
+	sd := m.DB.Select().
+		From(goqu.T(schema.TableModule)).
+		Where(
+			goqu.C("id").Lte(cursor),
+			goqu.C("product_id").Eq(productID),
+			goqu.C("offline_at").IsNull())
+
 	if pg.Q != "" {
-		db = m.DB.Where("`id` <= ? and `product_id` = ? and `offline_at` is null and `name` like ?", cursor, productID, pg.Q)
-		dbc = m.DB.Where("`product_id` = ? and `offline_at` is null and `name` like ?", productID, pg.Q)
+		sdc = sdc.Where(goqu.C("name").Like(pg.Q))
+		sd = sd.Where(goqu.C("name").Like(pg.Q))
 	}
 
-	total := 0
-	err := dbc.Model(&schema.Label{}).Count(&total).Error
-	if err == nil {
-		err = db.Order("`id` desc").Limit(pg.PageSize + 1).Find(&modules).Error
-	}
+	sd = sd.Order(goqu.C("id").Desc()).Limit(uint(pg.PageSize + 1))
+
+	total, err := sdc.CountContext(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
-	return modules, total, nil
-}
 
-// FindIDsByProductID 根据 productID 查找未下线模块 ID 数组
-func (m *Module) FindIDsByProductID(ctx context.Context, productID int64) ([]int64, error) {
-	modules := make([]schema.Module, 0)
-	err := m.DB.Where("`product_id` = ? and `offline_at` is null", productID).Select("`id`").
-		Limit(10000).Find(&modules).Error
-	ids := make([]int64, len(modules))
-	if err == nil {
-		for i, m := range modules {
-			ids[i] = m.ID
-		}
+	if err = sd.Executor().ScanStructsContext(ctx, &modules); err != nil {
+		return nil, 0, err
 	}
-	return ids, err
+
+	return modules, int(total), nil
 }
 
 // Create ...
 func (m *Module) Create(ctx context.Context, module *schema.Module) error {
-	err := m.DB.Create(module).Error
-	if err == nil {
-		go m.tryIncreaseStatisticStatus(ctx, schema.ModulesTotalSize, 1)
+	rowsAffected, err := m.createOne(ctx, schema.TableModule, module)
+	if rowsAffected > 0 {
+		util.Go(5*time.Second, func(gctx context.Context) {
+			m.tryIncreaseStatisticStatus(gctx, schema.ModulesTotalSize, 1)
+		})
 	}
 	return err
 }
 
 // Update 更新指定功能模块
 func (m *Module) Update(ctx context.Context, moduleID int64, changed map[string]interface{}) (*schema.Module, error) {
-	module := &schema.Module{ID: moduleID}
-	if len(changed) > 0 {
-		if err := m.DB.Model(module).UpdateColumns(changed).Error; err != nil {
-			return nil, err
-		}
+	module := &schema.Module{}
+	if _, err := m.updateByID(ctx, schema.TableModule, moduleID, goqu.Record(changed)); err != nil {
+		return nil, err
 	}
-
-	if err := m.DB.First(module).Error; err != nil {
+	if err := m.findOneByID(ctx, schema.TableModule, moduleID, module); err != nil {
 		return nil, err
 	}
 	return module, nil
@@ -129,22 +121,5 @@ func (m *Module) Update(ctx context.Context, moduleID int64, changed map[string]
 
 // Offline 标记模块下线
 func (m *Module) Offline(ctx context.Context, moduleID int64) error {
-	now := time.Now().UTC()
-	err := m.DB.Model(&schema.Module{ID: moduleID}).UpdateColumns(schema.Module{
-		OfflineAt: &now,
-		Status:    -1,
-	}).Error
-	if err == nil {
-		var settingIDs []int64
-		err = m.DB.Model(&schema.Setting{}).Where("`module_id` = ?", moduleID).Pluck("id", &settingIDs).Error
-		if err == nil {
-			err = m.DB.Model(&schema.Setting{}).Where("`id` in ( ? )", settingIDs).UpdateColumns(schema.Setting{
-				OfflineAt: &now,
-				Status:    -1,
-			}).Error
-			go m.tryDeleteSettingsRules(ctx, settingIDs)
-			go m.tryDeleteUserAndGroupSettings(ctx, settingIDs)
-		}
-	}
-	return err
+	return m.offlineModules(ctx, goqu.Ex{"id": moduleID, "offline_at": nil})
 }

@@ -2,14 +2,14 @@ package model
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"github.com/doug-martin/goqu/v9"
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
+	"github.com/teambition/urbs-setting/src/util"
 )
 
 // Label ...
@@ -19,25 +19,15 @@ type Label struct {
 
 // FindByName 根据 productID 和 name 返回 label 数据
 func (m *Label) FindByName(ctx context.Context, productID int64, name, selectStr string) (*schema.Label, error) {
-	var err error
 	label := &schema.Label{}
-
-	db := m.DB.Where("`product_id` = ? and `name` = ?", productID, name)
-
-	if selectStr == "" {
-		err = db.First(label).Error
-	} else {
-		err = db.Select(selectStr).First(label).Error
+	ok, err := m.findOneByCols(ctx, schema.TableLabel, goqu.Ex{"product_id": productID, "name": name}, selectStr, label)
+	if err != nil {
+		return nil, err
 	}
-
-	if err == nil {
-		return label, nil
-	}
-
-	if gorm.IsRecordNotFoundError(err) {
+	if !ok {
 		return nil, nil
 	}
-	return nil, err
+	return label, nil
 }
 
 // Acquire ...
@@ -57,7 +47,7 @@ func (m *Label) Acquire(ctx context.Context, productID int64, labelName string) 
 
 // AcquireID ...
 func (m *Label) AcquireID(ctx context.Context, productID int64, labelName string) (int64, error) {
-	label, err := m.FindByName(ctx, productID, labelName, "`id`, `offline_at`")
+	label, err := m.FindByName(ctx, productID, labelName, "id, offline_at")
 	if err != nil {
 		return 0, err
 	}
@@ -72,8 +62,8 @@ func (m *Label) AcquireID(ctx context.Context, productID int64, labelName string
 
 // AcquireByID ...
 func (m *Label) AcquireByID(ctx context.Context, labelID int64) (*schema.Label, error) {
-	label := &schema.Label{ID: labelID}
-	if err := m.DB.First(label).Error; err != nil {
+	label := &schema.Label{}
+	if err := m.findOneByID(ctx, schema.TableLabel, labelID, label); err != nil {
 		return nil, err
 	}
 	if label.OfflineAt != nil {
@@ -86,43 +76,57 @@ func (m *Label) AcquireByID(ctx context.Context, labelID int64) (*schema.Label, 
 func (m *Label) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Label, int, error) {
 	labels := make([]schema.Label, 0)
 	cursor := pg.TokenToID()
-	db := m.DB.Where("`id` <= ? and `product_id` = ? and `offline_at` is null", cursor, productID)
-	dbc := m.DB.Where("`product_id` = ? and `offline_at` is null", productID)
+
+	sdc := m.DB.Select().
+		From(goqu.T(schema.TableLabel)).
+		Where(
+			goqu.C("product_id").Eq(productID),
+			goqu.C("offline_at").IsNull())
+
+	sd := m.DB.Select().
+		From(goqu.T(schema.TableLabel)).
+		Where(
+			goqu.C("product_id").Eq(productID),
+			goqu.C("id").Lte(cursor),
+			goqu.C("offline_at").IsNull())
+
 	if pg.Q != "" {
-		db = m.DB.Where("`id` <= ? and `product_id` = ? and `offline_at` is null and `name` like ?", cursor, productID, pg.Q)
-		dbc = m.DB.Where("`product_id` = ? and `offline_at` is null and `name` like ?", productID, pg.Q)
+		sdc = sdc.Where(goqu.C("name").Like(pg.Q))
+		sd = sd.Where(goqu.C("name").Like(pg.Q))
 	}
 
-	total := 0
-	err := dbc.Model(&schema.Label{}).Count(&total).Error
-	if err == nil {
-		err = db.Order("`id` desc").Limit(pg.PageSize + 1).Find(&labels).Error
-	}
+	sd = sd.Order(goqu.C("id").Desc()).Limit(uint(pg.PageSize + 1))
+
+	total, err := sdc.CountContext(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
-	return labels, total, nil
+
+	if err = sd.Executor().ScanStructsContext(ctx, &labels); err != nil {
+		return nil, 0, err
+	}
+
+	return labels, int(total), nil
 }
 
 // Create ...
 func (m *Label) Create(ctx context.Context, label *schema.Label) error {
-	err := m.DB.Create(label).Error
-	if err == nil {
-		go m.tryIncreaseStatisticStatus(ctx, schema.LabelsTotalSize, 1)
+	rowsAffected, err := m.createOne(ctx, schema.TableLabel, label)
+	if rowsAffected > 0 {
+		util.Go(5*time.Second, func(gctx context.Context) {
+			m.tryIncreaseStatisticStatus(gctx, schema.LabelsTotalSize, 1)
+		})
 	}
 	return err
 }
 
 // Update 更新指定灰度标签
 func (m *Label) Update(ctx context.Context, labelID int64, changed map[string]interface{}) (*schema.Label, error) {
-	label := &schema.Label{ID: labelID}
-	if len(changed) > 0 {
-		if err := m.DB.Model(label).UpdateColumns(changed).Error; err != nil {
-			return nil, err
-		}
+	label := &schema.Label{}
+	if _, err := m.updateByID(ctx, schema.TableLabel, labelID, goqu.Record(changed)); err != nil {
+		return nil, err
 	}
-
-	if err := m.DB.First(label).Error; err != nil {
+	if err := m.findOneByID(ctx, schema.TableLabel, labelID, label); err != nil {
 		return nil, err
 	}
 	return label, nil
@@ -130,38 +134,13 @@ func (m *Label) Update(ctx context.Context, labelID int64, changed map[string]in
 
 // Offline 标记 label 下线，同时真删除用户和群组的 labels
 func (m *Label) Offline(ctx context.Context, labelID int64) error {
-	now := time.Now().UTC()
-	res := m.DB.Model(&schema.Label{ID: labelID}).UpdateColumns(schema.Label{
-		OfflineAt: &now,
-		Status:    -1,
-	})
-	if res.RowsAffected > 0 {
-		go m.tryDeleteLabelsRules(ctx, []int64{labelID})
-		go m.tryDeleteUserAndGroupLabels(ctx, []int64{labelID})
-		go m.tryIncreaseStatisticStatus(ctx, schema.LabelsTotalSize, -1)
-	}
-	return res.Error
+	return m.offlineLabels(ctx, goqu.Ex{"id": labelID, "offline_at": nil})
 }
-
-const batchAddUserLabelSQL = "insert ignore into `user_label` (`user_id`, `label_id`, `rls`) " +
-	"select `urbs_user`.`id`, ?, ? from `urbs_user` where `urbs_user`.`uid` in ( ? ) " +
-	"on duplicate key update `rls` = ?"
-const batchAddGroupLabelSQL = "insert ignore into `group_label` (`group_id`, `label_id`, `rls`) " +
-	"select `urbs_group`.`id`, ?, ? from `urbs_group` where `urbs_group`.`uid` in ( ? ) " +
-	"on duplicate key update `rls` = ?"
-const checkAddUserLabelSQL = "select t2.`uid` " +
-	"from `user_label` t1, `urbs_user` t2 " +
-	"where t1.`label_id` = ? and t1.`rls` = ? and t1.`user_id` = t2.`id` " +
-	"order by t1.`id` desc limit 1000"
-const checkAddGroupLabelSQL = "select t2.`uid` " +
-	"from `group_label` t1, `urbs_group` t2 " +
-	"where t1.`label_id` = ? and t1.`rls` = ? and t1.`group_id` = t2.`id` " +
-	"order by t1.`id` desc limit 1000"
 
 // Assign 把标签批量分配给用户或群组，如果用户或群组不存在则忽略
 func (m *Label) Assign(ctx context.Context, labelID int64, users, groups []string) (*tpl.LabelReleaseInfo, error) {
 	var err error
-	rowsAffected := int64(0)
+	totalRowsAffected := int64(0)
 	release, err := m.AcquireRelease(ctx, labelID)
 	if err != nil {
 		return nil, err
@@ -169,228 +148,255 @@ func (m *Label) Assign(ctx context.Context, labelID int64, users, groups []strin
 
 	releaseInfo := &tpl.LabelReleaseInfo{Release: release, Users: []string{}, Groups: []string{}}
 	if len(users) > 0 {
-		res := m.DB.Exec(batchAddUserLabelSQL, labelID, release, users, release)
-		rowsAffected += res.RowsAffected
-		err = res.Error
-		if err == nil && res.RowsAffected > 0 {
-			rows, err := m.DB.Raw(checkAddUserLabelSQL, labelID, release).Rows()
+		sd := m.DB.Insert(schema.TableUserLabel).Cols("user_id", "label_id", "rls").
+			FromQuery(goqu.From(goqu.T(schema.TableUser).As("t1")).
+				Select(goqu.I("t1.id"), goqu.V(labelID), goqu.V(release)).
+				Where(goqu.I("t1.uid").In(tpl.StrSliceToInterface(users)...))).
+			OnConflict(goqu.DoUpdate("rls", goqu.C("rls").Set(goqu.V(release))))
 
-			if err != nil {
-				rows.Close()
+		rowsAffected, err := service.DeResult(sd.Executor().ExecContext(ctx))
+		if err != nil {
+			return nil, err
+		}
+
+		totalRowsAffected += rowsAffected
+		if rowsAffected > 0 {
+			sd := m.DB.Select(goqu.I("t2.uid")).
+				From(
+					goqu.T(schema.TableUserLabel).As("t1"),
+					goqu.T(schema.TableUser).As("t2")).
+				Where(
+					goqu.I("t1.label_id").Eq(goqu.V(labelID)),
+					goqu.I("t1.rls").Eq(goqu.V(release)),
+					goqu.I("t1.user_id").Eq(goqu.I("t2.id"))).
+				Order(goqu.I("t1.id").Desc()).Limit(1000)
+
+			if err := sd.Executor().ScanValsContext(ctx, &releaseInfo.Users); err != nil {
 				return nil, err
 			}
-
-			for rows.Next() {
-				var uid string
-				if err := rows.Scan(&uid); err != nil {
-					rows.Close()
-					return nil, err
-				}
-				releaseInfo.Users = append(releaseInfo.Users, uid)
-			}
-			rows.Close()
 		}
 	}
 
-	if err == nil && len(groups) > 0 {
-		res := m.DB.Exec(batchAddGroupLabelSQL, labelID, release, groups, release)
-		rowsAffected += res.RowsAffected
-		err = res.Error
-		if err == nil && res.RowsAffected > 0 {
-			rows, err := m.DB.Raw(checkAddGroupLabelSQL, labelID, release).Rows()
+	if len(groups) > 0 {
+		sd := m.DB.Insert(schema.TableGroupLabel).Cols("group_id", "label_id", "rls").
+			FromQuery(goqu.From(goqu.T(schema.TableGroup).As("t1")).
+				Select(goqu.I("t1.id"), goqu.V(labelID), goqu.V(release)).
+				Where(goqu.I("t1.uid").In(tpl.StrSliceToInterface(groups)...))).
+			OnConflict(goqu.DoUpdate("rls", goqu.C("rls").Set(goqu.V(release))))
 
-			if err != nil {
-				rows.Close()
+		rowsAffected, err := service.DeResult(sd.Executor().ExecContext(ctx))
+		if err != nil {
+			return nil, err
+		}
+
+		totalRowsAffected += rowsAffected
+		if rowsAffected > 0 {
+			sd := m.DB.Select(goqu.I("t2.uid")).
+				From(
+					goqu.T(schema.TableGroupLabel).As("t1"),
+					goqu.T(schema.TableGroup).As("t2")).
+				Where(
+					goqu.I("t1.label_id").Eq(goqu.V(labelID)),
+					goqu.I("t1.rls").Eq(goqu.V(release)),
+					goqu.I("t1.group_id").Eq(goqu.I("t2.id"))).
+				Order(goqu.I("t1.id").Desc()).Limit(1000)
+
+			if err := sd.Executor().ScanValsContext(ctx, &releaseInfo.Groups); err != nil {
 				return nil, err
 			}
-
-			for rows.Next() {
-				var uid string
-				if err := rows.Scan(&uid); err != nil {
-					rows.Close()
-					return nil, err
-				}
-				releaseInfo.Groups = append(releaseInfo.Groups, uid)
-			}
-			rows.Close()
 		}
 	}
 
-	if rowsAffected > 0 {
-		go m.tryRefreshLabelStatus(ctx, labelID)
+	if totalRowsAffected > 0 {
+		util.Go(10*time.Second, func(gctx context.Context) {
+			m.tryRefreshLabelStatus(gctx, labelID)
+		})
 	}
 	return releaseInfo, err
 }
 
 // Delete 对标签进行物理删除
-func (m *Label) Delete(ctx context.Context, labelID int64) error {
-	res := m.DB.Delete(&schema.Label{ID: labelID})
-	return res.Error
+func (m *Label) Delete(ctx context.Context, id int64) error {
+	_, err := m.deleteByID(ctx, schema.TableLabel, id)
+	return err
 }
 
 // RemoveUserLabel 删除用户的 label
 func (m *Label) RemoveUserLabel(ctx context.Context, userID, labelID int64) (int64, error) {
-	res := m.DB.Where("`user_id` = ? and `label_id` = ?", userID, labelID).Delete(&schema.UserLabel{})
-	if res.RowsAffected > 0 {
-		go m.tryIncreaseLabelsStatus(ctx, []int64{labelID}, -1)
+	rowsAffected, err := m.deleteByCols(ctx, schema.TableUserLabel, goqu.Ex{"user_id": userID, "label_id": labelID})
+	if rowsAffected > 0 {
+		util.Go(5*time.Second, func(gctx context.Context) {
+			m.tryIncreaseLabelsStatus(gctx, []int64{labelID}, -1)
+		})
 	}
-	return res.RowsAffected, res.Error
+	return rowsAffected, err
 }
 
 // RemoveGroupLabel 删除群组的 label
 func (m *Label) RemoveGroupLabel(ctx context.Context, groupID, labelID int64) (int64, error) {
-	res := m.DB.Where("`group_id` = ? and `label_id` = ?", groupID, labelID).Delete(&schema.GroupLabel{})
-	if res.RowsAffected > 0 {
-		go m.tryRefreshLabelStatus(ctx, labelID)
+	rowsAffected, err := m.deleteByCols(ctx, schema.TableGroupLabel, goqu.Ex{"group_id": groupID, "label_id": labelID})
+	if rowsAffected > 0 {
+		util.Go(10*time.Second, func(gctx context.Context) {
+			m.tryRefreshLabelStatus(gctx, labelID)
+		})
 	}
-	return res.RowsAffected, res.Error
+	return rowsAffected, err
 }
 
 // Recall 撤销指定批次的用户或群组的灰度标签
 func (m *Label) Recall(ctx context.Context, labelID, release int64) error {
-	rowsAffected := int64(0)
-	res := m.DB.Where("`label_id` = ? and `rls` = ?", labelID, release).Delete(&schema.GroupLabel{})
-	rowsAffected += res.RowsAffected
+	totalRowsAffected := int64(0)
+	rowsAffected, err := m.deleteByCols(ctx, schema.TableGroupLabel, goqu.Ex{"label_id": labelID, "rls": release})
+	if err != nil {
+		return err
+	}
+	totalRowsAffected += rowsAffected
 
-	if res.Error == nil {
-		res = m.DB.Where("`label_id` = ? and `rls` = ?", labelID, release).Delete(&schema.UserLabel{})
-		rowsAffected += res.RowsAffected
+	rowsAffected, err = m.deleteByCols(ctx, schema.TableUserLabel, goqu.Ex{"label_id": labelID, "rls": release})
+	if err != nil {
+		return err
 	}
-	if rowsAffected > 0 {
-		go m.tryRefreshLabelStatus(ctx, labelID)
+	totalRowsAffected += rowsAffected
+	if totalRowsAffected > 0 {
+		util.Go(10*time.Second, func(gctx context.Context) {
+			m.tryRefreshLabelStatus(gctx, labelID)
+		})
 	}
-	return res.Error
+	return nil
 }
 
 // AcquireRelease ...
 func (m *Label) AcquireRelease(ctx context.Context, labelID int64) (int64, error) {
-	label := &schema.Label{ID: labelID}
-	if err := m.DB.Model(label).UpdateColumn("rls", gorm.Expr("`rls` + ?", 1)).Error; err != nil {
+	label := &schema.Label{}
+	if _, err := m.updateByID(ctx, schema.TableLabel, labelID, goqu.Record{
+		"rls": goqu.L("rls + ?", 1),
+	}); err != nil {
 		return 0, err
 	}
+
 	// MySQL 不支持 RETURNING，并发操作分配时 release 可能不准确，不过真实场景下基本不可能并发操作
-	if err := m.DB.Select("`id`, `rls`").First(label).Error; err != nil {
+	if err := m.findOneByID(ctx, schema.TableLabel, labelID, label); err != nil {
 		return 0, err
 	}
 	return label.Release, nil
 }
 
-const listLabelUsersSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid` " +
-	"from `user_label` t1, `urbs_user` t2 " +
-	"where t1.`label_id` = ? and t1.`id` <= ? and t1.`user_id` = t2.`id` " +
-	"order by t1.`id` desc " +
-	"limit ?"
-
-const countLabelUsersSQL = "select count(t2.`id`) " +
-	"from `user_label` t1, `urbs_user` t2  " +
-	"where t1.`label_id` = ? and t1.`user_id` = t2.`id`"
-
-const searchLabelUsersSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid` " +
-	"from `user_label` t1, `urbs_user` t2 " +
-	"where t1.`label_id` = ? and t1.`id` <= ? and t1.`user_id` = t2.`id` and t2.`uid` like ? " +
-	"order by t1.`id` desc " +
-	"limit ?"
-
-const countSearchLabelUsersSQL = "select count(t2.`id`) " +
-	"from `user_label` t1, `urbs_user` t2 " +
-	"where t1.`label_id` = ? and t1.`user_id` = t2.`id` and t2.`uid` like ?"
-
 // ListUsers ...
 func (m *Label) ListUsers(ctx context.Context, labelID int64, pg tpl.Pagination) ([]tpl.LabelUserInfo, int, error) {
 	data := []tpl.LabelUserInfo{}
 	cursor := pg.TokenToID()
-	total := 0
 
-	if pg.Q == "" {
-		if err := m.DB.Raw(countLabelUsersSQL, labelID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
-			return nil, 0, err
-		}
-	} else {
-		if err := m.DB.Raw(countSearchLabelUsersSQL, labelID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
-			return nil, 0, err
-		}
+	sdc := m.DB.Select().
+		From(
+			goqu.T(schema.TableUserLabel).As("t1"),
+			goqu.T(schema.TableUser).As("t2")).
+		Where(
+			goqu.I("t1.label_id").Eq(labelID),
+			goqu.I("t1.user_id").Eq(goqu.I("t2.id")))
+
+	sd := m.DB.Select(
+		goqu.I("t1.id"),
+		goqu.I("t1.created_at").As("assigned_at"),
+		goqu.I("t1.rls"),
+		goqu.I("t2.uid")).
+		From(
+			goqu.T(schema.TableUserLabel).As("t1"),
+			goqu.T(schema.TableUser).As("t2")).
+		Where(
+			goqu.I("t1.label_id").Eq(labelID),
+			goqu.I("t1.id").Lte(cursor),
+			goqu.I("t1.user_id").Eq(goqu.I("t2.id")))
+
+	if pg.Q != "" {
+		sdc = sdc.Where(goqu.I("t2.uid").Like(pg.Q))
+		sd = sd.Where(goqu.I("t2.uid").Like(pg.Q))
 	}
 
-	var err error
-	var rows *sql.Rows
-	if pg.Q == "" {
-		rows, err = m.DB.Raw(listLabelUsersSQL, labelID, cursor, pg.PageSize+1).Rows()
-	} else {
-		rows, err = m.DB.Raw(searchLabelUsersSQL, labelID, cursor, pg.Q, pg.PageSize+1).Rows()
-	}
-	defer rows.Close()
+	sd = sd.Order(goqu.I("t1.id").Desc()).Limit(uint(pg.PageSize + 1))
 
+	total, err := sdc.CountContext(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
+	scanner, err := sd.Executor().ScannerContext(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer scanner.Close()
 
-	for rows.Next() {
+	for scanner.Next() {
 		info := tpl.LabelUserInfo{}
-		if err := rows.Scan(&info.ID, &info.AssignedAt, &info.Release, &info.User); err != nil {
+		if err := scanner.ScanStruct(&info); err != nil {
 			return nil, 0, err
 		}
 		info.LabelHID = service.IDToHID(labelID, "label")
 		data = append(data, info)
 	}
-	return data, total, err
+
+	if err := scanner.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	return data, int(total), err
 }
-
-const listLabelGroupsSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid`, t2.`kind`, t2.`description`, t2.`status` " +
-	"from `group_label` t1, `urbs_group` t2 " +
-	"where t1.`label_id` = ? and t1.`id` <= ? and t1.`group_id` = t2.`id` " +
-	"order by t1.`id` desc " +
-	"limit ?"
-
-const countLabelGroupsSQL = "select count(t2.`id`) " +
-	"from `group_label` t1, `urbs_group` t2  " +
-	"where t1.`label_id` = ? and t1.`group_id` = t2.`id`"
-
-const searchLabelGroupsSQL = "select t1.`id`, t1.`created_at`, t1.`rls`, t2.`uid`, t2.`kind`, t2.`description`, t2.`status` " +
-	"from `group_label` t1, `urbs_group` t2 " +
-	"where t1.`label_id` = ? and t1.`id` <= ? and t1.`group_id` = t2.`id` and t2.`uid` like ? " +
-	"order by t1.`id` desc " +
-	"limit ?"
-
-const countSearchLabelGroupsSQL = "select count(t2.`id`) " +
-	"from `group_label` t1, `urbs_group` t2 " +
-	"where t1.`label_id` = ? and t1.`group_id` = t2.`id` and t2.`uid` like ?"
 
 // ListGroups ...
 func (m *Label) ListGroups(ctx context.Context, labelID int64, pg tpl.Pagination) ([]tpl.LabelGroupInfo, int, error) {
 	data := []tpl.LabelGroupInfo{}
 	cursor := pg.TokenToID()
-	total := 0
+	sdc := m.DB.Select().
+		From(
+			goqu.T(schema.TableGroupLabel).As("t1"),
+			goqu.T(schema.TableGroup).As("t2")).
+		Where(
+			goqu.I("t1.label_id").Eq(labelID),
+			goqu.I("t1.group_id").Eq(goqu.I("t2.id")))
 
-	if pg.Q == "" {
-		if err := m.DB.Raw(countLabelGroupsSQL, labelID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
-			return nil, 0, err
-		}
-	} else {
-		if err := m.DB.Raw(countSearchLabelGroupsSQL, labelID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
-			return nil, 0, err
-		}
+	sd := m.DB.Select(
+		goqu.I("t1.id"),
+		goqu.I("t1.created_at").As("assigned_at"),
+		goqu.I("t1.rls"),
+		goqu.I("t2.uid"),
+		goqu.I("t2.kind"),
+		goqu.I("t2.description"),
+		goqu.I("t2.status")).
+		From(
+			goqu.T(schema.TableGroupLabel).As("t1"),
+			goqu.T(schema.TableGroup).As("t2")).
+		Where(
+			goqu.I("t1.label_id").Eq(labelID),
+			goqu.I("t1.id").Lte(cursor),
+			goqu.I("t1.group_id").Eq(goqu.I("t2.id")))
+
+	if pg.Q != "" {
+		sdc = sdc.Where(goqu.I("t2.uid").Like(pg.Q))
+		sd = sd.Where(goqu.I("t2.uid").Like(pg.Q))
 	}
 
-	var err error
-	var rows *sql.Rows
-	if pg.Q == "" {
-		rows, err = m.DB.Raw(listLabelGroupsSQL, labelID, cursor, pg.PageSize+1).Rows()
-	} else {
-		rows, err = m.DB.Raw(searchLabelGroupsSQL, labelID, cursor, pg.Q, pg.PageSize+1).Rows()
-	}
-	defer rows.Close()
+	sd = sd.Order(goqu.I("t1.id").Desc()).Limit(uint(pg.PageSize + 1))
 
+	total, err := sdc.CountContext(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
+	scanner, err := sd.Executor().ScannerContext(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer scanner.Close()
 
-	for rows.Next() {
+	for scanner.Next() {
 		info := tpl.LabelGroupInfo{}
-		if err := rows.Scan(&info.ID, &info.AssignedAt, &info.Release, &info.Group, &info.Kind, &info.Desc, &info.Status); err != nil {
+		if err := scanner.ScanStruct(&info); err != nil {
 			return nil, 0, err
 		}
 		info.LabelHID = service.IDToHID(labelID, "label")
 		data = append(data, info)
 	}
-	return data, total, err
+
+	if err := scanner.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	return data, int(total), err
 }

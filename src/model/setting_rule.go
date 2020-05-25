@@ -3,7 +3,9 @@ package model
 import (
 	"context"
 
+	"github.com/doug-martin/goqu/v9"
 	"github.com/teambition/urbs-setting/src/schema"
+	"github.com/teambition/urbs-setting/src/service"
 )
 
 // SettingRule ...
@@ -11,22 +13,18 @@ type SettingRule struct {
 	*Model
 }
 
-const applySettingRulesSQL = "insert ignore into `user_setting` (`user_id`, `setting_id`, `rls`, `value`) " +
-	"select ?, t1.`setting_id`, t1.`rls`, t1.`value` from `setting_rule` t1 where t1.`id` in ( ? )"
-
-const findSettingRulesResultSQL = "select t1.`setting_id` " +
-	"from `setting_rule` t1, `user_setting` t2 " +
-	"where t1.`id` in ( ? ) and t1.`setting_id` = t2.`setting_id` and t1.`rls` = t2.`rls` and t2.`user_id` = ?"
-
 // ApplyRules ...
 func (m *SettingRule) ApplyRules(ctx context.Context, productID, userID int64) error {
 	rules := []schema.SettingRule{}
-	err := m.DB.Where("`product_id` = ? and `kind` = 'userPercent'", productID).Order("`updated_at` desc").Limit(1000).Find(&rules).Error
+	sd := m.DB.From(schema.TableSettingRule).
+		Where(goqu.C("product_id").Eq(productID), goqu.C("kind").Eq("userPercent")).
+		Order(goqu.C("updated_at").Desc()).Limit(1000)
+	err := sd.Executor().ScanStructsContext(ctx, &rules)
 	if err != nil {
 		return err
 	}
-	ids := make([]int64, 0)
 
+	ids := make([]interface{}, 0)
 	for _, rule := range rules {
 		p := rule.ToPercent()
 		if p > 0 && (int((userID+rule.CreatedAt.Unix())%100) <= p) {
@@ -36,27 +34,32 @@ func (m *SettingRule) ApplyRules(ctx context.Context, productID, userID int64) e
 	}
 
 	if len(ids) > 0 {
-		res := m.DB.Exec(applySettingRulesSQL, userID, ids)
-		if res.Error != nil {
-			return res.Error
+		sd := m.DB.Insert(schema.TableUserSetting).Cols("user_id", "setting_id", "rls", "value").
+			FromQuery(goqu.From(goqu.T(schema.TableSettingRule).As("t1")).
+				Select(goqu.V(userID), goqu.I("t1.setting_id"), goqu.I("t1.rls"), goqu.I("t1.value")).
+				Where(goqu.I("t1.id").In(ids...))).
+			OnConflict(goqu.DoNothing())
+		rowsAffected, err := service.DeResult(sd.Executor().ExecContext(ctx))
+		if err != nil {
+			return err
 		}
 
-		if res.RowsAffected > 0 {
-			rows, err := m.DB.Raw(findSettingRulesResultSQL, ids, userID).Rows()
-			defer rows.Close()
-
-			if err != nil {
+		if rowsAffected > 0 {
+			settingIDs := make([]int64, 0)
+			sd := m.DB.Select(goqu.I("t1.setting_id")).
+				From(
+					goqu.T(schema.TableSettingRule).As("t1"),
+					goqu.T(schema.TableUserSetting).As("t2")).
+				Where(
+					goqu.I("t1.id").In(ids...),
+					goqu.I("t1.setting_id").Eq(goqu.I("t2.setting_id")),
+					goqu.I("t1.rls").Eq(goqu.I("t2.rls")),
+					goqu.I("t2.user_id").Eq(userID)).
+				Limit(1000)
+			if err := sd.Executor().ScanValsContext(ctx, &settingIDs); err != nil {
 				return err
 			}
 
-			settingIDs := make([]int64, 0)
-			for rows.Next() {
-				var settingID int64
-				if err := rows.Scan(&settingID); err != nil {
-					return err
-				}
-				settingIDs = append(settingIDs, settingID)
-			}
 			if len(settingIDs) > 0 {
 				m.tryIncreaseSettingsStatus(ctx, settingIDs, 1)
 			}
@@ -67,8 +70,8 @@ func (m *SettingRule) ApplyRules(ctx context.Context, productID, userID int64) e
 
 // Acquire ...
 func (m *SettingRule) Acquire(ctx context.Context, settingRuleID int64) (*schema.SettingRule, error) {
-	settingRule := &schema.SettingRule{ID: settingRuleID}
-	if err := m.DB.First(settingRule).Error; err != nil {
+	settingRule := &schema.SettingRule{}
+	if err := m.findOneByID(ctx, schema.TableSettingRule, settingRuleID, settingRule); err != nil {
 		return nil, err
 	}
 	return settingRule, nil
@@ -77,34 +80,36 @@ func (m *SettingRule) Acquire(ctx context.Context, settingRuleID int64) (*schema
 // Find ...
 func (m *SettingRule) Find(ctx context.Context, productID, settingID int64) ([]schema.SettingRule, error) {
 	settingRules := make([]schema.SettingRule, 0)
-	err := m.DB.Where("`product_id` = ? and `setting_id` = ?", productID, settingID).
-		Order("`id` desc").Limit(10).Find(&settingRules).Error
-	return settingRules, err
+	sd := m.DB.From(schema.TableSettingRule).
+		Where(goqu.C("product_id").Eq(productID), goqu.C("setting_id").Eq(settingID)).
+		Order(goqu.C("id").Desc()).Limit(10)
+
+	err := sd.Executor().ScanStructsContext(ctx, &settingRules)
+	if err != nil {
+		return nil, err
+	}
+	return settingRules, nil
 }
 
 // Create ...
 func (m *SettingRule) Create(ctx context.Context, settingRule *schema.SettingRule) error {
-	err := m.DB.Create(settingRule).Error
+	_, err := m.createOne(ctx, schema.TableSettingRule, settingRule)
 	return err
 }
 
 // Update ...
 func (m *SettingRule) Update(ctx context.Context, settingRuleID int64, changed map[string]interface{}) (*schema.SettingRule, error) {
-	settingRule := &schema.SettingRule{ID: settingRuleID}
-	if len(changed) > 0 {
-		if err := m.DB.Model(settingRule).UpdateColumns(changed).Error; err != nil {
-			return nil, err
-		}
+	settingRule := &schema.SettingRule{}
+	if _, err := m.updateByID(ctx, schema.TableSettingRule, settingRuleID, goqu.Record(changed)); err != nil {
+		return nil, err
 	}
-
-	if err := m.DB.First(settingRule).Error; err != nil {
+	if err := m.findOneByID(ctx, schema.TableSettingRule, settingRuleID, settingRule); err != nil {
 		return nil, err
 	}
 	return settingRule, nil
 }
 
 // Delete ...
-func (m *SettingRule) Delete(ctx context.Context, settingRuleID int64) (int64, error) {
-	res := m.DB.Delete(&schema.SettingRule{ID: settingRuleID})
-	return res.RowsAffected, res.Error
+func (m *SettingRule) Delete(ctx context.Context, id int64) (int64, error) {
+	return m.deleteByID(ctx, schema.TableSettingRule, id)
 }

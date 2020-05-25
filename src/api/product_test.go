@@ -21,7 +21,7 @@ func createProduct(tt *TestTools) (product schema.Product, err error) {
 
 	if err == nil {
 		res.Content() // close http client
-		err = tt.DB.Where("name = ?", name).First(&product).Error
+		_, err = tt.DB.ScanStruct(&product, "select * from `urbs_product` where `name` = ? limit 1", name)
 	}
 	return
 }
@@ -302,17 +302,20 @@ func TestProductAPIs(t *testing.T) {
 
 			assert.Nil(label.OfflineAt)
 			l := label
-			assert.Nil(tt.DB.First(&l).Error)
+			_, err = tt.DB.ScanStruct(&l, "select * from `urbs_label` where `id` = ? limit 1", label.ID)
+			assert.Nil(err)
 			assert.NotNil(l.OfflineAt)
 
 			assert.Nil(module.OfflineAt)
 			m := module
-			assert.Nil(tt.DB.First(&m).Error)
+			_, err = tt.DB.ScanStruct(&m, "select * from `urbs_module` where `id` = ? limit 1", module.ID)
+			assert.Nil(err)
 			assert.NotNil(m.OfflineAt)
 
 			assert.Nil(setting.OfflineAt)
 			s := setting
-			assert.Nil(tt.DB.First(&s).Error)
+			_, err = tt.DB.ScanStruct(&s, "select * from `urbs_setting` where `id` = ? limit 1", setting.ID)
+			assert.Nil(err)
 			assert.NotNil(s.OfflineAt)
 		})
 
@@ -349,10 +352,12 @@ func TestProductAPIs(t *testing.T) {
 			res.Content() // close http client
 
 			var count int64
-			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label1.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_label` where `label_id` = ?", label1.ID)
+			assert.Nil(err)
 			assert.Equal(int64(10), count)
 
-			assert.Nil(tt.DB.Table(`group_label`).Where("label_id = ?", label1.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_label` where `label_id` = ?", label1.ID)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
 			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s:assign", tt.Host, product2.Name, label2.Name)).
@@ -366,10 +371,12 @@ func TestProductAPIs(t *testing.T) {
 			assert.Equal(200, res.StatusCode)
 			res.Content() // close http client
 
-			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label2.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_label` where `label_id` = ?", label2.ID)
+			assert.Nil(err)
 			assert.Equal(int64(10), count)
 
-			assert.Nil(tt.DB.Table(`group_label`).Where("label_id = ?", label2.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_label` where `label_id` = ?", label2.ID)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
 			res, err = request.Put(fmt.Sprintf("%s/v1/products/%s:offline", tt.Host, product1.Name)).
@@ -380,28 +387,36 @@ func TestProductAPIs(t *testing.T) {
 
 			time.Sleep(time.Second * 2)
 
-			assert.Nil(tt.DB.First(&product1).Error)
+			_, err = tt.DB.ScanStruct(&product1, "select * from `urbs_product` where `id` = ? limit 1", product1.ID)
+			assert.Nil(err)
 			assert.NotNil(product1.OfflineAt)
 
-			assert.Nil(tt.DB.First(&label1).Error)
+			_, err = tt.DB.ScanStruct(&label1, "select * from `urbs_label` where `id` = ? limit 1", label1.ID)
+			assert.Nil(err)
 			assert.NotNil(label1.OfflineAt)
 
-			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label1.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_label` where `label_id` = ?", label1.ID)
+			assert.Nil(err)
 			assert.Equal(int64(0), count)
 
-			assert.Nil(tt.DB.Table(`group_label`).Where("label_id = ?", label1.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_label` where `label_id` = ?", label1.ID)
+			assert.Nil(err)
 			assert.Equal(int64(0), count)
 
-			assert.Nil(tt.DB.First(&product2).Error)
+			_, err = tt.DB.ScanStruct(&product2, "select * from `urbs_product` where `id` = ? limit 1", product2.ID)
+			assert.Nil(err)
 			assert.Nil(product2.OfflineAt)
 
-			assert.Nil(tt.DB.First(&label2).Error)
+			_, err = tt.DB.ScanStruct(&label2, "select * from `urbs_label` where `id` = ? limit 1", label2.ID)
+			assert.Nil(err)
 			assert.Nil(label2.OfflineAt)
 
-			assert.Nil(tt.DB.Table(`user_label`).Where("label_id = ?", label2.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_label` where `label_id` = ?", label2.ID)
+			assert.Nil(err)
 			assert.Equal(int64(10), count)
 
-			assert.Nil(tt.DB.Table(`group_label`).Where("label_id = ?", label2.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_label` where `label_id` = ?", label2.ID)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 		})
 	})

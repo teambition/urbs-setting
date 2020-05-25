@@ -22,38 +22,20 @@ func (b *Setting) List(ctx context.Context, productName, moduleName string, pg t
 		return nil, err
 	}
 
-	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
-	if err != nil {
-		return nil, err
+	moduleID := int64(0)
+	if moduleName != "" {
+		moduleID, err = b.ms.Module.AcquireID(ctx, productID, moduleName)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	settings, total, err := b.ms.Setting.Find(ctx, module.ID, pg)
+	settings, total, err := b.ms.Setting.Find(ctx, productID, moduleID, pg)
 	if err != nil {
 		return nil, err
 	}
 
 	res := &tpl.SettingsInfoRes{Result: tpl.SettingsInfoFrom(settings, productName, moduleName)}
-	res.TotalSize = total
-	if len(res.Result) > pg.PageSize {
-		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)
-		res.Result = res.Result[:pg.PageSize]
-	}
-	return res, nil
-}
-
-// ListByProduct 返回产品下的所有功能模块的配置项列表
-func (b *Setting) ListByProduct(ctx context.Context, productName string, pg tpl.Pagination) (*tpl.SettingsInfoRes, error) {
-	productID, err := b.ms.Product.AcquireID(ctx, productName)
-	if err != nil {
-		return nil, err
-	}
-
-	settingsInfo, total, err := b.ms.Setting.FindByProductID(ctx, productName, productID, pg)
-	if err != nil {
-		return nil, err
-	}
-
-	res := &tpl.SettingsInfoRes{Result: settingsInfo}
 	res.TotalSize = total
 	if len(res.Result) > pg.PageSize {
 		res.NextPageToken = tpl.IDToPageToken(res.Result[pg.PageSize].ID)

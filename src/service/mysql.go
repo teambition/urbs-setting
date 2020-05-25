@@ -1,15 +1,16 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/doug-martin/goqu/v9"
-	_ "github.com/doug-martin/goqu/v9/dialect/mysql" // go-sql-driver
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql" // go-sql-driver
+	mysqlDialect "github.com/doug-martin/goqu/v9/dialect/mysql"
+	_ "github.com/go-sql-driver/mysql" // go-sql-driver
 	"github.com/teambition/urbs-setting/src/conf"
 	"github.com/teambition/urbs-setting/src/logging"
 	"github.com/teambition/urbs-setting/src/util"
@@ -17,18 +18,18 @@ import (
 
 func init() {
 	util.DigProvide(NewDB)
+	goqu.RegisterDialect("default", mysqlDialect.DialectOptions()) // make mysql dialect as default too.
 }
 
 // SQL ...
 type SQL struct {
-	DB  *gorm.DB
-	GDB *goqu.Database
-	GQ  goqu.DialectWrapper
+	db *sql.DB
+	DB *goqu.Database
 }
 
 // DBStats ...
 func (s *SQL) DBStats() sql.DBStats {
-	return s.DB.DB().Stats()
+	return s.db.Stats()
 }
 
 // NewDB ...
@@ -57,28 +58,35 @@ func NewDB() *SQL {
 
 	// https://github.com/go-sql-driver/mysql#parameters
 	url := fmt.Sprintf(`%s:%s@(%s)/%s?%s`, cfg.User, cfg.Password, cfg.Host, cfg.Database, parameters.Encode())
-	db, err := gorm.Open("mysql", url)
-
+	db, err := sql.Open("mysql", url)
+	if err == nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		err = db.PingContext(ctx)
+		cancel()
+	}
 	if err != nil {
 		url = strings.Replace(url, cfg.Password, cfg.Password[0:4]+"***", 1)
 		logging.Panicf("SQL DB connect failed %s, with config %s", err, url)
 	}
 
-	// 表名使用单数。
-	// https://the.agilesql.club/2019/05/should-i-pluralize-table-names-is-it-person-persons-people-or-people/
-	db.SingularTable(true)
-	db.LogMode(false)
 	// SetMaxIdleCons 设置连接池中的最大闲置连接数。
-	db.DB().SetMaxIdleConns(cfg.MaxIdleConns)
+	db.SetMaxIdleConns(cfg.MaxIdleConns)
 	// SetMaxOpenCons 设置数据库的最大连接数量。
-	db.DB().SetMaxOpenConns(cfg.MaxOpenConns)
+	db.SetMaxOpenConns(cfg.MaxOpenConns)
 	// SetConnMaxLifetiment 设置连接的最大可复用时间。
-	// db.DB().SetConnMaxLifetime(time.Hour)
+	// db.SetConnMaxLifetime(time.Hour)
 
 	dialect := goqu.Dialect("mysql")
 	return &SQL{
-		DB:  db,
-		GDB: dialect.DB(db.DB()),
-		GQ:  dialect,
+		db: db,
+		DB: dialect.DB(db),
 	}
+}
+
+// DeResult ...
+func DeResult(re sql.Result, err error) (int64, error) {
+	if err != nil {
+		return 0, err
+	}
+	return re.RowsAffected()
 }

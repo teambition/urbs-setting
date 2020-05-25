@@ -165,11 +165,15 @@ type SettingInfo struct {
 
 // SettingInfoFrom create a SettingInfo from schema.Setting
 func SettingInfoFrom(setting schema.Setting, product, module string) SettingInfo {
+	if module != "" {
+		setting.Module = module
+	}
+
 	return SettingInfo{
 		ID:        setting.ID,
 		HID:       service.IDToHID(setting.ID, "setting"),
 		Product:   product,
-		Module:    module,
+		Module:    setting.Module,
 		Name:      setting.Name,
 		Desc:      setting.Desc,
 		Channels:  StringToSlice(setting.Channels),
@@ -216,6 +220,8 @@ type MySetting struct {
 	LastValue  string    `json:"lastValue" db:"last_value"`
 	Release    int64     `json:"release" db:"rls"`
 	AssignedAt time.Time `json:"assignedAt" db:"assigned_at"`
+	Channels   string    `json:"-" db:"channels"`
+	Clients    string    `json:"-" db:"clients"`
 }
 
 // MySettingsRes ...

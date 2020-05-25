@@ -216,11 +216,11 @@ type ProductRes struct {
 
 // ProductStatistics ...
 type ProductStatistics struct {
-	Labels   int64 `json:"labels"`
-	Modules  int64 `json:"modules"`
-	Settings int64 `json:"settings"`
-	Release  int64 `json:"release"`
-	Status   int64 `json:"status"`
+	Labels   int64 `json:"labels" db:"labels"`
+	Modules  int64 `json:"modules" db:"modules"`
+	Settings int64 `json:"settings" db:"settings"`
+	Release  int64 `json:"release" db:"release"`
+	Status   int64 `json:"status" db:"status"`
 }
 
 // ProductStatisticsRes ...

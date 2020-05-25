@@ -12,5 +12,5 @@ type Healthz struct {
 
 // DBStats ...
 func (m *Healthz) DBStats(ctx context.Context) sql.DBStats {
-	return m.DB.DB().Stats()
+	return m.SQL.DBStats()
 }

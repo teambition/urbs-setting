@@ -1,7 +1,6 @@
 package tpl
 
 import (
-	"net/url"
 	"strings"
 	"time"
 
@@ -64,17 +63,17 @@ func (pg *Pagination) TokenToID() int64 {
 	return PageTokenToID(pg.PageToken)
 }
 
-// TokenToTime 把 pageToken 转换为 time
-func (pg *Pagination) TokenToTime(defaultTime ...time.Time) time.Time {
-	return PageTokenToTime(pg.PageToken, defaultTime...)
+// TokenToTimestamp 把 pageToken 转换为 timestamp (ms)
+func (pg *Pagination) TokenToTimestamp(defaultTime ...time.Time) int64 {
+	return PageTokenToTimestamp(pg.PageToken, defaultTime...)
 }
 
 // PageTokenToID 把 pageToken 转换为 int64
 func PageTokenToID(pageToken string) int64 {
-	if !strings.HasPrefix(pageToken, "hid.") {
+	if !strings.HasPrefix(pageToken, "h.") {
 		return 9223372036854775807
 	}
-	return service.HIDToID(pageToken[4:])
+	return service.HIDToID(pageToken[2:])
 }
 
 // IDToPageToken 把 int64 转换成 pageToken
@@ -82,31 +81,27 @@ func IDToPageToken(id int64) string {
 	if id <= 0 {
 		return ""
 	}
-	return "hid." + service.IDToHID(id)
+	return "h." + service.IDToHID(id)
 }
 
-// PageTokenToTime 把 pageToken 转换为 time
-func PageTokenToTime(pageToken string, defaultTime ...time.Time) time.Time {
+// PageTokenToTimestamp 把 pageToken 转换为 timestamp
+func PageTokenToTimestamp(pageToken string, defaultTime ...time.Time) int64 {
 	t := time.Unix(0, 0)
 	if len(defaultTime) > 0 {
 		t = defaultTime[0]
 	}
-	if pageToken == "" {
-		return t
+	if !strings.HasPrefix(pageToken, "t.") {
+		return t.Unix()*1000 + int64(t.UTC().Nanosecond()/1000000)
 	}
 
-	t2, err := time.Parse(time.RFC3339, pageToken)
-	if err != nil {
-		return t
-	}
-	return t2
+	return service.HIDToID(pageToken[2:])
 }
 
 // TimeToPageToken 把 time 转换成 pageToken
 func TimeToPageToken(t time.Time) string {
-	t = t.UTC()
-	if t.Unix() <= 0 {
+	s := t.Unix()*1000 + int64(t.UTC().Nanosecond()/1000000)
+	if s <= 0 {
 		return ""
 	}
-	return url.QueryEscape(t.Format(time.RFC3339))
+	return "t." + service.IDToHID(s)
 }

@@ -116,10 +116,10 @@ type GroupsRes struct {
 
 // GroupMember ...
 type GroupMember struct {
-	ID        int64     `json:"-"`
-	User      string    `json:"user"`
-	CreatedAt time.Time `json:"createdAt"`
-	SyncAt    int64     `json:"syncAt"` // 归属关系同步时间戳，1970 以来的秒数，应该与 group.sync_at 相等
+	ID        int64     `json:"-" db:"id"`
+	User      string    `json:"user" db:"uid"`
+	CreatedAt time.Time `json:"createdAt" db:"created_at"`
+	SyncAt    int64     `json:"syncAt" db:"sync_at"` // 归属关系同步时间戳，1970 以来的秒数，应该与 group.sync_at 相等
 }
 
 // GroupMembersRes ...

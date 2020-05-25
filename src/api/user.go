@@ -69,12 +69,12 @@ func (a *User) ListLabels(ctx *gear.Context) error {
 
 // ListSettings 返回 user 的 settings，按照 setting 设置时间正序，支持分页
 func (a *User) ListSettings(ctx *gear.Context) error {
-	req := tpl.UIDPaginationURL{}
+	req := tpl.MySettingsQueryURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res, err := a.blls.User.ListSettings(ctx, req.UID, req.Pagination)
+	res, err := a.blls.User.ListSettings(ctx, req)
 	if err != nil {
 		return err
 	}

@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
-	"github.com/jinzhu/gorm"
+	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/conf"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
+	"github.com/teambition/urbs-setting/src/util"
 )
 
 // User ...
@@ -21,24 +22,15 @@ type User struct {
 
 // FindByUID 根据 uid 返回 user 数据
 func (m *User) FindByUID(ctx context.Context, uid string, selectStr string) (*schema.User, error) {
-	var err error
 	user := &schema.User{}
-	db := m.DB.Where("`uid` = ?", uid)
-
-	if selectStr == "" {
-		err = db.First(user).Error
-	} else {
-		err = db.Select(selectStr).First(user).Error
+	ok, err := m.findOneByCols(ctx, schema.TableUser, goqu.Ex{"uid": uid}, selectStr, user)
+	if err != nil {
+		return nil, err
 	}
-
-	if err == nil {
-		return user, nil
-	}
-
-	if gorm.IsRecordNotFoundError(err) {
+	if !ok {
 		return nil, nil
 	}
-	return nil, err
+	return user, nil
 }
 
 // Acquire ...
@@ -55,7 +47,7 @@ func (m *User) Acquire(ctx context.Context, uid string) (*schema.User, error) {
 
 // AcquireID ...
 func (m *User) AcquireID(ctx context.Context, uid string) (int64, error) {
-	user, err := m.FindByUID(ctx, uid, "`id`")
+	user, err := m.FindByUID(ctx, uid, "id")
 	if err != nil {
 		return 0, err
 	}
@@ -69,44 +61,47 @@ func (m *User) AcquireID(ctx context.Context, uid string) (int64, error) {
 func (m *User) Find(ctx context.Context, pg tpl.Pagination) ([]schema.User, int, error) {
 	users := make([]schema.User, 0)
 	cursor := pg.TokenToID()
-	total := 0
+	sdc := m.DB.From(schema.TableUser)
+	sd := m.DB.From(schema.TableUser).Where(goqu.C("id").Lte(cursor))
 
-	var err error
-	db := m.DB.Where("`id` <= ?", cursor)
 	if pg.Q != "" {
-		db = m.DB.Where("`id` <= ? and `uid` like ?", cursor, pg.Q)
-		err = m.DB.Where("`uid` like ?", pg.Q).Model(&schema.User{}).Count(&total).Error
+		sdc = sdc.Where(goqu.C("uid").Like(pg.Q))
+		sd = sd.Where(goqu.C("uid").Like(pg.Q))
 	}
+	sd = sd.Order(goqu.C("id").Desc()).Limit(uint(pg.PageSize + 1))
 
-	if err == nil {
-		err = db.Order("`id` desc").Limit(pg.PageSize + 1).Find(&users).Error
-	}
+	total, err := sdc.CountContext(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
-	return users, total, nil
+	err = sd.Executor().ScanStructsContext(ctx, &users)
+	if err != nil {
+		return nil, 0, err
+	}
+	return users, int(total), nil
 }
-
-const userCacheLabelsSQL = "(select t2.`id`, t1.`created_at`, t2.`name`, t3.`name` as `p`, t2.`channels`, t2.`clients` " +
-	"from `user_label` t1, `urbs_label` t2, `urbs_product` t3 " +
-	"where t1.`user_id` = ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.`id` " +
-	"order by t1.`id` desc limit 200) " +
-	"union all " + // 期望能基于 id distinct
-	"(select t3.`id`, t2.`created_at`, t3.`name`, t4.`name` as `p`, t3.`channels`, t3.`clients` " +
-	"from `user_group` t1, `group_label` t2, `urbs_label` t3, `urbs_product` t4 " +
-	"where t1.`user_id` = ? and t1.`group_id` = t2.`group_id` and t2.`label_id` = t3.`id` and t3.`product_id` = t4.`id` " +
-	"order by t2.`id` desc limit 200)" +
-	"order by `created_at` desc"
 
 // RefreshLabels 更新 user 上的 labels 缓存，包括通过 group 关系获得的 labels
 func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force bool) (*schema.User, []int64, bool, error) {
-	user := &schema.User{ID: id}
+	user := &schema.User{}
 	labelIDs := make([]int64, 0)
 	refreshed := false
-	err := m.DB.Transaction(func(tx *gorm.DB) error {
+	tx, err := m.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	err = tx.Wrap(func() error {
 		// 指定 id 的记录被锁住，如果表中无符合记录的数据则排他锁不生效
-		if err := tx.Set("gorm:query_option", "FOR UPDATE").First(user).Error; err != nil {
+		sd := tx.From(schema.TableUser).Where(goqu.C("id").Eq(id)).
+			ForUpdate(exp.Wait).Order(goqu.C("id").Asc()).Limit(1)
+
+		ok, err := sd.Executor().ScanStructContext(ctx, user)
+		if err != nil {
 			return err
+		}
+		if !ok {
+			return gear.ErrNotFound.WithMsgf("user %d not found for RefreshLabels", id)
 		}
 
 		if !force && !conf.Config.IsCacheLabelExpired(now-5, user.ActiveAt) {
@@ -115,88 +110,182 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force boo
 		}
 
 		data := make(schema.UserCacheLabels)
-		rows, err := tx.Raw(userCacheLabelsSQL, id, id).Rows()
-		defer rows.Close()
 
+		sd = tx.Select(
+			goqu.I("t1.created_at"),
+			goqu.I("t2.id"),
+			goqu.I("t2.name"),
+			goqu.I("t2.channels"),
+			goqu.I("t2.clients"),
+			goqu.I("t3.name").As("product")).
+			From(
+				goqu.T(schema.TableUserLabel).As("t1"),
+				goqu.T(schema.TableLabel).As("t2"),
+				goqu.T(schema.TableProduct).As("t3")).
+			Where(
+				goqu.I("t1.user_id").Eq(id),
+				goqu.I("t1.label_id").Eq(goqu.I("t2.id")),
+				goqu.I("t2.product_id").Eq(goqu.I("t3.id"))).
+			Order(goqu.I("t1.id").Desc()).Limit(200)
+
+		sd = sd.UnionAll(tx.Select(
+			goqu.I("t2.created_at"),
+			goqu.I("t3.id"),
+			goqu.I("t3.name"),
+			goqu.I("t3.channels"),
+			goqu.I("t3.clients"),
+			goqu.I("t4.name").As("product")).
+			From(
+				goqu.T(schema.TableUserGroup).As("t1"),
+				goqu.T(schema.TableGroupLabel).As("t2"),
+				goqu.T(schema.TableLabel).As("t3"),
+				goqu.T(schema.TableProduct).As("t4")).
+			Where(
+				goqu.I("t1.user_id").Eq(id),
+				goqu.I("t1.group_id").Eq(goqu.I("t2.group_id")),
+				goqu.I("t2.label_id").Eq(goqu.I("t3.id")),
+				goqu.I("t3.product_id").Eq(goqu.I("t4.id"))).
+			Order(goqu.I("t2.id").Desc()).Limit(200)).
+			Order(goqu.C("created_at").Desc())
+
+		scanner, err := sd.Executor().ScannerContext(ctx)
 		if err != nil {
 			return err
 		}
+		defer scanner.Close()
 
-		var ignoreTime time.Time
 		set := make(map[int64]struct{})
-		for rows.Next() {
-			var ignoreID int64
-			var product string
-			var clients string
-			var channels string
-			label := schema.UserCacheLabel{}
-			// ScanRows 扫描一行记录到 user
-			if err := rows.Scan(&ignoreID, &ignoreTime, &label.Label, &product, &channels, &clients); err != nil {
+		for scanner.Next() {
+			myLabelInfo := schema.MyLabelInfo{}
+			if err := scanner.ScanStruct(&myLabelInfo); err != nil {
 				return err
 			}
-			if _, ok := set[ignoreID]; ok {
+			if _, ok := set[myLabelInfo.ID]; ok {
 				continue // 去重
 			}
-			set[ignoreID] = struct{}{}
-			labelIDs = append(labelIDs, ignoreID)
+			set[myLabelInfo.ID] = struct{}{}
 
-			label.Channels = tpl.StringToSlice(channels)
-			label.Clients = tpl.StringToSlice(clients)
-			arr, ok := data[product]
+			labelIDs = append(labelIDs, myLabelInfo.ID)
+			arr, ok := data[myLabelInfo.Product]
 			if !ok {
 				arr = make([]schema.UserCacheLabel, 0)
 			}
-			data[product] = append(arr, label)
+			data[myLabelInfo.Product] = append(arr, schema.UserCacheLabel{
+				Label:    myLabelInfo.Name,
+				Clients:  tpl.StringToSlice(myLabelInfo.Clients),
+				Channels: tpl.StringToSlice(myLabelInfo.Channels),
+			})
 		}
-		_ = user.PutLabels(data)
-		user.ActiveAt = time.Now().UTC().Unix()
 
 		refreshed = true
-		return tx.Model(&schema.User{ID: id}).UpdateColumns(map[string]interface{}{
-			"labels": user.Labels, "active_at": user.ActiveAt}).Error // 返回 nil 提交事务，否则回滚
+		user.ActiveAt = time.Now().UTC().Unix()
+		_ = user.PutLabels(data)
+		_, err = service.DeResult(tx.Update(schema.TableUser).
+			Where(goqu.C("id").Eq(id)).
+			Set(goqu.Record{"labels": user.Labels, "active_at": user.ActiveAt}).
+			Executor().ExecContext(ctx))
+		return err
 	})
 
-	return user, labelIDs, refreshed, err
+	if err != nil {
+		return nil, nil, false, err
+	}
+	return user, labelIDs, refreshed, nil
 }
 
-const userSettingsWithGroupSQL = "(select t1.`rls`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
-	"t2.`id`, t2.`name`, t3.`name` as `module`, t2.`channels`, t2.`clients` " +
-	"from `user_setting` t1, `urbs_setting` t2, `urbs_module` t3 " +
-	"where t1.`user_id` = ? and t1.`updated_at` <= ? and t1.`setting_id` = t2.`id` and t2.`module_id` in ( ? ) and t2.`module_id` = t3.`id` " +
-	"order by t1.`updated_at` desc limit ? ) " +
-	"union all " +
-	"(select t1.`rls`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
-	"t2.`id`, t2.`name`, t3.`name` as `module`, t2.`channels`, t2.`clients` " +
-	"from `group_setting` t1, `urbs_setting` t2, `urbs_module` t3 " +
-	"where t1.`group_id` in ( ? ) and t1.`updated_at` <= ? and t1.`setting_id` = t2.`id` and t2.`module_id` in ( ? ) and t2.`module_id` = t3.`id` " +
-	"order by t1.`updated_at` desc limit ? ) " +
-	"order by `updated_at` desc"
-
 // FindSettingsUnionAll 根据用户 ID, updateGt, productName 返回其 settings 数据。
-func (m *User) FindSettingsUnionAll(ctx context.Context, userID int64, groupIDs []int64, moduleIDs []int64, pg tpl.Pagination, channel, client string) ([]tpl.MySetting, error) {
+func (m *User) FindSettingsUnionAll(ctx context.Context, groupIDs []int64, userID, productID, moduleID, settingID int64, pg tpl.Pagination, channel, client string) ([]tpl.MySetting, error) {
 	data := []tpl.MySetting{}
-	cursor := pg.TokenToTime(time.Now().Add(time.Minute * 10))
+	cursor := pg.TokenToTimestamp(time.Now().Add(time.Minute * 10))
+	set := make(map[int64]struct{})
 	size := pg.PageSize + 1
 
-	for {
-		rows, err := m.DB.Raw(userSettingsWithGroupSQL, userID, cursor, moduleIDs, size,
-			groupIDs, cursor, moduleIDs, size).Rows()
+	s := m.DB.Select(
+		goqu.I("t1.rls"),
+		goqu.I("t1.updated_at").As("assigned_at"),
+		goqu.I("t1.value"),
+		goqu.I("t1.last_value"),
+		goqu.I("t2.id"),
+		goqu.I("t2.name"),
+		goqu.I("t2.description"),
+		goqu.I("t2.channels"),
+		goqu.I("t2.clients"),
+		goqu.I("t3.name").As("module"))
 
+	for i := 0; i < 7; i++ { // 分页补偿最多 7 次
+		sd := s.From(
+			goqu.T(schema.TableUserSetting).As("t1"),
+			goqu.T(schema.TableSetting).As("t2"),
+			goqu.T(schema.TableModule).As("t3")).
+			Where(
+				goqu.I("t1.user_id").Eq(userID),
+				goqu.L("unix_timestamp(`t1`.`updated_at`)*1000").Lte(cursor))
+
+		if settingID > 0 {
+			sd = sd.Where(
+				goqu.I("t1.setting_id").Eq(settingID),
+				goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
+		} else if moduleID > 0 {
+			sd = sd.Where(
+				goqu.I("t1.setting_id").Eq(goqu.I("t2.id")),
+				goqu.I("t2.module_id").Eq(moduleID))
+		} else {
+			sd = sd.Where(goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
+		}
+
+		if pg.Q != "" {
+			sd = sd.Where(goqu.I("t2.name").Like(pg.Q))
+		}
+
+		sd = sd.Where(
+			goqu.I("t2.module_id").Eq(goqu.I("t3.id")),
+			goqu.I("t3.product_id").Eq(productID)).
+			Order(goqu.I("t1.updated_at").Desc()).Limit(uint(size))
+
+		if len(groupIDs) > 0 {
+			gsd := s.From(
+				goqu.T(schema.TableGroupSetting).As("t1"),
+				goqu.T(schema.TableSetting).As("t2"),
+				goqu.T(schema.TableModule).As("t3")).
+				Where(
+					goqu.I("t1.group_id").In(groupIDs),
+					goqu.L("unix_timestamp(`t1`.`updated_at`)*1000").Lte(cursor))
+
+			if settingID > 0 {
+				gsd = gsd.Where(
+					goqu.I("t1.setting_id").Eq(settingID),
+					goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
+			} else if moduleID > 0 {
+				gsd = gsd.Where(
+					goqu.I("t1.setting_id").Eq(goqu.I("t2.id")),
+					goqu.I("t2.module_id").Eq(moduleID))
+			} else {
+				gsd = gsd.Where(goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
+			}
+
+			if pg.Q != "" {
+				gsd = gsd.Where(goqu.I("t2.name").Like(pg.Q))
+			}
+
+			gsd = gsd.Where(
+				goqu.I("t2.module_id").Eq(goqu.I("t3.id")),
+				goqu.I("t3.product_id").Eq(productID)).
+				Order(goqu.I("t1.updated_at").Desc()).Limit(uint(size))
+
+			sd = sd.UnionAll(gsd).Order(goqu.C("assigned_at").Desc())
+		}
+
+		scanner, err := sd.Executor().ScannerContext(ctx)
 		if err != nil {
-			rows.Close()
 			return nil, err
 		}
 
-		set := make(map[int64]struct{})
 		count := 0
-		for rows.Next() {
+		for scanner.Next() {
 			count++
-			var clients string
-			var channels string
 			mySetting := tpl.MySetting{}
-			if err := rows.Scan(&mySetting.Release, &mySetting.AssignedAt, &mySetting.Value, &mySetting.LastValue,
-				&mySetting.ID, &mySetting.Name, &mySetting.Module, &channels, &clients); err != nil {
-				rows.Close()
+			if err := scanner.ScanStruct(&mySetting); err != nil {
+				scanner.Close()
 				return nil, err
 			}
 
@@ -205,13 +294,13 @@ func (m *User) FindSettingsUnionAll(ctx context.Context, userID int64, groupIDs 
 			}
 			set[mySetting.ID] = struct{}{}
 
-			if channel != "" && channels != "" {
-				if !tpl.StringSliceHas(tpl.StringToSlice(channels), channel) {
+			if mySetting.Channels != "" {
+				if !tpl.StringSliceHas(tpl.StringToSlice(mySetting.Channels), channel) {
 					continue // channel 不匹配
 				}
 			}
-			if client != "" && clients != "" {
-				if !tpl.StringSliceHas(tpl.StringToSlice(clients), client) {
+			if mySetting.Clients != "" {
+				if !tpl.StringSliceHas(tpl.StringToSlice(mySetting.Clients), client) {
 					continue // client 不匹配
 				}
 			}
@@ -219,7 +308,11 @@ func (m *User) FindSettingsUnionAll(ctx context.Context, userID int64, groupIDs 
 			mySetting.HID = service.IDToHID(mySetting.ID, "setting")
 			data = append(data, mySetting)
 		}
-		rows.Close()
+
+		scanner.Close()
+		if err := scanner.Err(); err != nil {
+			return nil, err
+		}
 
 		if count < size {
 			break // no data to select
@@ -227,140 +320,166 @@ func (m *User) FindSettingsUnionAll(ctx context.Context, userID int64, groupIDs 
 		if len(data) >= size {
 			break // get enough
 		}
+		nt := data[len(data)-1].AssignedAt.UTC()
 		// select next page
-		cursor = data[len(data)-1].AssignedAt.Add(-time.Millisecond)
+		cursor = nt.Unix()*1000 + int64(nt.Nanosecond()/1000000) - 1
 	}
 
 	return data, nil
 }
 
-const listUserLabelsSQL = "select t1.`rls`, t1.`created_at`, t2.`id`, t2.`name`, " +
-	"t2.`description`, t3.`name` as `product` " +
-	"from `user_label` t1, `urbs_label` t2, `urbs_product` t3 " +
-	"where t1.`user_id` = ? and t1.`id` <= ? and t1.`label_id` = t2.`id` and t2.`product_id` = t3.id " +
-	"order by t1.`id` desc " +
-	"limit ?"
-
-const countUserLabelsSQL = "select count(t2.`id`) " +
-	"from `user_label` t1, `urbs_label` t2 " +
-	"where t1.`user_id` = ? and t1.`label_id` = t2.`id`"
-
-const searchUserLabelsSQL = "select t1.`rls`, t2.`created_at`, t2.`id`, t2.`name`, " +
-	"t2.`description`, t3.`name` as `product` " +
-	"from `user_label` t1, `urbs_label` t2, `urbs_product` t3 " +
-	"where t1.`user_id` = ? and t1.`id` <= ? and t1.`label_id` = t2.`id` and t2.`name` like ? and t2.`product_id` = t3.`id` " +
-	"order by t1.`id` desc " +
-	"limit ?"
-
-const countSearchUserLabelsSQL = "select count(t2.`id`) " +
-	"from `user_label` t1, `urbs_label` t2 " +
-	"where t1.`user_id` = ? and t1.`label_id` = t2.`id` and t2.`name` like ?"
-
 // FindLabels 根据用户 ID 返回其 labels 数据。
 func (m *User) FindLabels(ctx context.Context, userID int64, pg tpl.Pagination) ([]tpl.MyLabel, int, error) {
 	data := []tpl.MyLabel{}
 	cursor := pg.TokenToID()
-	total := 0
 
-	if pg.Q == "" {
-		if err := m.DB.Raw(countUserLabelsSQL, userID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
-			return nil, 0, err
-		}
-	} else {
-		if err := m.DB.Raw(countSearchUserLabelsSQL, userID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
-			return nil, 0, err
-		}
+	sdc := m.DB.Select().
+		From(
+			goqu.T(schema.TableUserLabel).As("t1"),
+			goqu.T(schema.TableLabel).As("t2"),
+			goqu.T(schema.TableProduct).As("t3")).
+		Where(
+			goqu.I("t1.user_id").Eq(userID),
+			goqu.I("t1.label_id").Eq(goqu.I("t2.id")))
+
+	sd := m.DB.Select(
+		goqu.I("t1.rls"),
+		goqu.I("t1.created_at").As("assigned_at"),
+		goqu.I("t2.id"),
+		goqu.I("t2.name"),
+		goqu.I("t2.description"),
+		goqu.I("t3.name").As("product")).
+		From(
+			goqu.T(schema.TableUserLabel).As("t1"),
+			goqu.T(schema.TableLabel).As("t2"),
+			goqu.T(schema.TableProduct).As("t3")).
+		Where(
+			goqu.I("t1.user_id").Eq(userID),
+			goqu.I("t1.id").Lte(cursor),
+			goqu.I("t1.label_id").Eq(goqu.I("t2.id")))
+
+	if pg.Q != "" {
+		sdc = sdc.Where(goqu.I("t2.name").Like(pg.Q))
+		sd = sd.Where(goqu.I("t2.name").Like(pg.Q))
 	}
 
-	var err error
-	var rows *sql.Rows
-	if pg.Q == "" {
-		rows, err = m.DB.Raw(listUserLabelsSQL, userID, cursor, pg.PageSize+1).Rows()
-	} else {
-		rows, err = m.DB.Raw(searchUserLabelsSQL, userID, cursor, pg.Q, pg.PageSize+1).Rows()
-	}
+	sdc = sdc.Where(goqu.I("t2.product_id").Eq(goqu.I("t3.id")))
+	sd = sd.Where(goqu.I("t2.product_id").Eq(goqu.I("t3.id"))).
+		Order(goqu.I("t1.id").Desc()).Limit(uint(pg.PageSize + 1))
 
-	defer rows.Close()
-
+	total, err := sdc.CountContext(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
+	scanner, err := sd.Executor().ScannerContext(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer scanner.Close()
 
-	for rows.Next() {
+	for scanner.Next() {
 		myLabel := tpl.MyLabel{}
-		if err := rows.Scan(&myLabel.Release, &myLabel.AssignedAt, &myLabel.ID, &myLabel.Name, &myLabel.Desc, &myLabel.Product); err != nil {
+		if err := scanner.ScanStruct(&myLabel); err != nil {
 			return nil, 0, err
 		}
 		myLabel.HID = service.IDToHID(myLabel.ID, "label")
 		data = append(data, myLabel)
 	}
 
-	return data, total, nil
+	if err := scanner.Err(); err != nil {
+		return nil, 0, err
+	}
+	return data, int(total), nil
 }
 
-const listUserSettingsSQL = "select t1.`rls`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
-	"t2.`id`, t2.`name`, t3.`name` as `module`, t4.`name` as `product` " +
-	"from `user_setting` t1, `urbs_setting` t2, `urbs_module` t3, `urbs_product` t4 " +
-	"where t1.`user_id` = ? and t1.`id` <= ? and t1.`setting_id` = t2.`id` and t2.`module_id` = t3.`id` and t3.`product_id` = t4.`id` " +
-	"order by t1.`id` desc " +
-	"limit ?"
-
-const countUserSettingsSQL = "select count(t2.`id`) " +
-	"from `user_setting` t1, `urbs_setting` t2 " +
-	"where t1.`user_id` = ? and t1.`setting_id` = t2.`id`"
-
-const searchUserSettingsSQL = "select t1.`rls`, t1.`updated_at`, t1.`value`, t1.`last_value`, " +
-	"t2.`id`, t2.`name`, t3.`name` as `module`, t4.`name` as `product` " +
-	"from `user_setting` t1, `urbs_setting` t2, `urbs_module` t3, `urbs_product` t4 " +
-	"where t1.`user_id` = ? and t1.`id` <= ? and t1.`setting_id` = t2.`id` and t2.`name` like ? and t2.`module_id` = t3.`id` and t3.`product_id` = t4.`id` " +
-	"order by t1.`id` desc " +
-	"limit ?"
-
-const countSearchUserSettingsSQL = "select count(t2.`id`) " +
-	"from `user_setting` t1, `urbs_setting` t2 " +
-	"where t1.`user_id` = ? and t1.`setting_id` = t2.`id` and t2.`name` like ?"
-
 // FindSettings 根据用户 ID 返回 settings 数据。
-func (m *User) FindSettings(ctx context.Context, userID int64, pg tpl.Pagination) ([]tpl.MySetting, int, error) {
+func (m *User) FindSettings(ctx context.Context, userID, productID, moduleID, settingID int64, pg tpl.Pagination) ([]tpl.MySetting, int, error) {
 	data := []tpl.MySetting{}
 	cursor := pg.TokenToID()
-	total := 0
+	sdc := m.DB.Select().
+		From(
+			goqu.T(schema.TableUserSetting).As("t1"),
+			goqu.T(schema.TableSetting).As("t2"),
+			goqu.T(schema.TableModule).As("t3"),
+			goqu.T(schema.TableProduct).As("t4")).
+		Where(goqu.I("t1.user_id").Eq(userID))
 
-	if pg.Q == "" {
-		if err := m.DB.Raw(countUserSettingsSQL, userID).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
-			return nil, 0, err
-		}
+	sd := m.DB.Select(
+		goqu.I("t1.rls"),
+		goqu.I("t1.updated_at").As("assigned_at"),
+		goqu.I("t1.value"),
+		goqu.I("t1.last_value"),
+		goqu.I("t2.id"),
+		goqu.I("t2.name"),
+		goqu.I("t2.description"),
+		goqu.I("t3.name").As("module"),
+		goqu.I("t4.name").As("product")).
+		From(
+			goqu.T(schema.TableUserSetting).As("t1"),
+			goqu.T(schema.TableSetting).As("t2"),
+			goqu.T(schema.TableModule).As("t3"),
+			goqu.T(schema.TableProduct).As("t4")).
+		Where(
+			goqu.I("t1.user_id").Eq(userID),
+			goqu.I("t1.id").Lte(cursor))
+
+	if settingID > 0 {
+		sdc = sdc.Where(
+			goqu.I("t1.setting_id").Eq(settingID),
+			goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
+		sd = sd.Where(
+			goqu.I("t1.setting_id").Eq(settingID),
+			goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
+	} else if moduleID > 0 {
+		sdc = sdc.Where(
+			goqu.I("t1.setting_id").Eq(goqu.I("t2.id")),
+			goqu.I("t2.module_id").Eq(moduleID))
+		sd = sd.Where(
+			goqu.I("t1.setting_id").Eq(goqu.I("t2.id")),
+			goqu.I("t2.module_id").Eq(moduleID))
 	} else {
-		if err := m.DB.Raw(countSearchUserSettingsSQL, userID, pg.Q).Row().Scan(&total); err != nil && err != sql.ErrNoRows {
-			return nil, 0, err
-		}
+		sdc = sdc.Where(goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
+		sd = sd.Where(goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
 	}
 
-	var err error
-	var rows *sql.Rows
-	if pg.Q == "" {
-		rows, err = m.DB.Raw(listUserSettingsSQL, userID, cursor, pg.PageSize+1).Rows()
-	} else {
-		rows, err = m.DB.Raw(searchUserSettingsSQL, userID, cursor, pg.Q, pg.PageSize+1).Rows()
+	if pg.Q != "" {
+		sdc = sdc.Where(goqu.I("t2.name").Like(pg.Q))
+		sd = sd.Where(goqu.I("t2.name").Like(pg.Q))
 	}
 
-	defer rows.Close()
+	sdc = sdc.Where(goqu.I("t2.module_id").Eq(goqu.I("t3.id")))
+	sd = sd.Where(goqu.I("t2.module_id").Eq(goqu.I("t3.id")))
+	if productID > 0 {
+		sdc = sdc.Where(goqu.I("t3.product_id").Eq(productID))
+		sd = sd.Where(goqu.I("t3.product_id").Eq(productID))
+	}
+	sd = sd.Where(goqu.I("t3.product_id").Eq(goqu.I("t4.id"))).
+		Order(goqu.I("t1.id").Desc()).Limit(uint(pg.PageSize + 1))
 
+	total, err := sdc.CountContext(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	for rows.Next() {
+	scanner, err := sd.Executor().ScannerContext(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer scanner.Close()
+
+	for scanner.Next() {
 		mySetting := tpl.MySetting{}
-		if err := rows.Scan(&mySetting.Release, &mySetting.AssignedAt, &mySetting.Value, &mySetting.LastValue,
-			&mySetting.ID, &mySetting.Name, &mySetting.Module, &mySetting.Product); err != nil {
+		if err := scanner.ScanStruct(&mySetting); err != nil {
 			return nil, 0, err
 		}
 		mySetting.HID = service.IDToHID(mySetting.ID, "setting")
 		data = append(data, mySetting)
 	}
 
-	return data, total, nil
+	if err := scanner.Err(); err != nil {
+		return nil, 0, err
+	}
+	return data, int(total), nil
 }
 
 // BatchAdd 批量添加用户
@@ -375,14 +494,12 @@ func (m *User) BatchAdd(ctx context.Context, uids []string) error {
 		vals[i] = goqu.Vals{uids[i]}
 	}
 
-	insertDataset := m.GDB.Insert("urbs_user").Cols("uid").Vals(vals...).OnConflict(goqu.DoNothing())
-	res, err := insertDataset.Executor().ExecContext(ctx)
-	if err != nil {
-		return err
-	}
-	rowsAffected, err := res.RowsAffected()
+	sd := m.DB.Insert(schema.TableUser).Cols("uid").Vals(vals...).OnConflict(goqu.DoNothing())
+	rowsAffected, err := service.DeResult(sd.Executor().ExecContext(ctx))
 	if rowsAffected > 0 {
-		go m.tryRefreshUsersTotalSize(ctx)
+		util.Go(30*time.Second, func(gctx context.Context) {
+			m.tryRefreshUsersTotalSize(gctx)
+		})
 	}
 	return err
 }

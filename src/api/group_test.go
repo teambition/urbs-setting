@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/DavidCai1993/request"
+	"github.com/doug-martin/goqu/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
@@ -24,7 +25,7 @@ func createGroup(tt *TestTools) (group schema.Group, err error) {
 
 	if err == nil {
 		res.Content() // close http client
-		err = tt.DB.Where("uid= ?", uid).First(&group).Error
+		_, err = tt.DB.ScanStruct(&group, "select * from `urbs_group` where `uid` = ? limit 1", uid)
 	}
 	return
 }
@@ -53,11 +54,13 @@ func createGroupWithUsers(tt *TestTools, count int) (group schema.Group, users [
 
 	if err == nil {
 		res.Content() // close http client
-		err = tt.DB.Where("uid= ?", groupUID).First(&group).Error
+		_, err = tt.DB.ScanStruct(&group, "select * from `urbs_group` where `uid` = ? limit 1", groupUID)
 	}
 
 	if err == nil {
-		err = tt.DB.Where("uid in ( ? )", userUIDs).Order("id").Find(&users).Error
+		err = tt.DB.From("urbs_user").
+			Where(goqu.Ex{"uid": userUIDs}).Order(goqu.C("id").Desc()).
+			Executor().ScanStructs(&users)
 	}
 	return
 }
@@ -87,11 +90,12 @@ func TestGroupAPIs(t *testing.T) {
 			assert.True(json.Result)
 
 			var count int64
-			assert.Nil(tt.DB.Table(`urbs_group`).Where("uid = ?", uid1).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `urbs_group` where `uid` = ?", uid1)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
 			var group schema.Group
-			err = tt.DB.Where("uid= ?", uid1).First(&group).Error
+			_, err = tt.DB.ScanStruct(&group, "select * from `urbs_group` where `uid` = ? limit 1", uid1)
 			assert.Nil(err)
 			assert.Equal("org", group.Kind)
 			assert.Equal(group.CreatedAt, group.UpdatedAt)
@@ -115,13 +119,16 @@ func TestGroupAPIs(t *testing.T) {
 			assert.True(json.Result)
 
 			var count int64
-			assert.Nil(tt.DB.Table(`urbs_group`).Where("uid = ?", uid1).Count(&count).Error)
+
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `urbs_group` where `uid` = ?", uid1)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
-			assert.Nil(tt.DB.Table(`urbs_group`).Where("uid = ?", uid2).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `urbs_group` where `uid` = ?", uid2)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
 			var group schema.Group
-			err = tt.DB.Where("uid= ?", uid1).First(&group).Error
+			_, err = tt.DB.ScanStruct(&group, "select * from `urbs_group` where `uid` = ? limit 1", uid1)
 			assert.Nil(err)
 			assert.Equal("org", group.Kind)
 			assert.Equal(group.CreatedAt, group.UpdatedAt)
@@ -344,7 +351,8 @@ func TestGroupAPIs(t *testing.T) {
 			res.Content() // close http client
 
 			var count int64
-			assert.Nil(tt.DB.Table(`group_label`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_label` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
 			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:assign", tt.Host, product.Name, module.Name, setting.Name)).
@@ -358,10 +366,12 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal(200, res.StatusCode)
 			res.Content() // close http client
 
-			assert.Nil(tt.DB.Table(`group_setting`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
-			assert.Nil(tt.DB.Table(`user_group`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_group` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(10), count)
 
 			res, err = request.Delete(fmt.Sprintf("%s/v1/groups/%s", tt.Host, group.UID)).
@@ -374,13 +384,17 @@ func TestGroupAPIs(t *testing.T) {
 			res.JSON(&json)
 			assert.True(json.Result)
 
-			assert.Nil(tt.DB.Table(`group_label`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_label` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(0), count)
-			assert.Nil(tt.DB.Table(`group_setting`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(0), count)
-			assert.Nil(tt.DB.Table(`user_group`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_group` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(0), count)
-			assert.Nil(tt.DB.Table(`urbs_group`).Where("id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `urbs_group` where `id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(0), count)
 		})
 
@@ -422,7 +436,8 @@ func TestGroupAPIs(t *testing.T) {
 			assert.True(json.Result)
 
 			var count int64
-			assert.Nil(tt.DB.Table(`user_group`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_group` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(5), count)
 		})
 
@@ -441,7 +456,8 @@ func TestGroupAPIs(t *testing.T) {
 			assert.True(json.Result)
 
 			var count int64
-			assert.Nil(tt.DB.Table(`user_group`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_group` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(6), count)
 		})
 
@@ -461,9 +477,11 @@ func TestGroupAPIs(t *testing.T) {
 			assert.True(json.Result)
 
 			var count int64
-			assert.Nil(tt.DB.Table(`user_group`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_group` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(7), count)
-			assert.Nil(tt.DB.Table(`urbs_user`).Where("uid = ?", u).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `urbs_user` where `uid` = ?", u)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 		})
 	})
@@ -528,7 +546,8 @@ func TestGroupAPIs(t *testing.T) {
 			assert := assert.New(t)
 
 			var count int64
-			assert.Nil(tt.DB.Table(`user_group`).Where("group_id = ? and user_id = ?", group.ID, users[0].ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_group` where `group_id` = ? and `user_id` = ?", group.ID, users[0].ID)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
 			res, err := request.Delete(fmt.Sprintf("%s/v1/groups/%s/members?user=%s", tt.Host, group.UID, users[0].UID)).
@@ -540,7 +559,8 @@ func TestGroupAPIs(t *testing.T) {
 			res.JSON(&json)
 			assert.True(json.Result)
 
-			assert.Nil(tt.DB.Table(`user_group`).Where("group_id = ? and user_id = ?", group.ID, users[0].ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_group` where `group_id` = ? and `user_id` = ?", group.ID, users[0].ID)
+			assert.Nil(err)
 			assert.Equal(int64(0), count)
 		})
 
@@ -557,7 +577,8 @@ func TestGroupAPIs(t *testing.T) {
 			assert.True(json.Result)
 
 			var count int64
-			assert.Nil(tt.DB.Table(`user_group`).Where("group_id = ? and user_id = ?", group.ID, users[0].ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_group` where `group_id` = ? and `user_id` = ?", group.ID, users[0].ID)
+			assert.Nil(err)
 			assert.Equal(int64(0), count)
 		})
 
@@ -565,7 +586,8 @@ func TestGroupAPIs(t *testing.T) {
 			assert := assert.New(t)
 
 			var count int64
-			assert.Nil(tt.DB.Table(`user_group`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_group` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(9), count)
 
 			time.Sleep(time.Second)
@@ -588,7 +610,8 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Equal(200, res.StatusCode)
 			res.Content() // close http client
 
-			assert.Nil(tt.DB.Table(`user_group`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_group` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(10), count)
 
 			res, err = request.Delete(fmt.Sprintf("%s/v1/groups/%s/members?syncLt=%d", tt.Host, group.UID, syncAt)).
@@ -599,7 +622,8 @@ func TestGroupAPIs(t *testing.T) {
 			json := tpl.BoolRes{}
 			res.JSON(&json)
 			assert.True(json.Result)
-			assert.Nil(tt.DB.Table(`user_group`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_group` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(2), count)
 		})
 	})
@@ -718,7 +742,8 @@ func TestGroupAPIs(t *testing.T) {
 			res.Content() // close http client
 
 			var count int64
-			assert.Nil(tt.DB.Table(`group_label`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_label` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
 			res, err = request.Delete(fmt.Sprintf("%s/v1/products/%s/labels/%s/groups/%s", tt.Host, product.Name, label.Name, group.UID)).
@@ -731,7 +756,8 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.True(json.Result)
 
-			assert.Nil(tt.DB.Table(`group_label`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_label` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(0), count)
 		})
 
@@ -793,7 +819,8 @@ func TestGroupAPIs(t *testing.T) {
 			res.Content() // close http client
 
 			var count int64
-			assert.Nil(tt.DB.Table(`group_setting`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
 			res, err = request.Get(fmt.Sprintf("%s/v1/groups/%s/settings", tt.Host, group.UID)).
@@ -997,7 +1024,8 @@ func TestGroupAPIs(t *testing.T) {
 			res.Content() // close http client
 
 			var count int64
-			assert.Nil(tt.DB.Table(`group_setting`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
 			res, err = request.Delete(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/groups/%s", tt.Host, product.Name, module.Name, setting.Name, group.UID)).
@@ -1010,7 +1038,8 @@ func TestGroupAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.True(json.Result)
 
-			assert.Nil(tt.DB.Table(`group_setting`).Where("group_id = ?", group.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `group_id` = ?", group.ID)
+			assert.Nil(err)
 			assert.Equal(int64(0), count)
 		})
 

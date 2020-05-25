@@ -2,13 +2,13 @@ package model
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"github.com/doug-martin/goqu/v9"
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/tpl"
+	"github.com/teambition/urbs-setting/src/util"
 )
 
 // Product ...
@@ -20,22 +20,14 @@ type Product struct {
 func (m *Product) FindByName(ctx context.Context, name, selectStr string) (*schema.Product, error) {
 	var err error
 	product := &schema.Product{}
-	db := m.DB.Unscoped().Where("`name` = ?", name)
-
-	if selectStr == "" {
-		err = db.First(product).Error
-	} else {
-		err = db.Select(selectStr).First(product).Error
+	ok, err := m.findOneByCols(ctx, schema.TableProduct, goqu.Ex{"name": name}, selectStr, product)
+	if err != nil {
+		return nil, err
 	}
-
-	if err == nil {
-		return product, nil
-	}
-
-	if gorm.IsRecordNotFoundError(err) {
+	if !ok {
 		return nil, nil
 	}
-	return nil, err
+	return product, nil
 }
 
 // Acquire ...
@@ -58,7 +50,7 @@ func (m *Product) Acquire(ctx context.Context, productName string) (*schema.Prod
 
 // AcquireID ...
 func (m *Product) AcquireID(ctx context.Context, productName string) (int64, error) {
-	product, err := m.FindByName(ctx, productName, "`id`, `offline_at`, `deleted_at`")
+	product, err := m.FindByName(ctx, productName, "id, offline_at, deleted_at")
 	if err != nil {
 		return 0, err
 	}
@@ -78,43 +70,55 @@ func (m *Product) AcquireID(ctx context.Context, productName string) (int64, err
 func (m *Product) Find(ctx context.Context, pg tpl.Pagination) ([]schema.Product, int, error) {
 	products := make([]schema.Product, 0)
 	cursor := pg.TokenToID()
-	db := m.DB.Where("`id` <= ? and `deleted_at` is null and `offline_at` is null", cursor)
-	dbc := m.DB.Where("`deleted_at` is null and `offline_at` is null")
+	sdc := m.DB.Select().
+		From(goqu.T(schema.TableProduct)).
+		Where(
+			goqu.C("deleted_at").IsNull(),
+			goqu.C("offline_at").IsNull())
+
+	sd := m.DB.Select().
+		From(goqu.T(schema.TableProduct)).
+		Where(
+			goqu.C("id").Lte(cursor),
+			goqu.C("deleted_at").IsNull(),
+			goqu.C("offline_at").IsNull())
+
 	if pg.Q != "" {
-		db = m.DB.Where("`id` <= ? and `deleted_at` is null and `offline_at` is null and `name` like ?", cursor, pg.Q)
-		dbc = m.DB.Where("`deleted_at` is null and `offline_at` is null and `name` like ?", pg.Q)
+		sdc = sdc.Where(goqu.C("name").Like(pg.Q))
+		sd = sd.Where(goqu.C("name").Like(pg.Q))
 	}
 
-	total := 0
-	err := dbc.Model(&schema.Product{}).Count(&total).Error
-	if err == nil {
-		err = db.Order("`id` desc").Limit(pg.PageSize + 1).Find(&products).Error
-	}
+	sd = sd.Order(goqu.C("id").Desc()).Limit(uint(pg.PageSize + 1))
+
+	total, err := sdc.CountContext(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
-	return products, total, nil
+
+	if err = sd.Executor().ScanStructsContext(ctx, &products); err != nil {
+		return nil, 0, err
+	}
+	return products, int(total), nil
 }
 
 // Create ...
 func (m *Product) Create(ctx context.Context, product *schema.Product) error {
-	err := m.DB.Create(product).Error
-	if err == nil {
-		go m.tryIncreaseStatisticStatus(ctx, schema.ProductsTotalSize, 1)
+	rowsAffected, err := m.createOne(ctx, schema.TableProduct, product)
+	if rowsAffected > 0 {
+		util.Go(5*time.Second, func(gctx context.Context) {
+			m.tryIncreaseStatisticStatus(gctx, schema.ProductsTotalSize, 1)
+		})
 	}
 	return err
 }
 
 // Update 更新指定功能模块
 func (m *Product) Update(ctx context.Context, productID int64, changed map[string]interface{}) (*schema.Product, error) {
-	product := &schema.Product{ID: productID}
-	if len(changed) > 0 {
-		if err := m.DB.Model(product).UpdateColumns(changed).Error; err != nil {
-			return nil, err
-		}
+	product := &schema.Product{}
+	if _, err := m.updateByID(ctx, schema.TableProduct, productID, goqu.Record(changed)); err != nil {
+		return nil, err
 	}
-
-	if err := m.DB.First(product).Error; err != nil {
+	if err := m.findOneByID(ctx, schema.TableProduct, productID, product); err != nil {
 		return nil, err
 	}
 	return product, nil
@@ -123,50 +127,25 @@ func (m *Product) Update(ctx context.Context, productID int64, changed map[strin
 // Offline 下线产品
 func (m *Product) Offline(ctx context.Context, productID int64) error {
 	now := time.Now().UTC()
-	res := m.DB.Model(&schema.Product{ID: productID}).UpdateColumns(schema.Product{
-		OfflineAt: &now,
-		Status:    -1,
-	})
-	if res.RowsAffected > 0 {
-		go m.tryIncreaseStatisticStatus(ctx, schema.ProductsTotalSize, -1)
-	}
+	rowsAffected, err := m.updateByCols(ctx, schema.TableProduct,
+		goqu.Ex{"id": productID, "offline_at": nil},
+		goqu.Record{"offline_at": &now, "status": -1},
+	)
+	if rowsAffected > 0 {
+		util.Go(5*time.Second, func(gctx context.Context) {
+			m.tryIncreaseStatisticStatus(gctx, schema.ProductsTotalSize, -1)
+		})
 
-	err := res.Error
-	if err == nil {
-		var labelIDs []int64
-		err = m.DB.Model(&schema.Label{}).Where("`product_id` = ?", productID).Pluck("id", &labelIDs).Error
+		err = m.offlineLabels(ctx, goqu.Ex{"product_id": productID, "offline_at": nil})
 		if err == nil {
-			err = m.DB.Model(&schema.Label{}).Where("`id` in ( ? )", labelIDs).UpdateColumns(schema.Label{
-				OfflineAt: &now,
-				Status:    -1,
-			}).Error
-			go m.tryDeleteLabelsRules(ctx, labelIDs)
-			go m.tryDeleteUserAndGroupLabels(ctx, labelIDs)
-			go m.tryRefreshLabelsTotalSize(ctx)
+			err = m.offlineModules(ctx, goqu.Ex{"product_id": productID, "offline_at": nil})
 		}
 
-		var moduleIDs []int64
-		err = m.DB.Model(&schema.Module{}).Where("`product_id` = ?", productID).Pluck("id", &moduleIDs).Error
 		if err == nil {
-			err = m.DB.Model(&schema.Module{}).Where("`id` in ( ? )", moduleIDs).UpdateColumns(schema.Setting{
-				OfflineAt: &now,
-				Status:    -1,
-			}).Error
-			go m.tryRefreshModulesTotalSize(ctx)
-
-			// 逐个处理，可能数据量太大不适合一次性批量处理
-			for _, moduleID := range moduleIDs {
-				var settingIDs []int64
-				if err := m.DB.Model(&schema.Setting{}).Where("`module_id` = ?", moduleID).Pluck("id", &settingIDs).Error; err == nil {
-					m.DB.Model(&schema.Setting{}).Where("`id` in ( ? )", settingIDs).UpdateColumns(schema.Setting{
-						OfflineAt: &now,
-						Status:    -1,
-					})
-					go m.tryDeleteSettingsRules(ctx, settingIDs)
-					go m.tryDeleteUserAndGroupSettings(ctx, settingIDs)
-				}
-			}
-			go m.tryRefreshSettingsTotalSize(ctx)
+			util.Go(20*time.Second, func(gctx context.Context) {
+				m.tryRefreshModulesTotalSize(gctx)
+				m.tryRefreshSettingsTotalSize(gctx)
+			})
 		}
 	}
 	return err
@@ -175,44 +154,53 @@ func (m *Product) Offline(ctx context.Context, productID int64) error {
 // Delete 对产品进行逻辑删除
 func (m *Product) Delete(ctx context.Context, productID int64) error {
 	now := time.Now().UTC()
-	res := m.DB.Model(&schema.Product{ID: productID}).UpdateColumns(schema.Product{
-		DeletedAt: &now,
-	})
-	return res.Error
+	_, err := m.updateByID(ctx, schema.TableProduct, productID, goqu.Record{"deleted_at": &now})
+	return err
 }
-
-const productLabelStatisticsSQL = "select `product_id`, count(`id`) as n, sum(`status`) as s, sum(`rls`) as r " +
-	"from `urbs_label` " +
-	"where `product_id` = ? and `offline_at` is null " +
-	"group by `product_id`"
-const productSettingStatisticsSQL = "select ? as `product_id`, count(`id`) as n, sum(`status`) as s, sum(`rls`) as r " +
-	"from `urbs_setting` " +
-	"where `module_id` in ( ? ) and `offline_at` is null " +
-	"group by `product_id`"
 
 // Statistics 返回产品的统计数据
 func (m *Product) Statistics(ctx context.Context, productID int64) (*tpl.ProductStatistics, error) {
-	var n int64
-	var s int64
-	var r int64
-	var ignoreID int64
+	res := &tpl.ProductStatistics{}
+	sd := m.DB.Select(
+		goqu.COUNT("id").As("labels"),
+		goqu.SUM("status").As("status"),
+		goqu.SUM("rls").As("release")).
+		From(goqu.T(schema.TableLabel)).
+		Where(
+			goqu.C("product_id").Eq(productID),
+			goqu.C("offline_at").IsNull())
 
-	if err := m.DB.Raw(productLabelStatisticsSQL, productID).Row().Scan(&ignoreID, &n, &s, &r); err != nil && err != sql.ErrNoRows {
+	if _, err := sd.Executor().ScanStructContext(ctx, res); err != nil {
 		return nil, err
 	}
 
-	res := &tpl.ProductStatistics{Labels: n, Status: s, Release: r}
-
-	var moduleIDs []int64
-	if err := m.DB.Model(&schema.Module{}).Where("`product_id` = ? and `offline_at` is null", productID).Pluck("id", &moduleIDs).Error; err != nil {
+	moduleIDs := make([]int64, 0)
+	sd = m.DB.Select("id").
+		From(goqu.T(schema.TableModule)).
+		Where(
+			goqu.C("product_id").Eq(productID),
+			goqu.C("offline_at").IsNull())
+	if err := sd.Executor().ScanValsContext(ctx, &moduleIDs); err != nil {
 		return nil, err
 	}
+
 	res.Modules = int64(len(moduleIDs))
-	if err := m.DB.Raw(productSettingStatisticsSQL, productID, moduleIDs).Row().Scan(&ignoreID, &n, &s, &r); err != nil && err != sql.ErrNoRows {
+	sd = m.DB.Select(
+		goqu.COUNT("id").As("settings"),
+		goqu.SUM("status").As("status"),
+		goqu.SUM("rls").As("release")).
+		From(goqu.T(schema.TableSetting)).
+		Where(
+			goqu.C("module_id").In(tpl.Int64SliceToInterface(moduleIDs)...),
+			goqu.C("offline_at").IsNull())
+
+	res2 := &tpl.ProductStatistics{}
+	if _, err := sd.Executor().ScanStructContext(ctx, res2); err != nil {
 		return nil, err
 	}
-	res.Settings = n
-	res.Status += s
-	res.Release += r
+
+	res.Settings = res2.Settings
+	res.Status += res2.Status
+	res.Release += res2.Release
 	return res, nil
 }
