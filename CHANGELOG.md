@@ -4,12 +4,14 @@ All notable changes to this project will be documented in this file starting fro
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 -----
-## [1.4.0] - 2020-05-20
+## [1.4.0] - 2020-05-27
 
 **Change:**
 
 - Change user's setting and label API.
 - Change group's setting and label API.
+- Use [goqu](github.com/doug-martin/goqu/v9) instead of gorm.
+- Support more query parameters for settings API.
 
 ## [1.3.3] - 2020-05-18
 

@@ -9,13 +9,13 @@ import (
 const TableSettingRule = "setting_rule"
 
 // SettingRule 详见 ./sql/schema.sql table `setting_rule`
-// 灰度标签发布规则
+// 环境标签发布规则
 type SettingRule struct {
 	ID        int64     `db:"id" goqu:"skipinsert"`
 	CreatedAt time.Time `db:"created_at" goqu:"skipinsert"`
 	UpdatedAt time.Time `db:"updated_at" goqu:"skipinsert"`
-	ProductID int64     `db:"product_id"` // 所从属的产品线 ID，与灰度标签的产品线一致
-	SettingID int64     `db:"setting_id"` // 规则所指向的灰度标签 ID
+	ProductID int64     `db:"product_id"` // 所从属的产品线 ID，与环境标签的产品线一致
+	SettingID int64     `db:"setting_id"` // 规则所指向的环境标签 ID
 	Kind      string    `db:"kind"`       // 规则类型，目前支持 "userPercent"
 	Rule      string    `db:"rule"`       // varchar(1022)，规则值，JSON string，对于 percent 类，其格式为 {"value": percent}
 	Value     string    `db:"value"`      // varchar(255)，配置值

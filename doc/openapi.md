@@ -11,7 +11,7 @@ headingLevel: 2
 
 ---
 
-<h1 id="urbs-setting">urbs-setting v1.3.0</h1>
+<h1 id="urbs-setting">urbs-setting v1.4.0</h1>
 
 > Scroll down for code samples, example requests and responses. Select a language for code samples from the tabs above or the mobile navigation menu.
 
@@ -58,7 +58,7 @@ Accept: application/json
   "name": "urbs-setting",
   "version": "v1.2.0",
   "gitSHA1": "cd7e82a",
-  "buildTime": "2020-05-13T06:41:11.814Z"
+  "buildTime": "2020-05-27T08:08:05.634Z"
 }
 ```
 
@@ -124,7 +124,7 @@ This operation does not require authentication
 
 User 用户相关接口
 
-## 该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定 uid 用户在指定 product 产品下的所有（未分页，最多 400 条）灰度标签，包括从 group 群组继承的灰度标签，按照 label 指派时间反序。网关只会取匹配 client 和 channel 的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在 config.cache_label_expire 配置，默认为 1 分钟，建议生产配置为 5 分钟。当 uid 对应用户不存在或 product 对应产品不存在时，该接口会返回空灰度标签列表
+## 该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定 uid 用户在指定 product 产品下的所有（未分页，最多 400 条）环境标签，包括从 group 群组继承的环境标签，按照 label 指派时间反序。网关只会取匹配 client 和 channel 的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在 config.cache_label_expire 配置，默认为 1 分钟，建议生产配置为 5 分钟。当 uid 对应用户不存在或 product 对应产品不存在时，该接口会返回空环境标签列表
 
 > Code samples
 
@@ -144,7 +144,7 @@ Accept: application/json
 
 `GET /users/{uid}/labels:cache`
 
-<h3 id="该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定-uid-用户在指定-product-产品下的所有（未分页，最多-400-条）灰度标签，包括从-group-群组继承的灰度标签，按照-label-指派时间反序。网关只会取匹配-client-和-channel-的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在-config.cache_label_expire-配置，默认为-1-分钟，建议生产配置为-5-分钟。当-uid-对应用户不存在或-product-对应产品不存在时，该接口会返回空灰度标签列表-parameters">Parameters</h3>
+<h3 id="该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定-uid-用户在指定-product-产品下的所有（未分页，最多-400-条）环境标签，包括从-group-群组继承的环境标签，按照-label-指派时间反序。网关只会取匹配-client-和-channel-的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在-config.cache_label_expire-配置，默认为-1-分钟，建议生产配置为-5-分钟。当-uid-对应用户不存在或-product-对应产品不存在时，该接口会返回空环境标签列表-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -176,23 +176,23 @@ Accept: application/json
 }
 ```
 
-<h3 id="该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定-uid-用户在指定-product-产品下的所有（未分页，最多-400-条）灰度标签，包括从-group-群组继承的灰度标签，按照-label-指派时间反序。网关只会取匹配-client-和-channel-的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在-config.cache_label_expire-配置，默认为-1-分钟，建议生产配置为-5-分钟。当-uid-对应用户不存在或-product-对应产品不存在时，该接口会返回空灰度标签列表-responses">Responses</h3>
+<h3 id="该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定-uid-用户在指定-product-产品下的所有（未分页，最多-400-条）环境标签，包括从-group-群组继承的环境标签，按照-label-指派时间反序。网关只会取匹配-client-和-channel-的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在-config.cache_label_expire-配置，默认为-1-分钟，建议生产配置为-5-分钟。当-uid-对应用户不存在或-product-对应产品不存在时，该接口会返回空环境标签列表-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|用于网关的用户灰度标签列表返回结果|Inline|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|用于网关的用户环境标签列表返回结果|Inline|
 
-<h3 id="该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定-uid-用户在指定-product-产品下的所有（未分页，最多-400-条）灰度标签，包括从-group-群组继承的灰度标签，按照-label-指派时间反序。网关只会取匹配-client-和-channel-的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在-config.cache_label_expire-配置，默认为-1-分钟，建议生产配置为-5-分钟。当-uid-对应用户不存在或-product-对应产品不存在时，该接口会返回空灰度标签列表-responseschema">Response Schema</h3>
+<h3 id="该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定-uid-用户在指定-product-产品下的所有（未分页，最多-400-条）环境标签，包括从-group-群组继承的环境标签，按照-label-指派时间反序。网关只会取匹配-client-和-channel-的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在-config.cache_label_expire-配置，默认为-1-分钟，建议生产配置为-5-分钟。当-uid-对应用户不存在或-product-对应产品不存在时，该接口会返回空环境标签列表-responseschema">Response Schema</h3>
 
 Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|» timestamp|integer(int64)|false|none|灰度标签列表缓存生成时间，1970 以来的秒数|
-|» result|[[CacheLabelInfo](#schemacachelabelinfo)]|false|none|灰度标签列表|
-|»» l|string|false|none|灰度标签名称|
-|»» cls|[string]|false|none|灰度标签适用的 Clients 客户端类型列表，当列表为空时表示全适用|
-|»» chs|[string]|false|none|灰度标签适用的 Channels 版本通道列表，当列表为空时表示全适用|
+|» timestamp|integer(int64)|false|none|环境标签列表缓存生成时间，1970 以来的秒数|
+|» result|[[CacheLabelInfo](#schemacachelabelinfo)]|false|none|环境标签列表|
+|»» l|string|false|none|环境标签名称|
+|»» cls|[string]|false|none|环境标签适用的 Clients 客户端类型列表，当列表为空时表示全适用|
+|»» chs|[string]|false|none|环境标签适用的 Channels 版本通道列表，当列表为空时表示全适用|
 
 <aside class="success">
 This operation does not require authentication
@@ -240,7 +240,7 @@ Authorization: string
       "uid": "5e82d747fe02a50021d339f3",
       "labels": "{\"teambition\":[{\"l\":\"dev\"}]}",
       "activeAt": 1585636012,
-      "createdAt": "2020-05-13T06:41:11.821Z"
+      "createdAt": "2020-05-27T08:08:05.640Z"
     }
   ]
 }
@@ -298,10 +298,13 @@ Authorization: string
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |uid|path|string|true|用户/群组 uid|
 |product|query|string|true|产品名称|
-|channel|query|string|false|版本通道，必须为服务端配置的有效值，只返回匹配 channel 的 setting 列表|
-|client|query|string|false|客户端类型，必须为服务端配置的有效值，只返回匹配 client 的 setting 列表|
+|module|query|string|false|功能模块名称|
+|setting|query|string|false|配置项名称|
+|channel|query|string|false|版本通道，必须为服务端配置的有效值，只返回匹配 channel 的 setting/label 列表|
+|client|query|string|false|客户端类型，必须为服务端配置的有效值，只返回匹配 client 的 setting/label 列表|
 |pageSize|query|integer(int32)|false|分页大小，默认为 10，(1-1000]|
 |pageToken|query|string|false|分页请求标记，来自于响应结果的 nextPageToken|
+|q|query|string|false|部分列表类 API 支持搜索，q 为搜索关键词|
 
 > Example responses
 
@@ -320,7 +323,7 @@ Authorization: string
       "value": "disable",
       "lastValue": "",
       "release": 1,
-      "assignedAt": "2020-05-13T06:41:11.822Z"
+      "assignedAt": "2020-05-27T08:08:05.641Z"
     }
   ]
 }
@@ -355,7 +358,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 HeaderAuthorizationJWT
 </aside>
 
-## 获取指定 uid 用户灰度标签列表，不包括从群组继承的灰度标签，支持分页，按照标签指派时间倒序
+## 获取指定 uid 用户环境标签列表，不包括从群组继承的环境标签，支持分页，按照标签指派时间倒序
 
 > Code samples
 
@@ -377,7 +380,7 @@ Authorization: string
 
 `GET /v1/users/{uid}/labels`
 
-<h3 id="获取指定-uid-用户灰度标签列表，不包括从群组继承的灰度标签，支持分页，按照标签指派时间倒序-parameters">Parameters</h3>
+<h3 id="获取指定-uid-用户环境标签列表，不包括从群组继承的环境标签，支持分页，按照标签指派时间倒序-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -401,19 +404,19 @@ Authorization: string
       "name": "task-share",
       "desc": "string",
       "release": 1,
-      "assignedAt": "2020-05-13T06:41:11.823Z"
+      "assignedAt": "2020-05-27T08:08:05.641Z"
     }
   ]
 }
 ```
 
-<h3 id="获取指定-uid-用户灰度标签列表，不包括从群组继承的灰度标签，支持分页，按照标签指派时间倒序-responses">Responses</h3>
+<h3 id="获取指定-uid-用户环境标签列表，不包括从群组继承的环境标签，支持分页，按照标签指派时间倒序-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|用户或群组被指派的灰度标签列表返回结果|Inline|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|用户或群组被指派的环境标签列表返回结果|Inline|
 
-<h3 id="获取指定-uid-用户灰度标签列表，不包括从群组继承的灰度标签，支持分页，按照标签指派时间倒序-responseschema">Response Schema</h3>
+<h3 id="获取指定-uid-用户环境标签列表，不包括从群组继承的环境标签，支持分页，按照标签指派时间倒序-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -421,10 +424,10 @@ Status Code **200**
 |---|---|---|---|---|
 |» nextPageToken|[NextPageToken](#schemanextpagetoken)|false|none|用于分页查询时用于获取下一页数据的 token，当为空值时表示没有下一页了|
 |» result|[[MyLabel](#schemamylabel)]|false|none|none|
-|»» hid|string|false|none|灰度标签的 hid|
-|»» product|string|false|none|灰度标签所属的产品名称|
-|»» name|string|false|none|灰度标签名称|
-|»» desc|string|false|none|灰度标签描述|
+|»» hid|string|false|none|环境标签的 hid|
+|»» product|string|false|none|环境标签所属的产品名称|
+|»» name|string|false|none|环境标签名称|
+|»» desc|string|false|none|环境标签描述|
 |»» release|integer(int64)|false|none|被设置批次|
 |»» assignedAt|string(date-time)|false|none|被设置时间|
 
@@ -433,7 +436,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 HeaderAuthorizationJWT
 </aside>
 
-## 强制刷新指定用户的灰度标签列表缓存
+## 强制刷新指定用户的环境标签列表缓存
 
 > Code samples
 
@@ -455,7 +458,7 @@ Authorization: string
 
 `PUT /v1/users/{uid}/labels:cache`
 
-<h3 id="强制刷新指定用户的灰度标签列表缓存-parameters">Parameters</h3>
+<h3 id="强制刷新指定用户的环境标签列表缓存-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -472,18 +475,18 @@ Authorization: string
     "uid": "5e82d747fe02a50021d339f3",
     "labels": "{\"teambition\":[{\"l\":\"dev\"}]}",
     "activeAt": 1585636012,
-    "createdAt": "2020-05-13T06:41:11.823Z"
+    "createdAt": "2020-05-27T08:08:05.642Z"
   }
 }
 ```
 
-<h3 id="强制刷新指定用户的灰度标签列表缓存-responses">Responses</h3>
+<h3 id="强制刷新指定用户的环境标签列表缓存-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|单个用户结果|Inline|
 
-<h3 id="强制刷新指定用户的灰度标签列表缓存-responseschema">Response Schema</h3>
+<h3 id="强制刷新指定用户的环境标签列表缓存-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -506,14 +509,14 @@ HeaderAuthorizationJWT
 
 ```shell
 # You can also use wget
-curl -X GET https://urbs-setting:8443/v1/users/{uid}/settings \
+curl -X GET https://urbs-setting:8443/v1/users/{uid}/settings?product=string \
   -H 'Accept: application/json' \
   -H 'Authorization: string'
 
 ```
 
 ```http
-GET https://urbs-setting:8443/v1/users/{uid}/settings HTTP/1.1
+GET https://urbs-setting:8443/v1/users/{uid}/settings?product=string HTTP/1.1
 Host: urbs-setting:8443
 Accept: application/json
 Authorization: string
@@ -528,6 +531,9 @@ Authorization: string
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |uid|path|string|true|用户/群组 uid|
+|product|query|string|true|产品名称|
+|module|query|string|false|功能模块名称|
+|setting|query|string|false|配置项名称|
 |pageSize|query|integer(int32)|false|分页大小，默认为 10，(1-1000]|
 |pageToken|query|string|false|分页请求标记，来自于响应结果的 nextPageToken|
 |q|query|string|false|部分列表类 API 支持搜索，q 为搜索关键词|
@@ -549,7 +555,7 @@ Authorization: string
       "value": "disable",
       "lastValue": "",
       "release": 1,
-      "assignedAt": "2020-05-13T06:41:11.824Z"
+      "assignedAt": "2020-05-27T08:08:05.642Z"
     }
   ]
 }
@@ -714,185 +720,11 @@ To perform this operation, you must be authenticated by means of one of the foll
 HeaderAuthorizationJWT
 </aside>
 
-## 移除指定 uid 用户的指定 hid 灰度标签
-
-> Code samples
-
-```shell
-# You can also use wget
-curl -X DELETE https://urbs-setting:8443/v1/users/{uid}/labels/{hid} \
-  -H 'Accept: application/json' \
-  -H 'Authorization: string'
-
-```
-
-```http
-DELETE https://urbs-setting:8443/v1/users/{uid}/labels/{hid} HTTP/1.1
-Host: urbs-setting:8443
-Accept: application/json
-Authorization: string
-
-```
-
-`DELETE /v1/users/{uid}/labels/{hid}`
-
-<h3 id="移除指定-uid-用户的指定-hid-灰度标签-parameters">Parameters</h3>
-
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
-|uid|path|string|true|用户/群组 uid|
-
-> Example responses
-
-> 200 Response
-
-```json
-{
-  "result": true
-}
-```
-
-<h3 id="移除指定-uid-用户的指定-hid-灰度标签-responses">Responses</h3>
-
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
-
-<h3 id="移除指定-uid-用户的指定-hid-灰度标签-responseschema">Response Schema</h3>
-
-Status Code **200**
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|» result|boolean|false|none|是否成功|
-
-<aside class="warning">
-To perform this operation, you must be authenticated by means of one of the following methods:
-HeaderAuthorizationJWT
-</aside>
-
-## 回滚指定 uid 用户的指定 hid 配置项值到上一个，只能回退到上一个值，不能到上上个值
-
-> Code samples
-
-```shell
-# You can also use wget
-curl -X PUT https://urbs-setting:8443/v1/users/{uid}/settings/{hid}:rollback \
-  -H 'Accept: application/json' \
-  -H 'Authorization: string'
-
-```
-
-```http
-PUT https://urbs-setting:8443/v1/users/{uid}/settings/{hid}:rollback HTTP/1.1
-Host: urbs-setting:8443
-Accept: application/json
-Authorization: string
-
-```
-
-`PUT /v1/users/{uid}/settings/{hid}:rollback`
-
-<h3 id="回滚指定-uid-用户的指定-hid-配置项值到上一个，只能回退到上一个值，不能到上上个值-parameters">Parameters</h3>
-
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
-|uid|path|string|true|用户/群组 uid|
-
-> Example responses
-
-> 200 Response
-
-```json
-{
-  "result": true
-}
-```
-
-<h3 id="回滚指定-uid-用户的指定-hid-配置项值到上一个，只能回退到上一个值，不能到上上个值-responses">Responses</h3>
-
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
-
-<h3 id="回滚指定-uid-用户的指定-hid-配置项值到上一个，只能回退到上一个值，不能到上上个值-responseschema">Response Schema</h3>
-
-Status Code **200**
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|» result|boolean|false|none|是否成功|
-
-<aside class="warning">
-To perform this operation, you must be authenticated by means of one of the following methods:
-HeaderAuthorizationJWT
-</aside>
-
-## 移除指定 uid 用户的指定 hid 配置项
-
-> Code samples
-
-```shell
-# You can also use wget
-curl -X DELETE https://urbs-setting:8443/v1/users/{uid}/settings/{hid} \
-  -H 'Accept: application/json' \
-  -H 'Authorization: string'
-
-```
-
-```http
-DELETE https://urbs-setting:8443/v1/users/{uid}/settings/{hid} HTTP/1.1
-Host: urbs-setting:8443
-Accept: application/json
-Authorization: string
-
-```
-
-`DELETE /v1/users/{uid}/settings/{hid}`
-
-<h3 id="移除指定-uid-用户的指定-hid-配置项-parameters">Parameters</h3>
-
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
-|uid|path|string|true|用户/群组 uid|
-
-> Example responses
-
-> 200 Response
-
-```json
-{
-  "result": true
-}
-```
-
-<h3 id="移除指定-uid-用户的指定-hid-配置项-responses">Responses</h3>
-
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
-
-<h3 id="移除指定-uid-用户的指定-hid-配置项-responseschema">Response Schema</h3>
-
-Status Code **200**
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|» result|boolean|false|none|是否成功|
-
-<aside class="warning">
-To perform this operation, you must be authenticated by means of one of the following methods:
-HeaderAuthorizationJWT
-</aside>
-
 <h1 id="urbs-setting-group">Group</h1>
 
 Group 群组相关接口
 
-## 获取指定 uid 群组灰度标签列表，支持分页，按照标签指派时间倒序。
+## 获取指定 uid 群组环境标签列表，支持分页，按照标签指派时间倒序。
 
 > Code samples
 
@@ -914,7 +746,7 @@ Authorization: string
 
 `GET /v1/groups/{uid}/labels`
 
-<h3 id="获取指定-uid-群组灰度标签列表，支持分页，按照标签指派时间倒序。-parameters">Parameters</h3>
+<h3 id="获取指定-uid-群组环境标签列表，支持分页，按照标签指派时间倒序。-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -938,19 +770,19 @@ Authorization: string
       "name": "task-share",
       "desc": "string",
       "release": 1,
-      "assignedAt": "2020-05-13T06:41:11.826Z"
+      "assignedAt": "2020-05-27T08:08:05.643Z"
     }
   ]
 }
 ```
 
-<h3 id="获取指定-uid-群组灰度标签列表，支持分页，按照标签指派时间倒序。-responses">Responses</h3>
+<h3 id="获取指定-uid-群组环境标签列表，支持分页，按照标签指派时间倒序。-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|用户或群组被指派的灰度标签列表返回结果|Inline|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|用户或群组被指派的环境标签列表返回结果|Inline|
 
-<h3 id="获取指定-uid-群组灰度标签列表，支持分页，按照标签指派时间倒序。-responseschema">Response Schema</h3>
+<h3 id="获取指定-uid-群组环境标签列表，支持分页，按照标签指派时间倒序。-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -958,10 +790,10 @@ Status Code **200**
 |---|---|---|---|---|
 |» nextPageToken|[NextPageToken](#schemanextpagetoken)|false|none|用于分页查询时用于获取下一页数据的 token，当为空值时表示没有下一页了|
 |» result|[[MyLabel](#schemamylabel)]|false|none|none|
-|»» hid|string|false|none|灰度标签的 hid|
-|»» product|string|false|none|灰度标签所属的产品名称|
-|»» name|string|false|none|灰度标签名称|
-|»» desc|string|false|none|灰度标签描述|
+|»» hid|string|false|none|环境标签的 hid|
+|»» product|string|false|none|环境标签所属的产品名称|
+|»» name|string|false|none|环境标签名称|
+|»» desc|string|false|none|环境标签描述|
 |»» release|integer(int64)|false|none|被设置批次|
 |»» assignedAt|string(date-time)|false|none|被设置时间|
 
@@ -976,14 +808,14 @@ HeaderAuthorizationJWT
 
 ```shell
 # You can also use wget
-curl -X GET https://urbs-setting:8443/v1/groups/{uid}/settings \
+curl -X GET https://urbs-setting:8443/v1/groups/{uid}/settings?product=string \
   -H 'Accept: application/json' \
   -H 'Authorization: string'
 
 ```
 
 ```http
-GET https://urbs-setting:8443/v1/groups/{uid}/settings HTTP/1.1
+GET https://urbs-setting:8443/v1/groups/{uid}/settings?product=string HTTP/1.1
 Host: urbs-setting:8443
 Accept: application/json
 Authorization: string
@@ -998,6 +830,9 @@ Authorization: string
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |uid|path|string|true|用户/群组 uid|
+|product|query|string|true|产品名称|
+|module|query|string|false|功能模块名称|
+|setting|query|string|false|配置项名称|
 |pageSize|query|integer(int32)|false|分页大小，默认为 10，(1-1000]|
 |pageToken|query|string|false|分页请求标记，来自于响应结果的 nextPageToken|
 |q|query|string|false|部分列表类 API 支持搜索，q 为搜索关键词|
@@ -1019,7 +854,7 @@ Authorization: string
       "value": "disable",
       "lastValue": "",
       "release": 1,
-      "assignedAt": "2020-05-13T06:41:11.826Z"
+      "assignedAt": "2020-05-27T08:08:05.644Z"
     }
   ]
 }
@@ -1101,8 +936,8 @@ Authorization: string
       "desc": "string",
       "syncAt": 1585636012,
       "status": 99,
-      "createdAt": "2020-05-13T06:41:11.827Z",
-      "updatedAt": "2020-05-13T06:41:11.827Z"
+      "createdAt": "2020-05-27T08:08:05.645Z",
+      "updatedAt": "2020-05-27T08:08:05.645Z"
     }
   ]
 }
@@ -1128,8 +963,8 @@ Status Code **200**
 |»» desc|string|false|none|群组的描述|
 |»» syncAt|integer(int64)|false|none|群组成员同步时间点，1970 以来的秒数|
 |»» status|integer(int64)|false|none|群组成员数量，非精确值|
-|»» createdAt|string(date-time)|false|none|灰度标签创建时间|
-|»» updatedAt|string(date-time)|false|none|灰度标签更新时间|
+|»» createdAt|string(date-time)|false|none|环境标签创建时间|
+|»» updatedAt|string(date-time)|false|none|环境标签更新时间|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1325,8 +1160,8 @@ Authorization: string
     "desc": "string",
     "syncAt": 1585636012,
     "status": 99,
-    "createdAt": "2020-05-13T06:41:11.828Z",
-    "updatedAt": "2020-05-13T06:41:11.828Z"
+    "createdAt": "2020-05-27T08:08:05.646Z",
+    "updatedAt": "2020-05-27T08:08:05.646Z"
   }
 }
 ```
@@ -1349,8 +1184,8 @@ Status Code **200**
 |»» desc|string|false|none|群组的描述|
 |»» syncAt|integer(int64)|false|none|群组成员同步时间点，1970 以来的秒数|
 |»» status|integer(int64)|false|none|群组成员数量，非精确值|
-|»» createdAt|string(date-time)|false|none|灰度标签创建时间|
-|»» updatedAt|string(date-time)|false|none|灰度标签更新时间|
+|»» createdAt|string(date-time)|false|none|环境标签创建时间|
+|»» updatedAt|string(date-time)|false|none|环境标签更新时间|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1403,180 +1238,6 @@ Authorization: string
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
 
 <h3 id="删除指定-uid-群组-responseschema">Response Schema</h3>
-
-Status Code **200**
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|» result|boolean|false|none|是否成功|
-
-<aside class="warning">
-To perform this operation, you must be authenticated by means of one of the following methods:
-HeaderAuthorizationJWT
-</aside>
-
-## 移除指定 uid 群组的指定 hid 灰度标签
-
-> Code samples
-
-```shell
-# You can also use wget
-curl -X DELETE https://urbs-setting:8443/v1/groups/{uid}/labels/{hid} \
-  -H 'Accept: application/json' \
-  -H 'Authorization: string'
-
-```
-
-```http
-DELETE https://urbs-setting:8443/v1/groups/{uid}/labels/{hid} HTTP/1.1
-Host: urbs-setting:8443
-Accept: application/json
-Authorization: string
-
-```
-
-`DELETE /v1/groups/{uid}/labels/{hid}`
-
-<h3 id="移除指定-uid-群组的指定-hid-灰度标签-parameters">Parameters</h3>
-
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
-|uid|path|string|true|用户/群组 uid|
-
-> Example responses
-
-> 200 Response
-
-```json
-{
-  "result": true
-}
-```
-
-<h3 id="移除指定-uid-群组的指定-hid-灰度标签-responses">Responses</h3>
-
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
-
-<h3 id="移除指定-uid-群组的指定-hid-灰度标签-responseschema">Response Schema</h3>
-
-Status Code **200**
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|» result|boolean|false|none|是否成功|
-
-<aside class="warning">
-To perform this operation, you must be authenticated by means of one of the following methods:
-HeaderAuthorizationJWT
-</aside>
-
-## 回滚指定 uid 群组的指定 hid 配置项值到上一个，只能回退到上一个值，不能到上上个值
-
-> Code samples
-
-```shell
-# You can also use wget
-curl -X PUT https://urbs-setting:8443/v1/groups/{uid}/settings/{hid}:rollback \
-  -H 'Accept: application/json' \
-  -H 'Authorization: string'
-
-```
-
-```http
-PUT https://urbs-setting:8443/v1/groups/{uid}/settings/{hid}:rollback HTTP/1.1
-Host: urbs-setting:8443
-Accept: application/json
-Authorization: string
-
-```
-
-`PUT /v1/groups/{uid}/settings/{hid}:rollback`
-
-<h3 id="回滚指定-uid-群组的指定-hid-配置项值到上一个，只能回退到上一个值，不能到上上个值-parameters">Parameters</h3>
-
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
-|uid|path|string|true|用户/群组 uid|
-
-> Example responses
-
-> 200 Response
-
-```json
-{
-  "result": true
-}
-```
-
-<h3 id="回滚指定-uid-群组的指定-hid-配置项值到上一个，只能回退到上一个值，不能到上上个值-responses">Responses</h3>
-
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
-
-<h3 id="回滚指定-uid-群组的指定-hid-配置项值到上一个，只能回退到上一个值，不能到上上个值-responseschema">Response Schema</h3>
-
-Status Code **200**
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|» result|boolean|false|none|是否成功|
-
-<aside class="warning">
-To perform this operation, you must be authenticated by means of one of the following methods:
-HeaderAuthorizationJWT
-</aside>
-
-## 移除指定 uid 群组的指定 hid 配置项
-
-> Code samples
-
-```shell
-# You can also use wget
-curl -X DELETE https://urbs-setting:8443/v1/groups/{uid}/settings/{hid} \
-  -H 'Accept: application/json' \
-  -H 'Authorization: string'
-
-```
-
-```http
-DELETE https://urbs-setting:8443/v1/groups/{uid}/settings/{hid} HTTP/1.1
-Host: urbs-setting:8443
-Accept: application/json
-Authorization: string
-
-```
-
-`DELETE /v1/groups/{uid}/settings/{hid}`
-
-<h3 id="移除指定-uid-群组的指定-hid-配置项-parameters">Parameters</h3>
-
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
-|uid|path|string|true|用户/群组 uid|
-
-> Example responses
-
-> 200 Response
-
-```json
-{
-  "result": true
-}
-```
-
-<h3 id="移除指定-uid-群组的指定-hid-配置项-responses">Responses</h3>
-
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
-
-<h3 id="移除指定-uid-群组的指定-hid-配置项-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -1705,7 +1366,7 @@ Authorization: string
     {
       "user": "5e82d747fe02a50021d339f3",
       "syncAt": 1585636012,
-      "createdAt": "2020-05-13T06:41:11.829Z"
+      "createdAt": "2020-05-27T08:08:05.647Z"
     }
   ]
 }
@@ -1843,8 +1504,8 @@ Authorization: string
       "name": "urbs",
       "desc": "string",
       "status": 0,
-      "createdAt": "2020-05-13T06:41:11.831Z",
-      "updatedAt": "2020-05-13T06:41:11.831Z",
+      "createdAt": "2020-05-27T08:08:05.649Z",
+      "updatedAt": "2020-05-27T08:08:05.649Z",
       "deletedAt": null,
       "offlineAt": null
     }
@@ -1939,8 +1600,8 @@ Authorization: string
     "name": "urbs",
     "desc": "string",
     "status": 0,
-    "createdAt": "2020-05-13T06:41:11.831Z",
-    "updatedAt": "2020-05-13T06:41:11.831Z",
+    "createdAt": "2020-05-27T08:08:05.649Z",
+    "updatedAt": "2020-05-27T08:08:05.649Z",
     "deletedAt": null,
     "offlineAt": null
   }
@@ -2042,8 +1703,8 @@ Authorization: string
     "desc": "string",
     "syncAt": 1585636012,
     "status": 99,
-    "createdAt": "2020-05-13T06:41:11.832Z",
-    "updatedAt": "2020-05-13T06:41:11.832Z"
+    "createdAt": "2020-05-27T08:08:05.649Z",
+    "updatedAt": "2020-05-27T08:08:05.649Z"
   }
 }
 ```
@@ -2066,8 +1727,8 @@ Status Code **200**
 |»» desc|string|false|none|群组的描述|
 |»» syncAt|integer(int64)|false|none|群组成员同步时间点，1970 以来的秒数|
 |»» status|integer(int64)|false|none|群组成员数量，非精确值|
-|»» createdAt|string(date-time)|false|none|灰度标签创建时间|
-|»» updatedAt|string(date-time)|false|none|灰度标签更新时间|
+|»» createdAt|string(date-time)|false|none|环境标签创建时间|
+|»» updatedAt|string(date-time)|false|none|环境标签更新时间|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2132,7 +1793,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 HeaderAuthorizationJWT
 </aside>
 
-## 将指定 product name 的产品下线，此操作会将产品名下的所有功能模块和配置项都下线，所有设置给用户或群组的对应配置项和灰度标签也会被移除！
+## 将指定 product name 的产品下线，此操作会将产品名下的所有功能模块和配置项都下线，所有设置给用户或群组的对应配置项和环境标签也会被移除！
 
 > Code samples
 
@@ -2154,7 +1815,7 @@ Authorization: string
 
 `PUT /v1/products/{product}:offline`
 
-<h3 id="将指定-product-name-的产品下线，此操作会将产品名下的所有功能模块和配置项都下线，所有设置给用户或群组的对应配置项和灰度标签也会被移除！-parameters">Parameters</h3>
+<h3 id="将指定-product-name-的产品下线，此操作会将产品名下的所有功能模块和配置项都下线，所有设置给用户或群组的对应配置项和环境标签也会被移除！-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -2171,13 +1832,13 @@ Authorization: string
 }
 ```
 
-<h3 id="将指定-product-name-的产品下线，此操作会将产品名下的所有功能模块和配置项都下线，所有设置给用户或群组的对应配置项和灰度标签也会被移除！-responses">Responses</h3>
+<h3 id="将指定-product-name-的产品下线，此操作会将产品名下的所有功能模块和配置项都下线，所有设置给用户或群组的对应配置项和环境标签也会被移除！-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
 
-<h3 id="将指定-product-name-的产品下线，此操作会将产品名下的所有功能模块和配置项都下线，所有设置给用户或群组的对应配置项和灰度标签也会被移除！-responseschema">Response Schema</h3>
+<h3 id="将指定-product-name-的产品下线，此操作会将产品名下的所有功能模块和配置项都下线，所有设置给用户或群组的对应配置项和环境标签也会被移除！-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -2248,11 +1909,11 @@ Status Code **200**
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |» result|[ProductStatistics](#schemaproductstatistics)|false|none|none|
-|»» labels|integer(int64)|false|none|产品下灰度标签数量|
+|»» labels|integer(int64)|false|none|产品下环境标签数量|
 |»» modules|integer(int64)|false|none|产品下功能模块数量|
 |»» settings|integer(int64)|false|none|产品下配置项数量|
-|»» release|integer(int64)|false|none|产品下灰度标签和配置项总发布次数|
-|»» status|integer(int64)|false|none|产品下灰度标签和配置项总作用人数（非精确值）|
+|»» release|integer(int64)|false|none|产品下环境标签和配置项总发布次数|
+|»» status|integer(int64)|false|none|产品下环境标签和配置项总作用人数（非精确值）|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2261,9 +1922,9 @@ HeaderAuthorizationJWT
 
 <h1 id="urbs-setting-label">Label</h1>
 
-Label 灰度标签相关接口
+Label 环境标签相关接口
 
-## 读取产品下灰度标签列表，支持分页，按照创建时间倒序
+## 读取产品下环境标签列表，支持分页，按照创建时间倒序
 
 > Code samples
 
@@ -2285,7 +1946,7 @@ Authorization: string
 
 `GET /v1/products/{product}/labels`
 
-<h3 id="读取产品下灰度标签列表，支持分页，按照创建时间倒序-parameters">Parameters</h3>
+<h3 id="读取产品下环境标签列表，支持分页，按照创建时间倒序-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -2317,21 +1978,21 @@ Authorization: string
       ],
       "status": 100,
       "release": 2,
-      "createdAt": "2020-05-13T06:41:11.833Z",
-      "updatedAt": "2020-05-13T06:41:11.833Z",
+      "createdAt": "2020-05-27T08:08:05.650Z",
+      "updatedAt": "2020-05-27T08:08:05.650Z",
       "offlineAt": null
     }
   ]
 }
 ```
 
-<h3 id="读取产品下灰度标签列表，支持分页，按照创建时间倒序-responses">Responses</h3>
+<h3 id="读取产品下环境标签列表，支持分页，按照创建时间倒序-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|灰度标签列表返回结果|Inline|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|环境标签列表返回结果|Inline|
 
-<h3 id="读取产品下灰度标签列表，支持分页，按照创建时间倒序-responseschema">Response Schema</h3>
+<h3 id="读取产品下环境标签列表，支持分页，按照创建时间倒序-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -2340,24 +2001,24 @@ Status Code **200**
 |» totalSize|[TotalSize](#schematotalsize)(int64)|false|none|当前分页查询的总数据量|
 |» nextPageToken|[NextPageToken](#schemanextpagetoken)|false|none|用于分页查询时用于获取下一页数据的 token，当为空值时表示没有下一页了|
 |» result|[[LabelInfo](#schemalabelinfo)]|false|none|none|
-|»» hid|string|false|none|灰度标签的 hid|
-|»» product|string|false|none|灰度标签所属的产品名称|
-|»» name|string|false|none|灰度标签名称，同一产品下唯一（不能重名）|
-|»» desc|string|false|none|灰度标签描述|
-|»» channels|[string]|false|none|灰度标签适用版本通道|
-|»» clients|[string]|false|none|灰度标签适用客户端类型|
+|»» hid|string|false|none|环境标签的 hid|
+|»» product|string|false|none|环境标签所属的产品名称|
+|»» name|string|false|none|环境标签名称，同一产品下唯一（不能重名）|
+|»» desc|string|false|none|环境标签描述|
+|»» channels|[string]|false|none|环境标签适用版本通道|
+|»» clients|[string]|false|none|环境标签适用客户端类型|
 |»» status|integer(int64)|false|none|使用用户计数（被动异步计算，非精确值）|
 |»» release|integer(int64)|false|none|标签发布（被设置）计数|
-|»» createdAt|string(date-time)|false|none|灰度标签创建时间|
-|»» updatedAt|string(date-time)|false|none|灰度标签更新时间|
-|»» offlineAt|string(date-time)|false|none|灰度标签下线时间|
+|»» createdAt|string(date-time)|false|none|环境标签创建时间|
+|»» updatedAt|string(date-time)|false|none|环境标签更新时间|
+|»» offlineAt|string(date-time)|false|none|环境标签下线时间|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
 HeaderAuthorizationJWT
 </aside>
 
-## 添加产品灰度标签，灰度标签 name 在产品下必须唯一
+## 添加产品环境标签，环境标签 name 在产品下必须唯一
 
 > Code samples
 
@@ -2389,16 +2050,16 @@ Authorization: string
 }
 ```
 
-<h3 id="添加产品灰度标签，灰度标签-name-在产品下必须唯一-parameters">Parameters</h3>
+<h3 id="添加产品环境标签，环境标签-name-在产品下必须唯一-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
-|body|body|[LabelBody](#schemalabelbody)|true|创建灰度标签的请求数据|
+|body|body|[LabelBody](#schemalabelbody)|true|创建环境标签的请求数据|
 |» name|body|string|false|名称，必须符合正则 /^[0-9a-z][0-9a-z-]{0,61}[0-9a-z]$/|
 |» desc|body|string|false|描述|
-|» channels|body|[string]|false|该灰度标签适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有|
-|» clients|body|[string]|false|该灰度标签适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有|
+|» channels|body|[string]|false|该环境标签适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有|
+|» clients|body|[string]|false|该环境标签适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有|
 
 > Example responses
 
@@ -2419,37 +2080,37 @@ Authorization: string
     ],
     "status": 100,
     "release": 2,
-    "createdAt": "2020-05-13T06:41:11.834Z",
-    "updatedAt": "2020-05-13T06:41:11.834Z",
+    "createdAt": "2020-05-27T08:08:05.651Z",
+    "updatedAt": "2020-05-27T08:08:05.651Z",
     "offlineAt": null
   }
 }
 ```
 
-<h3 id="添加产品灰度标签，灰度标签-name-在产品下必须唯一-responses">Responses</h3>
+<h3 id="添加产品环境标签，环境标签-name-在产品下必须唯一-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|灰度标签列表返回结果|Inline|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|环境标签列表返回结果|Inline|
 
-<h3 id="添加产品灰度标签，灰度标签-name-在产品下必须唯一-responseschema">Response Schema</h3>
+<h3 id="添加产品环境标签，环境标签-name-在产品下必须唯一-responseschema">Response Schema</h3>
 
 Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |» result|[LabelInfo](#schemalabelinfo)|false|none|none|
-|»» hid|string|false|none|灰度标签的 hid|
-|»» product|string|false|none|灰度标签所属的产品名称|
-|»» name|string|false|none|灰度标签名称，同一产品下唯一（不能重名）|
-|»» desc|string|false|none|灰度标签描述|
-|»» channels|[string]|false|none|灰度标签适用版本通道|
-|»» clients|[string]|false|none|灰度标签适用客户端类型|
+|»» hid|string|false|none|环境标签的 hid|
+|»» product|string|false|none|环境标签所属的产品名称|
+|»» name|string|false|none|环境标签名称，同一产品下唯一（不能重名）|
+|»» desc|string|false|none|环境标签描述|
+|»» channels|[string]|false|none|环境标签适用版本通道|
+|»» clients|[string]|false|none|环境标签适用客户端类型|
 |»» status|integer(int64)|false|none|使用用户计数（被动异步计算，非精确值）|
 |»» release|integer(int64)|false|none|标签发布（被设置）计数|
-|»» createdAt|string(date-time)|false|none|灰度标签创建时间|
-|»» updatedAt|string(date-time)|false|none|灰度标签更新时间|
-|»» offlineAt|string(date-time)|false|none|灰度标签下线时间|
+|»» createdAt|string(date-time)|false|none|环境标签创建时间|
+|»» updatedAt|string(date-time)|false|none|环境标签更新时间|
+|»» offlineAt|string(date-time)|false|none|环境标签下线时间|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2501,11 +2162,11 @@ Authorization: string
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
-|label|path|string|true|灰度标签名称|
-|body|body|[LabelUpdateBody](#schemalabelupdatebody)|true|更新灰度标签的请求数据|
-|» desc|body|string|false|灰度标签描述|
-|» channels|body|[string]|false|该灰度标签适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有|
-|» clients|body|[string]|false|该灰度标签适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有|
+|label|path|string|true|环境标签名称|
+|body|body|[LabelUpdateBody](#schemalabelupdatebody)|true|更新环境标签的请求数据|
+|» desc|body|string|false|环境标签描述|
+|» channels|body|[string]|false|该环境标签适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有|
+|» clients|body|[string]|false|该环境标签适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有|
 
 > Example responses
 
@@ -2526,8 +2187,8 @@ Authorization: string
     ],
     "status": 100,
     "release": 2,
-    "createdAt": "2020-05-13T06:41:11.834Z",
-    "updatedAt": "2020-05-13T06:41:11.834Z",
+    "createdAt": "2020-05-27T08:08:05.652Z",
+    "updatedAt": "2020-05-27T08:08:05.652Z",
     "offlineAt": null
   }
 }
@@ -2537,7 +2198,7 @@ Authorization: string
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|灰度标签列表返回结果|Inline|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|环境标签列表返回结果|Inline|
 
 <h3 id="更新指定-product-name-的产品-responseschema">Response Schema</h3>
 
@@ -2546,24 +2207,24 @@ Status Code **200**
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |» result|[LabelInfo](#schemalabelinfo)|false|none|none|
-|»» hid|string|false|none|灰度标签的 hid|
-|»» product|string|false|none|灰度标签所属的产品名称|
-|»» name|string|false|none|灰度标签名称，同一产品下唯一（不能重名）|
-|»» desc|string|false|none|灰度标签描述|
-|»» channels|[string]|false|none|灰度标签适用版本通道|
-|»» clients|[string]|false|none|灰度标签适用客户端类型|
+|»» hid|string|false|none|环境标签的 hid|
+|»» product|string|false|none|环境标签所属的产品名称|
+|»» name|string|false|none|环境标签名称，同一产品下唯一（不能重名）|
+|»» desc|string|false|none|环境标签描述|
+|»» channels|[string]|false|none|环境标签适用版本通道|
+|»» clients|[string]|false|none|环境标签适用客户端类型|
 |»» status|integer(int64)|false|none|使用用户计数（被动异步计算，非精确值）|
 |»» release|integer(int64)|false|none|标签发布（被设置）计数|
-|»» createdAt|string(date-time)|false|none|灰度标签创建时间|
-|»» updatedAt|string(date-time)|false|none|灰度标签更新时间|
-|»» offlineAt|string(date-time)|false|none|灰度标签下线时间|
+|»» createdAt|string(date-time)|false|none|环境标签创建时间|
+|»» updatedAt|string(date-time)|false|none|环境标签更新时间|
+|»» offlineAt|string(date-time)|false|none|环境标签下线时间|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
 HeaderAuthorizationJWT
 </aside>
 
-## 将指定产品灰度标签下线，所有设置给用户或群组的对应灰度标签也会被移除！
+## 将指定产品环境标签下线，所有设置给用户或群组的对应环境标签也会被移除！
 
 > Code samples
 
@@ -2585,13 +2246,13 @@ Authorization: string
 
 `PUT /v1/products/{product}/labels/{label}:offline`
 
-<h3 id="将指定产品灰度标签下线，所有设置给用户或群组的对应灰度标签也会被移除！-parameters">Parameters</h3>
+<h3 id="将指定产品环境标签下线，所有设置给用户或群组的对应环境标签也会被移除！-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
-|label|path|string|true|灰度标签名称|
+|label|path|string|true|环境标签名称|
 
 > Example responses
 
@@ -2603,13 +2264,13 @@ Authorization: string
 }
 ```
 
-<h3 id="将指定产品灰度标签下线，所有设置给用户或群组的对应灰度标签也会被移除！-responses">Responses</h3>
+<h3 id="将指定产品环境标签下线，所有设置给用户或群组的对应环境标签也会被移除！-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
 
-<h3 id="将指定产品灰度标签下线，所有设置给用户或群组的对应灰度标签也会被移除！-responseschema">Response Schema</h3>
+<h3 id="将指定产品环境标签下线，所有设置给用户或群组的对应环境标签也会被移除！-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -2622,7 +2283,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 HeaderAuthorizationJWT
 </aside>
 
-## 批量为用户或群组设置灰度标签
+## 批量为用户或群组设置环境标签
 
 > Code samples
 
@@ -2661,17 +2322,17 @@ Authorization: string
 }
 ```
 
-<h3 id="批量为用户或群组设置灰度标签-parameters">Parameters</h3>
+<h3 id="批量为用户或群组设置环境标签-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
-|label|path|string|true|灰度标签名称|
-|body|body|[UsersGroupsBody](#schemausersgroupsbody)|true|批量为用户或群组设置灰度标签或配置项的请求数据|
+|label|path|string|true|环境标签名称|
+|body|body|[UsersGroupsBody](#schemausersgroupsbody)|true|批量为用户或群组设置环境标签或配置项的请求数据|
 |» users|body|[string]|false|用户 uid 数组，可以不提供，最大长度受 HTTP 请求最大字节数限制|
 |» groups|body|[string]|false|群组 uid 数组，可以不提供，最大长度受 HTTP 请求最大字节数限制|
-|» value|body|string|false|配置项值，设置灰度标签时不必提供|
+|» value|body|string|false|配置项值，设置环境标签时不必提供|
 
 > Example responses
 
@@ -2692,13 +2353,13 @@ Authorization: string
 }
 ```
 
-<h3 id="批量为用户或群组设置灰度标签-responses">Responses</h3>
+<h3 id="批量为用户或群组设置环境标签-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|设置灰度标签返回结果|Inline|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|设置环境标签返回结果|Inline|
 
-<h3 id="批量为用户或群组设置灰度标签-responseschema">Response Schema</h3>
+<h3 id="批量为用户或群组设置环境标签-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -2714,7 +2375,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 HeaderAuthorizationJWT
 </aside>
 
-## 批量撤销对用户或群组设置的产品灰度标签
+## 批量撤销对用户或群组设置的产品环境标签
 
 > Code samples
 
@@ -2746,14 +2407,14 @@ Authorization: string
 }
 ```
 
-<h3 id="批量撤销对用户或群组设置的产品灰度标签-parameters">Parameters</h3>
+<h3 id="批量撤销对用户或群组设置的产品环境标签-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
-|label|path|string|true|灰度标签名称|
-|body|body|[RecallBody](#schemarecallbody)|true|撤销/回滚指定发布批次的灰度标签或配置项|
+|label|path|string|true|环境标签名称|
+|body|body|[RecallBody](#schemarecallbody)|true|撤销/回滚指定发布批次的环境标签或配置项|
 |» release|body|integer(int64)|false|发布批次（被设置）计数|
 
 > Example responses
@@ -2766,13 +2427,13 @@ Authorization: string
 }
 ```
 
-<h3 id="批量撤销对用户或群组设置的产品灰度标签-responses">Responses</h3>
+<h3 id="批量撤销对用户或群组设置的产品环境标签-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
 
-<h3 id="批量撤销对用户或群组设置的产品灰度标签-responseschema">Response Schema</h3>
+<h3 id="批量撤销对用户或群组设置的产品环境标签-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -2785,7 +2446,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 HeaderAuthorizationJWT
 </aside>
 
-## 读取指定产品灰度标签的用户列表
+## 读取指定产品环境标签的用户列表
 
 > Code samples
 
@@ -2807,13 +2468,13 @@ Authorization: string
 
 `GET /v1/products/{product}/labels/{label}/users`
 
-<h3 id="读取指定产品灰度标签的用户列表-parameters">Parameters</h3>
+<h3 id="读取指定产品环境标签的用户列表-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
-|label|path|string|true|灰度标签名称|
+|label|path|string|true|环境标签名称|
 |pageSize|query|integer(int32)|false|分页大小，默认为 10，(1-1000]|
 |pageToken|query|string|false|分页请求标记，来自于响应结果的 nextPageToken|
 |q|query|string|false|部分列表类 API 支持搜索，q 为搜索关键词|
@@ -2827,7 +2488,7 @@ Authorization: string
   "result": [
     {
       "labelHID": "urbs",
-      "assignedAt": "2020-05-13T06:41:11.836Z",
+      "assignedAt": "2020-05-27T08:08:05.653Z",
       "release": 2,
       "user": "50c32afae8cf1439d35a87e6"
     }
@@ -2835,21 +2496,21 @@ Authorization: string
 }
 ```
 
-<h3 id="读取指定产品灰度标签的用户列表-responses">Responses</h3>
+<h3 id="读取指定产品环境标签的用户列表-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|灰度标签作用的用户列表|Inline|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|环境标签作用的用户列表|Inline|
 
-<h3 id="读取指定产品灰度标签的用户列表-responseschema">Response Schema</h3>
+<h3 id="读取指定产品环境标签的用户列表-responseschema">Response Schema</h3>
 
 Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |» result|[[LabelUserInfo](#schemalabeluserinfo)]|false|none|none|
-|»» labelHID|string|false|none|灰度标签 hid|
-|»» assignedAt|string(date-time)|false|none|灰度标签设置时间|
+|»» labelHID|string|false|none|环境标签 hid|
+|»» assignedAt|string(date-time)|false|none|环境标签设置时间|
 |»» release|integer(int64)|false|none|发布批次（被设置）计数|
 |»» user|string|false|none|用户的 uid|
 
@@ -2858,7 +2519,67 @@ To perform this operation, you must be authenticated by means of one of the foll
 HeaderAuthorizationJWT
 </aside>
 
-## 读取指定产品灰度标签的群组列表
+## 删除指定产品环境标签的灰度用户
+
+> Code samples
+
+```shell
+# You can also use wget
+curl -X DELETE https://urbs-setting:8443/v1/products/{product}/labels/{label}/users/{uid} \
+  -H 'Accept: application/json' \
+  -H 'Authorization: string'
+
+```
+
+```http
+DELETE https://urbs-setting:8443/v1/products/{product}/labels/{label}/users/{uid} HTTP/1.1
+Host: urbs-setting:8443
+Accept: application/json
+Authorization: string
+
+```
+
+`DELETE /v1/products/{product}/labels/{label}/users/{uid}`
+
+<h3 id="删除指定产品环境标签的灰度用户-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
+|product|path|string|true|产品名称|
+|label|path|string|true|环境标签名称|
+|uid|path|string|true|用户/群组 uid|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "result": true
+}
+```
+
+<h3 id="删除指定产品环境标签的灰度用户-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
+
+<h3 id="删除指定产品环境标签的灰度用户-responseschema">Response Schema</h3>
+
+Status Code **200**
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|» result|boolean|false|none|是否成功|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+HeaderAuthorizationJWT
+</aside>
+
+## 读取指定产品环境标签的群组列表
 
 > Code samples
 
@@ -2880,13 +2601,13 @@ Authorization: string
 
 `GET /v1/products/{product}/labels/{label}/groups`
 
-<h3 id="读取指定产品灰度标签的群组列表-parameters">Parameters</h3>
+<h3 id="读取指定产品环境标签的群组列表-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
-|label|path|string|true|灰度标签名称|
+|label|path|string|true|环境标签名称|
 |pageSize|query|integer(int32)|false|分页大小，默认为 10，(1-1000]|
 |pageToken|query|string|false|分页请求标记，来自于响应结果的 nextPageToken|
 |q|query|string|false|部分列表类 API 支持搜索，q 为搜索关键词|
@@ -2900,7 +2621,7 @@ Authorization: string
   "result": [
     {
       "labelHID": "urbs",
-      "assignedAt": "2020-05-13T06:41:11.836Z",
+      "assignedAt": "2020-05-27T08:08:05.654Z",
       "release": 2,
       "group": "50c32afae8cf1439d35a87e6",
       "kind": "organization",
@@ -2911,21 +2632,21 @@ Authorization: string
 }
 ```
 
-<h3 id="读取指定产品灰度标签的群组列表-responses">Responses</h3>
+<h3 id="读取指定产品环境标签的群组列表-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|灰度标签作用的群组列表|Inline|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|环境标签作用的群组列表|Inline|
 
-<h3 id="读取指定产品灰度标签的群组列表-responseschema">Response Schema</h3>
+<h3 id="读取指定产品环境标签的群组列表-responseschema">Response Schema</h3>
 
 Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |» result|[[LabelGroupInfo](#schemalabelgroupinfo)]|false|none|none|
-|»» labelHID|string|false|none|灰度标签 hid|
-|»» assignedAt|string(date-time)|false|none|灰度标签设置时间|
+|»» labelHID|string|false|none|环境标签 hid|
+|»» assignedAt|string(date-time)|false|none|环境标签设置时间|
 |»» release|integer(int64)|false|none|发布批次（被设置）计数|
 |»» group|string|false|none|群组的 uid|
 |»» kind|string|false|none|群组类型|
@@ -2937,7 +2658,67 @@ To perform this operation, you must be authenticated by means of one of the foll
 HeaderAuthorizationJWT
 </aside>
 
-## 读取指定产品灰度标签的灰度发布规则列表
+## 删除指定产品环境标签的灰度群组
+
+> Code samples
+
+```shell
+# You can also use wget
+curl -X DELETE https://urbs-setting:8443/v1/products/{product}/labels/{label}/groups/{uid} \
+  -H 'Accept: application/json' \
+  -H 'Authorization: string'
+
+```
+
+```http
+DELETE https://urbs-setting:8443/v1/products/{product}/labels/{label}/groups/{uid} HTTP/1.1
+Host: urbs-setting:8443
+Accept: application/json
+Authorization: string
+
+```
+
+`DELETE /v1/products/{product}/labels/{label}/groups/{uid}`
+
+<h3 id="删除指定产品环境标签的灰度群组-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
+|product|path|string|true|产品名称|
+|label|path|string|true|环境标签名称|
+|uid|path|string|true|用户/群组 uid|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "result": true
+}
+```
+
+<h3 id="删除指定产品环境标签的灰度群组-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
+
+<h3 id="删除指定产品环境标签的灰度群组-responseschema">Response Schema</h3>
+
+Status Code **200**
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|» result|boolean|false|none|是否成功|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+HeaderAuthorizationJWT
+</aside>
+
+## 读取指定产品环境标签的灰度发布规则列表
 
 > Code samples
 
@@ -2959,13 +2740,13 @@ Authorization: string
 
 `GET /v1/products/{product}/labels/{label}/rules`
 
-<h3 id="读取指定产品灰度标签的灰度发布规则列表-parameters">Parameters</h3>
+<h3 id="读取指定产品环境标签的灰度发布规则列表-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
-|label|path|string|true|灰度标签名称|
+|label|path|string|true|环境标签名称|
 
 > Example responses
 
@@ -2980,20 +2761,20 @@ Authorization: string
       "kind": "userPercent",
       "rule": "{\"value\": 10}",
       "release": 2,
-      "createdAt": "2020-05-13T06:41:11.837Z",
-      "updatedAt": "2020-05-13T06:41:11.837Z"
+      "createdAt": "2020-05-27T08:08:05.655Z",
+      "updatedAt": "2020-05-27T08:08:05.655Z"
     }
   ]
 }
 ```
 
-<h3 id="读取指定产品灰度标签的灰度发布规则列表-responses">Responses</h3>
+<h3 id="读取指定产品环境标签的灰度发布规则列表-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|灰度标签的发布规则列表|Inline|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|环境标签的发布规则列表|Inline|
 
-<h3 id="读取指定产品灰度标签的灰度发布规则列表-responseschema">Response Schema</h3>
+<h3 id="读取指定产品环境标签的灰度发布规则列表-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -3001,7 +2782,7 @@ Status Code **200**
 |---|---|---|---|---|
 |» result|[[LabelRuleInfo](#schemalabelruleinfo)]|false|none|none|
 |»» hid|string|false|none|发布规则的 hid|
-|»» labelHID|string|false|none|发布规则所属灰度标签的 hid|
+|»» labelHID|string|false|none|发布规则所属环境标签的 hid|
 |»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"|
 |»» rule|object|false|none|发布规则内容，JSON 对象，具体格式取决于 kind|
 |»»» value|integer(int64)|false|none|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
@@ -3014,7 +2795,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 HeaderAuthorizationJWT
 </aside>
 
-## 创建指定产品灰度标签的灰度发布规则，同一个灰度标签同一种 kind 的发布规则只能创建一个
+## 创建指定产品环境标签的灰度发布规则，同一个环境标签同一种 kind 的发布规则只能创建一个
 
 > Code samples
 
@@ -3048,13 +2829,13 @@ Authorization: string
 }
 ```
 
-<h3 id="创建指定产品灰度标签的灰度发布规则，同一个灰度标签同一种-kind-的发布规则只能创建一个-parameters">Parameters</h3>
+<h3 id="创建指定产品环境标签的灰度发布规则，同一个环境标签同一种-kind-的发布规则只能创建一个-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
-|label|path|string|true|灰度标签名称|
+|label|path|string|true|环境标签名称|
 |body|body|[LabelRuleBody](#schemalabelrulebody)|true|创建/更新配置项的发布规则|
 |» kind|body|string|false|发布规则类型，目前仅支持 "userPercent"|
 |» rule|body|object|false|发布规则内容，JSON 对象，具体格式取决于 kind|
@@ -3073,19 +2854,19 @@ Authorization: string
     "kind": "userPercent",
     "rule": "{\"value\": 10}",
     "release": 2,
-    "createdAt": "2020-05-13T06:41:11.837Z",
-    "updatedAt": "2020-05-13T06:41:11.837Z"
+    "createdAt": "2020-05-27T08:08:05.655Z",
+    "updatedAt": "2020-05-27T08:08:05.655Z"
   }
 }
 ```
 
-<h3 id="创建指定产品灰度标签的灰度发布规则，同一个灰度标签同一种-kind-的发布规则只能创建一个-responses">Responses</h3>
+<h3 id="创建指定产品环境标签的灰度发布规则，同一个环境标签同一种-kind-的发布规则只能创建一个-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|灰度标签的发布规则结果|Inline|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|环境标签的发布规则结果|Inline|
 
-<h3 id="创建指定产品灰度标签的灰度发布规则，同一个灰度标签同一种-kind-的发布规则只能创建一个-responseschema">Response Schema</h3>
+<h3 id="创建指定产品环境标签的灰度发布规则，同一个环境标签同一种-kind-的发布规则只能创建一个-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -3093,7 +2874,7 @@ Status Code **200**
 |---|---|---|---|---|
 |» result|[LabelRuleInfo](#schemalabelruleinfo)|false|none|none|
 |»» hid|string|false|none|发布规则的 hid|
-|»» labelHID|string|false|none|发布规则所属灰度标签的 hid|
+|»» labelHID|string|false|none|发布规则所属环境标签的 hid|
 |»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"|
 |»» rule|object|false|none|发布规则内容，JSON 对象，具体格式取决于 kind|
 |»»» value|integer(int64)|false|none|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
@@ -3106,7 +2887,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 HeaderAuthorizationJWT
 </aside>
 
-## 更新指定产品灰度标签的灰度发布规则
+## 更新指定产品环境标签的灰度发布规则
 
 > Code samples
 
@@ -3140,13 +2921,13 @@ Authorization: string
 }
 ```
 
-<h3 id="更新指定产品灰度标签的灰度发布规则-parameters">Parameters</h3>
+<h3 id="更新指定产品环境标签的灰度发布规则-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
-|label|path|string|true|灰度标签名称|
+|label|path|string|true|环境标签名称|
 |uid|path|string|true|标签/配置项/发布规则 hid|
 |body|body|[LabelRuleBody](#schemalabelrulebody)|true|创建/更新配置项的发布规则|
 |» kind|body|string|false|发布规则类型，目前仅支持 "userPercent"|
@@ -3166,19 +2947,19 @@ Authorization: string
     "kind": "userPercent",
     "rule": "{\"value\": 10}",
     "release": 2,
-    "createdAt": "2020-05-13T06:41:11.838Z",
-    "updatedAt": "2020-05-13T06:41:11.838Z"
+    "createdAt": "2020-05-27T08:08:05.656Z",
+    "updatedAt": "2020-05-27T08:08:05.656Z"
   }
 }
 ```
 
-<h3 id="更新指定产品灰度标签的灰度发布规则-responses">Responses</h3>
+<h3 id="更新指定产品环境标签的灰度发布规则-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|灰度标签的发布规则结果|Inline|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|环境标签的发布规则结果|Inline|
 
-<h3 id="更新指定产品灰度标签的灰度发布规则-responseschema">Response Schema</h3>
+<h3 id="更新指定产品环境标签的灰度发布规则-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -3186,7 +2967,7 @@ Status Code **200**
 |---|---|---|---|---|
 |» result|[LabelRuleInfo](#schemalabelruleinfo)|false|none|none|
 |»» hid|string|false|none|发布规则的 hid|
-|»» labelHID|string|false|none|发布规则所属灰度标签的 hid|
+|»» labelHID|string|false|none|发布规则所属环境标签的 hid|
 |»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"|
 |»» rule|object|false|none|发布规则内容，JSON 对象，具体格式取决于 kind|
 |»»» value|integer(int64)|false|none|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
@@ -3199,7 +2980,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 HeaderAuthorizationJWT
 </aside>
 
-## 删除指定产品灰度标签的灰度发布规则
+## 删除指定产品环境标签的灰度发布规则
 
 > Code samples
 
@@ -3221,13 +3002,13 @@ Authorization: string
 
 `DELETE /v1/products/{product}/labels/{label}/rules/{hid}`
 
-<h3 id="删除指定产品灰度标签的灰度发布规则-parameters">Parameters</h3>
+<h3 id="删除指定产品环境标签的灰度发布规则-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
-|label|path|string|true|灰度标签名称|
+|label|path|string|true|环境标签名称|
 |uid|path|string|true|标签/配置项/发布规则 hid|
 
 > Example responses
@@ -3240,13 +3021,13 @@ Authorization: string
 }
 ```
 
-<h3 id="删除指定产品灰度标签的灰度发布规则-responses">Responses</h3>
+<h3 id="删除指定产品环境标签的灰度发布规则-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
 
-<h3 id="删除指定产品灰度标签的灰度发布规则-responseschema">Response Schema</h3>
+<h3 id="删除指定产品环境标签的灰度发布规则-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -3308,8 +3089,8 @@ Authorization: string
       "name": "urbs",
       "desc": "string",
       "status": 0,
-      "createdAt": "2020-05-13T06:41:11.839Z",
-      "updatedAt": "2020-05-13T06:41:11.839Z",
+      "createdAt": "2020-05-27T08:08:05.657Z",
+      "updatedAt": "2020-05-27T08:08:05.657Z",
       "offlineAt": null
     }
   ]
@@ -3395,8 +3176,8 @@ Authorization: string
     "name": "urbs",
     "desc": "string",
     "status": 0,
-    "createdAt": "2020-05-13T06:41:11.839Z",
-    "updatedAt": "2020-05-13T06:41:11.839Z",
+    "createdAt": "2020-05-27T08:08:05.657Z",
+    "updatedAt": "2020-05-27T08:08:05.657Z",
     "offlineAt": null
   }
 }
@@ -3479,8 +3260,8 @@ Authorization: string
     "name": "urbs",
     "desc": "string",
     "status": 0,
-    "createdAt": "2020-05-13T06:41:11.839Z",
-    "updatedAt": "2020-05-13T06:41:11.839Z",
+    "createdAt": "2020-05-27T08:08:05.658Z",
+    "updatedAt": "2020-05-27T08:08:05.658Z",
     "offlineAt": null
   }
 }
@@ -3634,8 +3415,8 @@ Authorization: string
         "true",
         "false"
       ],
-      "createdAt": "2020-05-13T06:41:11.841Z",
-      "updatedAt": "2020-05-13T06:41:11.841Z",
+      "createdAt": "2020-05-27T08:08:05.659Z",
+      "updatedAt": "2020-05-27T08:08:05.659Z",
       "offlineAt": null
     }
   ]
@@ -3737,8 +3518,8 @@ Authorization: string
         "true",
         "false"
       ],
-      "createdAt": "2020-05-13T06:41:11.841Z",
-      "updatedAt": "2020-05-13T06:41:11.841Z",
+      "createdAt": "2020-05-27T08:08:05.660Z",
+      "updatedAt": "2020-05-27T08:08:05.660Z",
       "offlineAt": null
     }
   ]
@@ -3853,8 +3634,8 @@ Authorization: string
         "true",
         "false"
       ],
-      "createdAt": "2020-05-13T06:41:11.842Z",
-      "updatedAt": "2020-05-13T06:41:11.842Z",
+      "createdAt": "2020-05-27T08:08:05.660Z",
+      "updatedAt": "2020-05-27T08:08:05.660Z",
       "offlineAt": null
     }
   ]
@@ -3951,8 +3732,8 @@ Authorization: string
       "true",
       "false"
     ],
-    "createdAt": "2020-05-13T06:41:11.842Z",
-    "updatedAt": "2020-05-13T06:41:11.842Z",
+    "createdAt": "2020-05-27T08:08:05.661Z",
+    "updatedAt": "2020-05-27T08:08:05.661Z",
     "offlineAt": null
   }
 }
@@ -4064,8 +3845,8 @@ Authorization: string
       "true",
       "false"
     ],
-    "createdAt": "2020-05-13T06:41:11.843Z",
-    "updatedAt": "2020-05-13T06:41:11.843Z",
+    "createdAt": "2020-05-27T08:08:05.662Z",
+    "updatedAt": "2020-05-27T08:08:05.662Z",
     "offlineAt": null
   }
 }
@@ -4210,10 +3991,10 @@ Authorization: string
 |product|path|string|true|产品名称|
 |module|path|string|true|功能模块名称|
 |setting|path|string|true|配置项名称|
-|body|body|[UsersGroupsBody](#schemausersgroupsbody)|true|批量为用户或群组设置灰度标签或配置项的请求数据|
+|body|body|[UsersGroupsBody](#schemausersgroupsbody)|true|批量为用户或群组设置环境标签或配置项的请求数据|
 |» users|body|[string]|false|用户 uid 数组，可以不提供，最大长度受 HTTP 请求最大字节数限制|
 |» groups|body|[string]|false|群组 uid 数组，可以不提供，最大长度受 HTTP 请求最大字节数限制|
-|» value|body|string|false|配置项值，设置灰度标签时不必提供|
+|» value|body|string|false|配置项值，设置环境标签时不必提供|
 
 > Example responses
 
@@ -4298,7 +4079,7 @@ Authorization: string
 |product|path|string|true|产品名称|
 |module|path|string|true|功能模块名称|
 |setting|path|string|true|配置项名称|
-|body|body|[RecallBody](#schemarecallbody)|true|撤销/回滚指定发布批次的灰度标签或配置项|
+|body|body|[RecallBody](#schemarecallbody)|true|撤销/回滚指定发布批次的环境标签或配置项|
 |» release|body|integer(int64)|false|发布批次（被设置）计数|
 
 > Example responses
@@ -4378,8 +4159,8 @@ Authorization: string
       "rule": "{\"value\": 10}",
       "value": "x",
       "release": 2,
-      "createdAt": "2020-05-13T06:41:11.845Z",
-      "updatedAt": "2020-05-13T06:41:11.845Z"
+      "createdAt": "2020-05-27T08:08:05.663Z",
+      "updatedAt": "2020-05-27T08:08:05.663Z"
     }
   ]
 }
@@ -4407,6 +4188,128 @@ Status Code **200**
 |»» release|integer(int64)|false|none|发布批次（被设置）计数|
 |»» createdAt|string(date-time)|false|none|创建时间|
 |»» updatedAt|string(date-time)|false|none|更新时间|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+HeaderAuthorizationJWT
+</aside>
+
+## 回滚指定产品功能配置项的灰度用户的灰度值
+
+> Code samples
+
+```shell
+# You can also use wget
+curl -X PUT https://urbs-setting:8443/v1/products/{product}/modules/{module}/settings/{setting}/users/{uid}:rollback \
+  -H 'Accept: application/json' \
+  -H 'Authorization: string'
+
+```
+
+```http
+PUT https://urbs-setting:8443/v1/products/{product}/modules/{module}/settings/{setting}/users/{uid}:rollback HTTP/1.1
+Host: urbs-setting:8443
+Accept: application/json
+Authorization: string
+
+```
+
+`PUT /v1/products/{product}/modules/{module}/settings/{setting}/users/{uid}:rollback`
+
+<h3 id="回滚指定产品功能配置项的灰度用户的灰度值-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
+|product|path|string|true|产品名称|
+|module|path|string|true|功能模块名称|
+|setting|path|string|true|配置项名称|
+|uid|path|string|true|用户/群组 uid|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "result": true
+}
+```
+
+<h3 id="回滚指定产品功能配置项的灰度用户的灰度值-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
+
+<h3 id="回滚指定产品功能配置项的灰度用户的灰度值-responseschema">Response Schema</h3>
+
+Status Code **200**
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|» result|boolean|false|none|是否成功|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+HeaderAuthorizationJWT
+</aside>
+
+## 删除指定产品功能配置项的灰度用户
+
+> Code samples
+
+```shell
+# You can also use wget
+curl -X DELETE https://urbs-setting:8443/v1/products/{product}/modules/{module}/settings/{setting}/users/{uid} \
+  -H 'Accept: application/json' \
+  -H 'Authorization: string'
+
+```
+
+```http
+DELETE https://urbs-setting:8443/v1/products/{product}/modules/{module}/settings/{setting}/users/{uid} HTTP/1.1
+Host: urbs-setting:8443
+Accept: application/json
+Authorization: string
+
+```
+
+`DELETE /v1/products/{product}/modules/{module}/settings/{setting}/users/{uid}`
+
+<h3 id="删除指定产品功能配置项的灰度用户-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
+|product|path|string|true|产品名称|
+|module|path|string|true|功能模块名称|
+|setting|path|string|true|配置项名称|
+|uid|path|string|true|用户/群组 uid|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "result": true
+}
+```
+
+<h3 id="删除指定产品功能配置项的灰度用户-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
+
+<h3 id="删除指定产品功能配置项的灰度用户-responseschema">Response Schema</h3>
+
+Status Code **200**
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|» result|boolean|false|none|是否成功|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -4456,7 +4359,7 @@ Authorization: string
   "result": [
     {
       "settingHID": "urbs",
-      "assignedAt": "2020-05-13T06:41:11.845Z",
+      "assignedAt": "2020-05-27T08:08:05.665Z",
       "release": 2,
       "group": "50c32afae8cf1439d35a87e6",
       "kind": "organization",
@@ -4491,6 +4394,128 @@ Status Code **200**
 |»» status|integer(int64)|false|none|群组成员数量，非精确值|
 |»» value|string|false|none|配置项值|
 |»» lastValue|string|false|none|上一个配置项值|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+HeaderAuthorizationJWT
+</aside>
+
+## 回滚指定产品功能配置项的灰度群组的灰度值
+
+> Code samples
+
+```shell
+# You can also use wget
+curl -X PUT https://urbs-setting:8443/v1/products/{product}/modules/{module}/settings/{setting}/groups/{uid}:rollback \
+  -H 'Accept: application/json' \
+  -H 'Authorization: string'
+
+```
+
+```http
+PUT https://urbs-setting:8443/v1/products/{product}/modules/{module}/settings/{setting}/groups/{uid}:rollback HTTP/1.1
+Host: urbs-setting:8443
+Accept: application/json
+Authorization: string
+
+```
+
+`PUT /v1/products/{product}/modules/{module}/settings/{setting}/groups/{uid}:rollback`
+
+<h3 id="回滚指定产品功能配置项的灰度群组的灰度值-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
+|product|path|string|true|产品名称|
+|module|path|string|true|功能模块名称|
+|setting|path|string|true|配置项名称|
+|uid|path|string|true|用户/群组 uid|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "result": true
+}
+```
+
+<h3 id="回滚指定产品功能配置项的灰度群组的灰度值-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
+
+<h3 id="回滚指定产品功能配置项的灰度群组的灰度值-responseschema">Response Schema</h3>
+
+Status Code **200**
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|» result|boolean|false|none|是否成功|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+HeaderAuthorizationJWT
+</aside>
+
+## 删除指定产品功能配置项的灰度群组
+
+> Code samples
+
+```shell
+# You can also use wget
+curl -X DELETE https://urbs-setting:8443/v1/products/{product}/modules/{module}/settings/{setting}/groups/{uid} \
+  -H 'Accept: application/json' \
+  -H 'Authorization: string'
+
+```
+
+```http
+DELETE https://urbs-setting:8443/v1/products/{product}/modules/{module}/settings/{setting}/groups/{uid} HTTP/1.1
+Host: urbs-setting:8443
+Accept: application/json
+Authorization: string
+
+```
+
+`DELETE /v1/products/{product}/modules/{module}/settings/{setting}/groups/{uid}`
+
+<h3 id="删除指定产品功能配置项的灰度群组-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
+|product|path|string|true|产品名称|
+|module|path|string|true|功能模块名称|
+|setting|path|string|true|配置项名称|
+|uid|path|string|true|用户/群组 uid|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "result": true
+}
+```
+
+<h3 id="删除指定产品功能配置项的灰度群组-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
+
+<h3 id="删除指定产品功能配置项的灰度群组-responseschema">Response Schema</h3>
+
+Status Code **200**
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|» result|boolean|false|none|是否成功|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -4785,7 +4810,7 @@ HeaderAuthorizationJWT
   "name": "urbs-setting",
   "version": "v1.2.0",
   "gitSHA1": "cd7e82a",
-  "buildTime": "2020-05-13T06:41:11.847Z"
+  "buildTime": "2020-05-27T08:08:05.668Z"
 }
 
 ```
@@ -4824,9 +4849,9 @@ HeaderAuthorizationJWT
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|l|string|false|none|灰度标签名称|
-|cls|[string]|false|none|灰度标签适用的 Clients 客户端类型列表，当列表为空时表示全适用|
-|chs|[string]|false|none|灰度标签适用的 Channels 版本通道列表，当列表为空时表示全适用|
+|l|string|false|none|环境标签名称|
+|cls|[string]|false|none|环境标签适用的 Clients 客户端类型列表，当列表为空时表示全适用|
+|chs|[string]|false|none|环境标签适用的 Channels 版本通道列表，当列表为空时表示全适用|
 
 <h2 id="tocSlabelinfo">LabelInfo</h2>
 
@@ -4846,8 +4871,8 @@ HeaderAuthorizationJWT
   ],
   "status": 100,
   "release": 2,
-  "createdAt": "2020-05-13T06:41:11.847Z",
-  "updatedAt": "2020-05-13T06:41:11.847Z",
+  "createdAt": "2020-05-27T08:08:05.668Z",
+  "updatedAt": "2020-05-27T08:08:05.668Z",
   "offlineAt": null
 }
 
@@ -4857,17 +4882,17 @@ HeaderAuthorizationJWT
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|hid|string|false|none|灰度标签的 hid|
-|product|string|false|none|灰度标签所属的产品名称|
-|name|string|false|none|灰度标签名称，同一产品下唯一（不能重名）|
-|desc|string|false|none|灰度标签描述|
-|channels|[string]|false|none|灰度标签适用版本通道|
-|clients|[string]|false|none|灰度标签适用客户端类型|
+|hid|string|false|none|环境标签的 hid|
+|product|string|false|none|环境标签所属的产品名称|
+|name|string|false|none|环境标签名称，同一产品下唯一（不能重名）|
+|desc|string|false|none|环境标签描述|
+|channels|[string]|false|none|环境标签适用版本通道|
+|clients|[string]|false|none|环境标签适用客户端类型|
 |status|integer(int64)|false|none|使用用户计数（被动异步计算，非精确值）|
 |release|integer(int64)|false|none|标签发布（被设置）计数|
-|createdAt|string(date-time)|false|none|灰度标签创建时间|
-|updatedAt|string(date-time)|false|none|灰度标签更新时间|
-|offlineAt|string(date-time)|false|none|灰度标签下线时间|
+|createdAt|string(date-time)|false|none|环境标签创建时间|
+|updatedAt|string(date-time)|false|none|环境标签更新时间|
+|offlineAt|string(date-time)|false|none|环境标签下线时间|
 
 <h2 id="tocSmylabel">MyLabel</h2>
 
@@ -4880,7 +4905,7 @@ HeaderAuthorizationJWT
   "name": "task-share",
   "desc": "string",
   "release": 1,
-  "assignedAt": "2020-05-13T06:41:11.847Z"
+  "assignedAt": "2020-05-27T08:08:05.668Z"
 }
 
 ```
@@ -4889,10 +4914,10 @@ HeaderAuthorizationJWT
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|hid|string|false|none|灰度标签的 hid|
-|product|string|false|none|灰度标签所属的产品名称|
-|name|string|false|none|灰度标签名称|
-|desc|string|false|none|灰度标签描述|
+|hid|string|false|none|环境标签的 hid|
+|product|string|false|none|环境标签所属的产品名称|
+|name|string|false|none|环境标签名称|
+|desc|string|false|none|环境标签描述|
 |release|integer(int64)|false|none|被设置批次|
 |assignedAt|string(date-time)|false|none|被设置时间|
 
@@ -4910,7 +4935,7 @@ HeaderAuthorizationJWT
   "value": "disable",
   "lastValue": "",
   "release": 1,
-  "assignedAt": "2020-05-13T06:41:11.847Z"
+  "assignedAt": "2020-05-27T08:08:05.669Z"
 }
 
 ```
@@ -4938,7 +4963,7 @@ HeaderAuthorizationJWT
   "uid": "5e82d747fe02a50021d339f3",
   "labels": "{\"teambition\":[{\"l\":\"dev\"}]}",
   "activeAt": 1585636012,
-  "createdAt": "2020-05-13T06:41:11.847Z"
+  "createdAt": "2020-05-27T08:08:05.669Z"
 }
 
 ```
@@ -4963,8 +4988,8 @@ HeaderAuthorizationJWT
   "desc": "string",
   "syncAt": 1585636012,
   "status": 99,
-  "createdAt": "2020-05-13T06:41:11.848Z",
-  "updatedAt": "2020-05-13T06:41:11.848Z"
+  "createdAt": "2020-05-27T08:08:05.669Z",
+  "updatedAt": "2020-05-27T08:08:05.669Z"
 }
 
 ```
@@ -4978,8 +5003,8 @@ HeaderAuthorizationJWT
 |desc|string|false|none|群组的描述|
 |syncAt|integer(int64)|false|none|群组成员同步时间点，1970 以来的秒数|
 |status|integer(int64)|false|none|群组成员数量，非精确值|
-|createdAt|string(date-time)|false|none|灰度标签创建时间|
-|updatedAt|string(date-time)|false|none|灰度标签更新时间|
+|createdAt|string(date-time)|false|none|环境标签创建时间|
+|updatedAt|string(date-time)|false|none|环境标签更新时间|
 
 <h2 id="tocSgroupmember">GroupMember</h2>
 
@@ -4989,7 +5014,7 @@ HeaderAuthorizationJWT
 {
   "user": "5e82d747fe02a50021d339f3",
   "syncAt": 1585636012,
-  "createdAt": "2020-05-13T06:41:11.848Z"
+  "createdAt": "2020-05-27T08:08:05.669Z"
 }
 
 ```
@@ -5011,8 +5036,8 @@ HeaderAuthorizationJWT
   "name": "urbs",
   "desc": "string",
   "status": 0,
-  "createdAt": "2020-05-13T06:41:11.848Z",
-  "updatedAt": "2020-05-13T06:41:11.848Z",
+  "createdAt": "2020-05-27T08:08:05.669Z",
+  "updatedAt": "2020-05-27T08:08:05.669Z",
   "deletedAt": null,
   "offlineAt": null
 }
@@ -5050,11 +5075,11 @@ HeaderAuthorizationJWT
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|labels|integer(int64)|false|none|产品下灰度标签数量|
+|labels|integer(int64)|false|none|产品下环境标签数量|
 |modules|integer(int64)|false|none|产品下功能模块数量|
 |settings|integer(int64)|false|none|产品下配置项数量|
-|release|integer(int64)|false|none|产品下灰度标签和配置项总发布次数|
-|status|integer(int64)|false|none|产品下灰度标签和配置项总作用人数（非精确值）|
+|release|integer(int64)|false|none|产品下环境标签和配置项总发布次数|
+|status|integer(int64)|false|none|产品下环境标签和配置项总作用人数（非精确值）|
 
 <h2 id="tocSmodule">Module</h2>
 
@@ -5065,8 +5090,8 @@ HeaderAuthorizationJWT
   "name": "urbs",
   "desc": "string",
   "status": 0,
-  "createdAt": "2020-05-13T06:41:11.848Z",
-  "updatedAt": "2020-05-13T06:41:11.848Z",
+  "createdAt": "2020-05-27T08:08:05.669Z",
+  "updatedAt": "2020-05-27T08:08:05.669Z",
   "offlineAt": null
 }
 
@@ -5107,8 +5132,8 @@ HeaderAuthorizationJWT
     "true",
     "false"
   ],
-  "createdAt": "2020-05-13T06:41:11.848Z",
-  "updatedAt": "2020-05-13T06:41:11.848Z",
+  "createdAt": "2020-05-27T08:08:05.669Z",
+  "updatedAt": "2020-05-27T08:08:05.669Z",
   "offlineAt": null
 }
 
@@ -5165,7 +5190,7 @@ HeaderAuthorizationJWT
 ```json
 {
   "labelHID": "urbs",
-  "assignedAt": "2020-05-13T06:41:11.849Z",
+  "assignedAt": "2020-05-27T08:08:05.670Z",
   "release": 2,
   "group": "50c32afae8cf1439d35a87e6",
   "kind": "organization",
@@ -5179,8 +5204,8 @@ HeaderAuthorizationJWT
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|labelHID|string|false|none|灰度标签 hid|
-|assignedAt|string(date-time)|false|none|灰度标签设置时间|
+|labelHID|string|false|none|环境标签 hid|
+|assignedAt|string(date-time)|false|none|环境标签设置时间|
 |release|integer(int64)|false|none|发布批次（被设置）计数|
 |group|string|false|none|群组的 uid|
 |kind|string|false|none|群组类型|
@@ -5194,7 +5219,7 @@ HeaderAuthorizationJWT
 ```json
 {
   "labelHID": "urbs",
-  "assignedAt": "2020-05-13T06:41:11.849Z",
+  "assignedAt": "2020-05-27T08:08:05.670Z",
   "release": 2,
   "user": "50c32afae8cf1439d35a87e6"
 }
@@ -5205,8 +5230,8 @@ HeaderAuthorizationJWT
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|labelHID|string|false|none|灰度标签 hid|
-|assignedAt|string(date-time)|false|none|灰度标签设置时间|
+|labelHID|string|false|none|环境标签 hid|
+|assignedAt|string(date-time)|false|none|环境标签设置时间|
 |release|integer(int64)|false|none|发布批次（被设置）计数|
 |user|string|false|none|用户的 uid|
 
@@ -5221,8 +5246,8 @@ HeaderAuthorizationJWT
   "kind": "userPercent",
   "rule": "{\"value\": 10}",
   "release": 2,
-  "createdAt": "2020-05-13T06:41:11.849Z",
-  "updatedAt": "2020-05-13T06:41:11.849Z"
+  "createdAt": "2020-05-27T08:08:05.670Z",
+  "updatedAt": "2020-05-27T08:08:05.670Z"
 }
 
 ```
@@ -5232,7 +5257,7 @@ HeaderAuthorizationJWT
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |hid|string|false|none|发布规则的 hid|
-|labelHID|string|false|none|发布规则所属灰度标签的 hid|
+|labelHID|string|false|none|发布规则所属环境标签的 hid|
 |kind|string|false|none|发布规则类型，目前仅支持 "userPercent"|
 |rule|object|false|none|发布规则内容，JSON 对象，具体格式取决于 kind|
 |» value|integer(int64)|false|none|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
@@ -5275,7 +5300,7 @@ HeaderAuthorizationJWT
 ```json
 {
   "settingHID": "urbs",
-  "assignedAt": "2020-05-13T06:41:11.849Z",
+  "assignedAt": "2020-05-27T08:08:05.671Z",
   "release": 2,
   "group": "50c32afae8cf1439d35a87e6",
   "kind": "organization",
@@ -5313,8 +5338,8 @@ HeaderAuthorizationJWT
   "rule": "{\"value\": 10}",
   "value": "x",
   "release": 2,
-  "createdAt": "2020-05-13T06:41:11.849Z",
-  "updatedAt": "2020-05-13T06:41:11.849Z"
+  "createdAt": "2020-05-27T08:08:05.671Z",
+  "updatedAt": "2020-05-27T08:08:05.671Z"
 }
 
 ```

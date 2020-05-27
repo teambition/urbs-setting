@@ -120,7 +120,7 @@ func (m *Label) Create(ctx context.Context, label *schema.Label) error {
 	return err
 }
 
-// Update 更新指定灰度标签
+// Update 更新指定环境标签
 func (m *Label) Update(ctx context.Context, labelID int64, changed map[string]interface{}) (*schema.Label, error) {
 	label := &schema.Label{}
 	if _, err := m.updateByID(ctx, schema.TableLabel, labelID, goqu.Record(changed)); err != nil {
@@ -243,7 +243,7 @@ func (m *Label) RemoveGroupLabel(ctx context.Context, groupID, labelID int64) (i
 	return rowsAffected, err
 }
 
-// Recall 撤销指定批次的用户或群组的灰度标签
+// Recall 撤销指定批次的用户或群组的环境标签
 func (m *Label) Recall(ctx context.Context, labelID, release int64) error {
 	totalRowsAffected := int64(0)
 	rowsAffected, err := m.deleteByCols(ctx, schema.TableGroupLabel, goqu.Ex{"label_id": labelID, "rls": release})

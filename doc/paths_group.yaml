@@ -3,7 +3,7 @@
     get:
       tags:
         - Group
-      summary: 获取指定 uid 群组灰度标签列表，支持分页，按照标签指派时间倒序。
+      summary: 获取指定 uid 群组环境标签列表，支持分页，按照标签指派时间倒序。
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -26,6 +26,9 @@
       parameters:
         - $ref: '#/components/parameters/HeaderAuthorization'
         - $ref: "#/components/parameters/PathUID"
+        - $ref: "#/components/parameters/QueryProduct"
+        - $ref: "#/components/parameters/QueryModule"
+        - $ref: "#/components/parameters/QuerySetting"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
         - $ref: "#/components/parameters/QueryQ"
@@ -108,51 +111,6 @@
       parameters:
         - $ref: '#/components/parameters/HeaderAuthorization'
         - $ref: "#/components/parameters/PathUID"
-      responses:
-        '200':
-          $ref: '#/components/responses/BoolRes'
-
-  /v1/groups/{uid}/labels/{hid}:
-    delete:
-      tags:
-        - Group
-      summary: 移除指定 uid 群组的指定 hid 灰度标签
-      security:
-        - HeaderAuthorizationJWT: {}
-      parameters:
-        - $ref: '#/components/parameters/HeaderAuthorization'
-        - $ref: "#/components/parameters/PathUID"
-        - $ref: "#/components/parameters/PathHID"
-      responses:
-        '200':
-          $ref: '#/components/responses/BoolRes'
-
-  /v1/groups/{uid}/settings/{hid}:rollback:
-    put:
-      tags:
-        - Group
-      summary: 回滚指定 uid 群组的指定 hid 配置项值到上一个，只能回退到上一个值，不能到上上个值
-      security:
-        - HeaderAuthorizationJWT: {}
-      parameters:
-        - $ref: '#/components/parameters/HeaderAuthorization'
-        - $ref: "#/components/parameters/PathUID"
-        - $ref: "#/components/parameters/PathHID"
-      responses:
-        '200':
-          $ref: '#/components/responses/BoolRes'
-
-  /v1/groups/{uid}/settings/{hid}:
-    delete:
-      tags:
-        - Group
-      summary: 移除指定 uid 群组的指定 hid 配置项
-      security:
-        - HeaderAuthorizationJWT: {}
-      parameters:
-        - $ref: '#/components/parameters/HeaderAuthorization'
-        - $ref: "#/components/parameters/PathUID"
-        - $ref: "#/components/parameters/PathHID"
       responses:
         '200':
           $ref: '#/components/responses/BoolRes'

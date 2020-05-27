@@ -64,16 +64,19 @@ func (m *User) Find(ctx context.Context, pg tpl.Pagination) ([]schema.User, int,
 	sdc := m.DB.From(schema.TableUser)
 	sd := m.DB.From(schema.TableUser).Where(goqu.C("id").Lte(cursor))
 
+	var total int64
+	var err error
 	if pg.Q != "" {
 		sdc = sdc.Where(goqu.C("uid").Like(pg.Q))
+		total, err = sdc.CountContext(ctx)
+		if err != nil {
+			return nil, 0, err
+		}
+
 		sd = sd.Where(goqu.C("uid").Like(pg.Q))
 	}
-	sd = sd.Order(goqu.C("id").Desc()).Limit(uint(pg.PageSize + 1))
 
-	total, err := sdc.CountContext(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
+	sd = sd.Order(goqu.C("id").Desc()).Limit(uint(pg.PageSize + 1))
 	err = sd.Executor().ScanStructsContext(ctx, &users)
 	if err != nil {
 		return nil, 0, err

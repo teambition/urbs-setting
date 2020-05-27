@@ -314,8 +314,8 @@ func (m *Model) unlock(ctx context.Context, key string) {
 	}
 }
 
-// tryRefreshLabelStatus 更新指定 label 的 Status（灰度标签灰度进度，被作用的用户数，非精确）值
-// 比如用户因为属于 n 个群组而被重复设置灰度标签
+// tryRefreshLabelStatus 更新指定 label 的 Status（环境标签灰度进度，被作用的用户数，非精确）值
+// 比如用户因为属于 n 个群组而被重复设置环境标签
 func (m *Model) tryRefreshLabelStatus(ctx context.Context, labelID int64) {
 	if err := m.refreshLabelStatus(ctx, labelID); err != nil {
 		logging.Errf("tryRefreshLabelStatus: labelID %d, error %v", labelID, err)

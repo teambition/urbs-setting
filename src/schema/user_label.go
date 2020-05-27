@@ -9,11 +9,11 @@ import (
 const TableUserLabel = "user_label"
 
 // UserLabel 详见 ./sql/schema.sql table `user_label`
-// 记录用户被分配的灰度标签，不同客户端不同大版本可能有不同的灰度标签
+// 记录用户被分配的环境标签，不同客户端不同大版本可能有不同的环境标签
 type UserLabel struct {
 	ID        int64     `db:"id" goqu:"skipinsert"`
 	CreatedAt time.Time `db:"created_at" goqu:"skipinsert"`
 	UserID    int64     `db:"user_id"`  // 用户内部 ID
-	LabelID   int64     `db:"label_id"` // 灰度标签内部 ID
+	LabelID   int64     `db:"label_id"` // 环境标签内部 ID
 	Release   int64     `db:"rls"`      // 标签被设置计数批次
 }

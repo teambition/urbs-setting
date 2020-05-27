@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   description: |-
     Urbs 灰度平台灰度策略服务
-  version: 1.3.0
+  version: 1.4.0
   title: urbs-setting
 servers:
   - url: https://urbs-setting:8443
@@ -17,7 +17,7 @@ tags:
   - name: Product
     description: Product 产品相关接口
   - name: Label
-    description: Label 灰度标签相关接口
+    description: Label 环境标签相关接口
   - name: Module
     description: Module 产品功能模块相关接口
   - name: Setting
@@ -69,7 +69,7 @@ components:
     PathLabel:
       in: path
       name: label
-      description: 灰度标签名称
+      description: 环境标签名称
       required: true
       schema:
         type: string
@@ -78,6 +78,34 @@ components:
       name: product
       description: 产品名称
       required: true
+      schema:
+        type: string
+    QueryModule:
+      in: query
+      name: module
+      description: 功能模块名称
+      required: false
+      schema:
+        type: string
+    QuerySetting:
+      in: query
+      name: setting
+      description: 配置项名称
+      required: false
+      schema:
+        type: string
+    QueryChannel:
+      in: query
+      name: channel
+      description: 版本通道，必须为服务端配置的有效值，只返回匹配 channel 的 setting/label 列表
+      required: false
+      schema:
+        type: string
+    QueryClient:
+      in: query
+      name: client
+      description: 客户端类型，必须为服务端配置的有效值，只返回匹配 client 的 setting/label 列表
+      required: false
       schema:
         type: string
     QueryPageSize:
@@ -154,17 +182,17 @@ components:
       properties:
         l:
           type: string
-          description: 灰度标签名称
+          description: 环境标签名称
           example: beta
         cls:
           type: array
-          description: 灰度标签适用的 Clients 客户端类型列表，当列表为空时表示全适用
+          description: 环境标签适用的 Clients 客户端类型列表，当列表为空时表示全适用
           example: ["ios", "android", "web"]
           items:
             type: string
         chs:
           type: array
-          description: 灰度标签适用的 Channels 版本通道列表，当列表为空时表示全适用
+          description: 环境标签适用的 Channels 版本通道列表，当列表为空时表示全适用
           example: ["stable", "beta", "dev"]
           items:
             type: string
@@ -173,28 +201,28 @@ components:
       properties:
         hid:
           type: string
-          description: 灰度标签的 hid
+          description: 环境标签的 hid
           example: AwAAAAAAAAB25V_QnbhCuRwF
         product:
           type: string
-          description: 灰度标签所属的产品名称
+          description: 环境标签所属的产品名称
           example: teambition
         name:
           type: string
-          description: 灰度标签名称，同一产品下唯一（不能重名）
+          description: 环境标签名称，同一产品下唯一（不能重名）
           example: beta
         desc:
           type: string
-          description: 灰度标签描述
+          description: 环境标签描述
         channels:
           type: array
-          description: 灰度标签适用版本通道
+          description: 环境标签适用版本通道
           example: ["beta"]
           items:
             type: string
         clients:
           type: array
-          description: 灰度标签适用客户端类型
+          description: 环境标签适用客户端类型
           example: ["web"]
           items:
             type: string
@@ -211,17 +239,17 @@ components:
         createdAt:
           type: string
           format: date-time
-          description: 灰度标签创建时间
+          description: 环境标签创建时间
           example: 2020-03-25T06:24:25Z
         updatedAt:
           type: string
           format: date-time
-          description: 灰度标签更新时间
+          description: 环境标签更新时间
           example: 2020-03-25T06:24:25Z
         offlineAt:
           type: string
           format: date-time
-          description: 灰度标签下线时间
+          description: 环境标签下线时间
           default: null
           example: null
     MyLabel:
@@ -229,19 +257,19 @@ components:
       properties:
         hid:
           type: string
-          description: 灰度标签的 hid
+          description: 环境标签的 hid
           example: AwAAAAAAAAB25V_QnbhCuRwF
         product:
           type: string
-          description: 灰度标签所属的产品名称
+          description: 环境标签所属的产品名称
           example: teambition
         name:
           type: string
-          description: 灰度标签名称
+          description: 环境标签名称
           example: task-share
         desc:
           type: string
-          description: 灰度标签描述
+          description: 环境标签描述
         release:
           type: integer
           format: int64
@@ -340,12 +368,12 @@ components:
         createdAt:
           type: string
           format: date-time
-          description: 灰度标签创建时间
+          description: 环境标签创建时间
           example: 2020-03-25T06:24:25Z
         updatedAt:
           type: string
           format: date-time
-          description: 灰度标签更新时间
+          description: 环境标签更新时间
           example: 2020-03-25T06:24:25Z
     GroupMember:
       type: object
@@ -404,7 +432,7 @@ components:
         labels:
           type: integer
           format: int64
-          description: 产品下灰度标签数量
+          description: 产品下环境标签数量
         modules:
           type: integer
           format: int64
@@ -416,11 +444,11 @@ components:
         release:
           type: integer
           format: int64
-          description: 产品下灰度标签和配置项总发布次数
+          description: 产品下环境标签和配置项总发布次数
         status:
           type: integer
           format: int64
-          description: 产品下灰度标签和配置项总作用人数（非精确值）
+          description: 产品下环境标签和配置项总作用人数（非精确值）
     Module:
       type: object
       properties:
@@ -540,12 +568,12 @@ components:
       properties:
         labelHID:
           type: string
-          description: 灰度标签 hid
+          description: 环境标签 hid
           example: urbs
         assignedAt:
           type: string
           format: date-time
-          description: 灰度标签设置时间
+          description: 环境标签设置时间
           example: 2020-03-25T06:24:25Z
         release:
           type: integer
@@ -573,12 +601,12 @@ components:
       properties:
         labelHID:
           type: string
-          description: 灰度标签 hid
+          description: 环境标签 hid
           example: urbs
         assignedAt:
           type: string
           format: date-time
-          description: 灰度标签设置时间
+          description: 环境标签设置时间
           example: 2020-03-25T06:24:25Z
         release:
           type: integer
@@ -598,7 +626,7 @@ components:
           example: urbs
         labelHID:
           type: string
-          description: 发布规则所属灰度标签的 hid
+          description: 发布规则所属环境标签的 hid
           example: urbs
         kind:
           type: string
@@ -848,7 +876,7 @@ components:
             example: {"name": "product or module or setting"}
     LabelBody:
       required: true
-      description: 创建灰度标签的请求数据
+      description: 创建环境标签的请求数据
       content:
         application/json:
           schema:
@@ -865,14 +893,14 @@ components:
                 description: 描述
               channels:
                 type: array
-                description: 该灰度标签适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有
+                description: 该环境标签适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有
                 example: ["beta"]
                 items:
                   type: string
                 default: null
               clients:
                 type: array
-                description: 该灰度标签适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有
+                description: 该环境标签适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有
                 example: ["ios", "android"]
                 items:
                   type: string
@@ -980,7 +1008,7 @@ components:
             example: {"values": ["a", "b"]}
     UsersGroupsBody:
       required: true
-      description: 批量为用户或群组设置灰度标签或配置项的请求数据
+      description: 批量为用户或群组设置环境标签或配置项的请求数据
       content:
         application/json:
           schema:
@@ -1003,12 +1031,12 @@ components:
               value:
                 type: string
                 title: value
-                description: 配置项值，设置灰度标签时不必提供
+                description: 配置项值，设置环境标签时不必提供
                 default: null
                 example: "beta"
     LabelUpdateBody:
       required: true
-      description: 更新灰度标签的请求数据
+      description: 更新环境标签的请求数据
       content:
         application/json:
           schema:
@@ -1017,25 +1045,25 @@ components:
               desc:
                 type: string
                 title: desc
-                description: 灰度标签描述
+                description: 环境标签描述
                 default: null
               channels:
                 type: array
-                description: 该灰度标签适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有
+                description: 该环境标签适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有
                 example: ["beta"]
                 items:
                   type: string
                 default: null
               clients:
                 type: array
-                description: 该灰度标签适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有
+                description: 该环境标签适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有
                 example: ["ios", "android"]
                 items:
                   type: string
                 default: null
     RecallBody:
       required: true
-      description: 撤销/回滚指定发布批次的灰度标签或配置项
+      description: 撤销/回滚指定发布批次的环境标签或配置项
       content:
         application/json:
           schema:
@@ -1048,7 +1076,7 @@ components:
                 example: 2
     LabelRuleBody:
       required: true
-      description: 创建/更新灰度标签的发布规则
+      description: 创建/更新环境标签的发布规则
       content:
         application/json:
           schema:
@@ -1139,7 +1167,7 @@ components:
                 description: 是否连接了数据库
                 example: true
     CacheLabelsInfo:
-      description: 用于网关的用户灰度标签列表返回结果
+      description: 用于网关的用户环境标签列表返回结果
       content:
         application/json:
           schema:
@@ -1148,15 +1176,15 @@ components:
               timestamp:
                 type: integer
                 format: int64
-                description: 灰度标签列表缓存生成时间，1970 以来的秒数
+                description: 环境标签列表缓存生成时间，1970 以来的秒数
                 example: 1585129360
               result:
                 type: array
-                description: 灰度标签列表
+                description: 环境标签列表
                 items:
                   $ref: "#/components/schemas/CacheLabelInfo"
     LabelsInfoRes:
-      description: 灰度标签列表返回结果
+      description: 环境标签列表返回结果
       content:
         application/json:
           schema:
@@ -1171,7 +1199,7 @@ components:
                 items:
                   $ref: "#/components/schemas/LabelInfo"
     LabelInfoRes:
-      description: 灰度标签列表返回结果
+      description: 环境标签列表返回结果
       content:
         application/json:
           schema:
@@ -1180,7 +1208,7 @@ components:
               result:
                 $ref: "#/components/schemas/LabelInfo"
     MyLabelsRes:
-      description: 用户或群组被指派的灰度标签列表返回结果
+      description: 用户或群组被指派的环境标签列表返回结果
       content:
         application/json:
           schema:
@@ -1326,7 +1354,7 @@ components:
               result:
                 $ref: "#/components/schemas/ProductStatistics"
     LabelReleaseInfoRes:
-      description: 设置灰度标签返回结果
+      description: 设置环境标签返回结果
       content:
         application/json:
           schema:
@@ -1335,7 +1363,7 @@ components:
               result:
                 $ref: "#/components/schemas/LabelReleaseInfo"
     LabelGroupsInfoRes:
-      description: 灰度标签作用的群组列表
+      description: 环境标签作用的群组列表
       content:
         application/json:
           schema:
@@ -1346,7 +1374,7 @@ components:
                 items:
                   $ref: "#/components/schemas/LabelGroupInfo"
     LabelUsersInfoRes:
-      description: 灰度标签作用的用户列表
+      description: 环境标签作用的用户列表
       content:
         application/json:
           schema:
@@ -1357,7 +1385,7 @@ components:
                 items:
                   $ref: "#/components/schemas/LabelUserInfo"
     LabelRulesInfoRes:
-      description: 灰度标签的发布规则列表
+      description: 环境标签的发布规则列表
       content:
         application/json:
           schema:
@@ -1368,7 +1396,7 @@ components:
                 items:
                   $ref: "#/components/schemas/LabelRuleInfo"
     LabelRuleInfoRes:
-      description: 灰度标签的发布规则结果
+      description: 环境标签的发布规则结果
       content:
         application/json:
           schema:

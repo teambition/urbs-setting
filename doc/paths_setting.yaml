@@ -152,6 +152,40 @@
         '200':
           $ref: '#/components/responses/SettingUsersInfoRes'
 
+  /v1/products/{product}/modules/{module}/settings/{setting}/users/{uid}:rollback:
+    put:
+      tags:
+        - Setting
+      summary: 回滚指定产品功能配置项的灰度用户的灰度值
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+        - $ref: "#/components/parameters/PathUID"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+
+  /v1/products/{product}/modules/{module}/settings/{setting}/users/{uid}:
+    delete:
+      tags:
+        - Setting
+      summary: 删除指定产品功能配置项的灰度用户
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+        - $ref: "#/components/parameters/PathUID"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+
   /v1/products/{product}/modules/{module}/settings/{setting}/groups:
     get:
       tags:
@@ -170,6 +204,40 @@
       responses:
         '200':
           $ref: '#/components/responses/SettingGroupsInfoRes'
+
+  /v1/products/{product}/modules/{module}/settings/{setting}/groups/{uid}:rollback:
+    put:
+      tags:
+        - Setting
+      summary: 回滚指定产品功能配置项的灰度群组的灰度值
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+        - $ref: "#/components/parameters/PathUID"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
+
+  /v1/products/{product}/modules/{module}/settings/{setting}/groups/{uid}:
+    delete:
+      tags:
+        - Setting
+      summary: 删除指定产品功能配置项的灰度群组
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+        - $ref: "#/components/parameters/PathModule"
+        - $ref: "#/components/parameters/PathSetting"
+        - $ref: "#/components/parameters/PathUID"
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'
 
   /v1/products/{product}/modules/{module}/settings/{setting}/rules:
     get:

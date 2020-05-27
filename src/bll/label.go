@@ -133,7 +133,7 @@ func (b *Label) Delete(ctx context.Context, productName, labelName string) (*tpl
 	return res, nil
 }
 
-// Recall 撤销指定批次的用户或群组的灰度标签
+// Recall 撤销指定批次的用户或群组的环境标签
 func (b *Label) Recall(ctx context.Context, productName, labelName string, release int64) (*tpl.BoolRes, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
@@ -283,7 +283,7 @@ func (b *Label) DeleteRule(ctx context.Context, productName, labelName string, r
 	return res, nil
 }
 
-// ListUsers 返回产品下灰度标签的用户列表
+// ListUsers 返回产品下环境标签的用户列表
 func (b *Label) ListUsers(ctx context.Context, productName, labelName string, pg tpl.Pagination) (*tpl.LabelUsersInfoRes, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
@@ -332,7 +332,7 @@ func (b *Label) DeleteUser(ctx context.Context, productName, labelName, uid stri
 	return &tpl.BoolRes{Result: rowsAffected > 0}, nil
 }
 
-// ListGroups 返回产品下灰度标签的群组列表
+// ListGroups 返回产品下环境标签的群组列表
 func (b *Label) ListGroups(ctx context.Context, productName, labelName string, pg tpl.Pagination) (*tpl.LabelGroupsInfoRes, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {

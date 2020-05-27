@@ -41,7 +41,7 @@ func newRouters(apis *APIs) []*gear.Router {
 	router := gear.NewRouter()
 	// health check
 	router.Get("/healthz", apis.Healthz.Get)
-	// 读取指定用户的灰度标签，包括继承自群组的标签，返回轻量级 labels，无身份验证，用于网关
+	// 读取指定用户的环境标签，包括继承自群组的标签，返回轻量级 labels，无身份验证，用于网关
 	router.Get("/users/:uid/labels:cache", apis.User.ListCachedLabels)
 
 	routerV1 := gear.NewRouter(gear.RouterOptions{
@@ -52,9 +52,9 @@ func newRouters(apis *APIs) []*gear.Router {
 	// ***** user ******
 	// 读取用户列表，支持条件筛选
 	routerV1.Get("/users", apis.User.List)
-	// 读取指定用户的灰度标签，支持条件筛选
+	// 读取指定用户的环境标签，支持条件筛选
 	routerV1.Get("/users/:uid/labels", apis.User.ListLabels)
-	// 强制刷新指定用户的灰度标签列表缓存
+	// 强制刷新指定用户的环境标签列表缓存
 	routerV1.Put("/users/:uid/labels:cache", apis.User.RefreshCachedLabels)
 	// 读取指定用户的功能配置项，支持条件筛选
 	routerV1.Get("/users/:uid/settings", apis.User.ListSettings)
@@ -66,7 +66,7 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Post("/users:batch", apis.User.BatchAdd)
 
 	// ***** group ******
-	// 读取指定群组的灰度标签，支持条件筛选
+	// 读取指定群组的环境标签，支持条件筛选
 	routerV1.Get("/groups/:uid/labels", apis.Group.ListLabels)
 	// 读取指定群组的功能配置项，支持条件筛选
 	routerV1.Get("/groups/:uid/settings", apis.Group.ListSettings)
@@ -156,37 +156,37 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Delete("/products/:product/modules/:module/settings/:setting/groups/:uid", apis.Setting.DeleteGroup)
 
 	// ***** label ******
-	// 读取指定产品灰度标签
+	// 读取指定产品环境标签
 	routerV1.Get("/products/:product/labels", apis.Label.List)
-	// 创建指定产品灰度标签
+	// 创建指定产品环境标签
 	routerV1.Post("/products/:product/labels", apis.Label.Create)
-	// 更新指定产品灰度标签
+	// 更新指定产品环境标签
 	routerV1.Put("/products/:product/labels/:label", apis.Label.Update)
-	// 更新指定产品灰度标签
+	// 更新指定产品环境标签
 	routerV1.Delete("/products/:product/labels/:label", apis.Label.Delete)
-	// 下线指定产品灰度标签
+	// 下线指定产品环境标签
 	routerV1.Put("/products/:product/labels/:label+:offline", apis.Label.Offline)
-	// 重新上线指定产品灰度标签
+	// 重新上线指定产品环境标签
 	// routerV1.Put("/products/:product/labels/:label+:online", apis.Label.Online)
-	// 批量为用户或群组设置产品灰度标签
+	// 批量为用户或群组设置产品环境标签
 	routerV1.Post("/products/:product/labels/:label+:assign", apis.Label.Assign)
-	// 批量撤销对用户或群组设置的产品灰度标签
+	// 批量撤销对用户或群组设置的产品环境标签
 	routerV1.Post("/products/:product/labels/:label+:recall", apis.Label.Recall)
-	// 创建指定产品灰度标签的灰度发布规则
+	// 创建指定产品环境标签的灰度发布规则
 	routerV1.Post("/products/:product/labels/:label/rules", apis.Label.CreateRule)
-	// 读取指定产品灰度标签的灰度发布规则列表
+	// 读取指定产品环境标签的灰度发布规则列表
 	routerV1.Get("/products/:product/labels/:label/rules", apis.Label.ListRules)
-	// 更新指定产品灰度标签的指定灰度发布规则
+	// 更新指定产品环境标签的指定灰度发布规则
 	routerV1.Put("/products/:product/labels/:label/rules/:hid", apis.Label.UpdateRule)
-	// 删除指定产品灰度标签的指定灰度发布规则
+	// 删除指定产品环境标签的指定灰度发布规则
 	routerV1.Delete("/products/:product/labels/:label/rules/:hid", apis.Label.DeleteRule)
-	// 读取指定产品灰度标签的用户列表
+	// 读取指定产品环境标签的用户列表
 	routerV1.Get("/products/:product/labels/:label/users", apis.Label.ListUsers)
-	// 移除指定用户的指定灰度标签
+	// 移除指定用户的指定环境标签
 	routerV1.Delete("/products/:product/labels/:label/users/:uid", apis.Label.DeleteUser)
-	// 读取指定产品灰度标签的群组列表
+	// 读取指定产品环境标签的群组列表
 	routerV1.Get("/products/:product/labels/:label/groups", apis.Label.ListGroups)
-	// 移除指定群组的指定灰度标签
+	// 移除指定群组的指定环境标签
 	routerV1.Delete("/products/:product/labels/:label/groups/:uid", apis.Label.DeleteGroup)
 	return []*gear.Router{router, routerV1}
 }

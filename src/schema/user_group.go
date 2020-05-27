@@ -10,7 +10,7 @@ const TableUserGroup = "user_group"
 
 // UserGroup 详见 ./sql/schema.sql table `user_group`
 // 记录用户从属的群组，用户可以归属到多个群组
-// 用户能从所归属的群组继承灰度标签和功能项配置，也就是基于群组进行灰度
+// 用户能从所归属的群组继承环境标签和功能项配置，也就是基于群组进行灰度
 type UserGroup struct {
 	ID        int64     `db:"id" goqu:"skipinsert"`
 	CreatedAt time.Time `db:"created_at" goqu:"skipinsert"`

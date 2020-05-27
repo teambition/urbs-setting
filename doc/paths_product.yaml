@@ -66,7 +66,7 @@
     put:
       tags:
         - Product
-      summary: 将指定 product name 的产品下线，此操作会将产品名下的所有功能模块和配置项都下线，所有设置给用户或群组的对应配置项和灰度标签也会被移除！
+      summary: 将指定 product name 的产品下线，此操作会将产品名下的所有功能模块和配置项都下线，所有设置给用户或群组的对应配置项和环境标签也会被移除！
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
