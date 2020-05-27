@@ -163,8 +163,8 @@ func (m *Product) Statistics(ctx context.Context, productID int64) (*tpl.Product
 	res := &tpl.ProductStatistics{}
 	sd := m.DB.Select(
 		goqu.COUNT("id").As("labels"),
-		goqu.SUM("status").As("status"),
-		goqu.SUM("rls").As("release")).
+		goqu.L("IFNULL(SUM(`status`), 0)").As("status"),
+		goqu.L("IFNULL(SUM(`rls`), 0)").As("release")).
 		From(goqu.T(schema.TableLabel)).
 		Where(
 			goqu.C("product_id").Eq(productID),
@@ -184,23 +184,25 @@ func (m *Product) Statistics(ctx context.Context, productID int64) (*tpl.Product
 		return nil, err
 	}
 
-	res.Modules = int64(len(moduleIDs))
-	sd = m.DB.Select(
-		goqu.COUNT("id").As("settings"),
-		goqu.SUM("status").As("status"),
-		goqu.SUM("rls").As("release")).
-		From(goqu.T(schema.TableSetting)).
-		Where(
-			goqu.C("module_id").In(tpl.Int64SliceToInterface(moduleIDs)...),
-			goqu.C("offline_at").IsNull())
+	if len(moduleIDs) > 0 {
+		res.Modules = int64(len(moduleIDs))
+		sd = m.DB.Select(
+			goqu.COUNT("id").As("settings"),
+			goqu.L("IFNULL(SUM(`status`), 0)").As("status"),
+			goqu.L("IFNULL(SUM(`rls`), 0)").As("release")).
+			From(goqu.T(schema.TableSetting)).
+			Where(
+				goqu.C("module_id").In(tpl.Int64SliceToInterface(moduleIDs)...),
+				goqu.C("offline_at").IsNull())
 
-	res2 := &tpl.ProductStatistics{}
-	if _, err := sd.Executor().ScanStructContext(ctx, res2); err != nil {
-		return nil, err
+		res2 := &tpl.ProductStatistics{}
+		if _, err := sd.Executor().ScanStructContext(ctx, res2); err != nil {
+			return nil, err
+		}
+
+		res.Settings = res2.Settings
+		res.Status += res2.Status
+		res.Release += res2.Release
 	}
-
-	res.Settings = res2.Settings
-	res.Status += res2.Status
-	res.Release += res2.Release
 	return res, nil
 }

@@ -607,6 +607,10 @@ func (m *Model) tryIncreaseLabelsStatus(ctx context.Context, labelIDs []int64, d
 	}
 }
 func (m *Model) increaseLabelsStatus(ctx context.Context, labelIDs []int64, delta int) error {
+	if len(labelIDs) == 0 {
+		return nil
+	}
+
 	exp := goqu.L("status + ?", delta)
 	if delta < 0 {
 		exp = goqu.L("status - ?", -delta)
@@ -623,6 +627,10 @@ func (m *Model) tryIncreaseSettingsStatus(ctx context.Context, settingIDs []int6
 	}
 }
 func (m *Model) increaseSettingsStatus(ctx context.Context, settingIDs []int64, delta int) error {
+	if len(settingIDs) == 0 {
+		return nil
+	}
+
 	exp := goqu.L("status + ?", delta)
 	if delta < 0 {
 		exp = goqu.L("status - ?", -delta)
@@ -639,6 +647,10 @@ func (m *Model) tryIncreaseModulesStatus(ctx context.Context, moduleIDs []int64,
 	}
 }
 func (m *Model) increaseModulesStatus(ctx context.Context, moduleIDs []int64, delta int) error {
+	if len(moduleIDs) == 0 {
+		return nil
+	}
+
 	exp := goqu.L("status + ?", delta)
 	if delta < 0 {
 		exp = goqu.L("status - ?", -delta)
