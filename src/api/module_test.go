@@ -22,11 +22,11 @@ func createModule(tt *TestTools, productName string) (module schema.Module, err 
 	var product schema.Product
 	if err == nil {
 		res.Content() // close http client
-		err = tt.DB.Where("name = ?", productName).First(&product).Error
+		_, err = tt.DB.ScanStruct(&product, "select * from `urbs_product` where `name` = ? limit 1", productName)
 	}
 
 	if err == nil {
-		err = tt.DB.Where("product_id = ? and name = ?", product.ID, name).First(&module).Error
+		_, err = tt.DB.ScanStruct(&module, "select * from `urbs_module` where `product_id` = ? and `name` = ? limit 1", product.ID, name)
 	}
 	return
 }
@@ -218,12 +218,15 @@ func TestModuleAPIs(t *testing.T) {
 
 			assert.Nil(module.OfflineAt)
 			m := module
-			assert.Nil(tt.DB.First(&m).Error)
+
+			_, err = tt.DB.ScanStruct(&m, "select * from `urbs_module` where `id` = ? limit 1", module.ID)
+			assert.Nil(err)
 			assert.NotNil(m.OfflineAt)
 
 			assert.Nil(setting.OfflineAt)
 			s := setting
-			assert.Nil(tt.DB.First(&s).Error)
+			_, err = tt.DB.ScanStruct(&s, "select * from `urbs_setting` where `id` = ? limit 1", setting.ID)
+			assert.Nil(err)
 			assert.NotNil(s.OfflineAt)
 		})
 	})

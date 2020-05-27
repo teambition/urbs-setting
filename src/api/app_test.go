@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/DavidCai1993/request"
-	"github.com/jinzhu/gorm"
+	"github.com/doug-martin/goqu/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/service"
@@ -14,7 +14,7 @@ import (
 )
 
 type TestTools struct {
-	DB   *gorm.DB
+	DB   *goqu.Database
 	App  *gear.App
 	Host string
 }

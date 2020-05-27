@@ -2,11 +2,11 @@ package model
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"github.com/doug-martin/goqu/v9"
+	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/logging"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
@@ -19,7 +19,8 @@ func init() {
 
 // Model ...
 type Model struct {
-	DB *gorm.DB
+	SQL *service.SQL
+	DB  *goqu.Database
 }
 
 // Models ...
@@ -39,7 +40,7 @@ type Models struct {
 
 // NewModels ...
 func NewModels(sql *service.SQL) *Models {
-	m := &Model{DB: sql.DB}
+	m := &Model{SQL: sql, DB: sql.DB}
 	return &Models{
 		Model:       m,
 		Healthz:     &Healthz{m},
@@ -103,17 +104,197 @@ func (ms *Models) TryApplySettingRules(ctx context.Context, productID, userID in
 }
 
 // ***** 以下为多个 model 可能共用的接口 *****
+func (m *Model) findOneByID(ctx context.Context, table string, id int64, i interface{}) error {
+	if id <= 0 || table == "" {
+		return fmt.Errorf("invalid id %d or table %s for findOneByID", id, table)
+	}
+
+	sd := m.DB.From(table).Where(goqu.C("id").Eq(id)).Order(goqu.C("id").Asc()).Limit(1)
+	ok, err := sd.Executor().ScanStructContext(ctx, i)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return gear.ErrNotFound.WithMsgf("%s %d not found", table, id)
+	}
+	return nil
+}
+
+func (m *Model) findOneByCols(ctx context.Context, table string, cls goqu.Ex, selectStr string, i interface{}) (bool, error) {
+	if len(cls) == 0 {
+		return false, fmt.Errorf("invalid clause %v for findOneByCols", cls)
+	}
+
+	sd := m.DB.From(table).Where(cls).Order(goqu.C("id").Asc()).Limit(1)
+	if selectStr != "" {
+		sd = sd.Select(goqu.L(selectStr))
+	}
+
+	return sd.Executor().ScanStructContext(ctx, i)
+}
+
+func (m *Model) createOne(ctx context.Context, table string, obj interface{}) (int64, error) {
+	if obj == nil {
+		return 0, fmt.Errorf("invalid obj for createOne")
+	}
+	sd := m.DB.Insert(table).Rows(obj)
+	res, err := sd.Executor().ExecContext(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	if id <= 0 || rowsAffected <= 0 {
+		return 0, fmt.Errorf("createOne failed")
+	}
+
+	err = m.findOneByID(ctx, table, id, obj)
+	if err != nil {
+		return 0, err
+	}
+	return rowsAffected, nil
+}
+
+func (m *Model) updateByID(ctx context.Context, table string, id int64, changed goqu.Record) (int64, error) {
+	if id <= 0 || table == "" {
+		return 0, fmt.Errorf("invalid id %d or table %s for updateByID", id, table)
+	}
+	return m.updateByCols(ctx, table, goqu.Ex{"id": id}, changed)
+}
+
+func (m *Model) updateByCols(ctx context.Context, table string, cls goqu.Ex, changed goqu.Record) (int64, error) {
+	if len(cls) == 0 {
+		return 0, fmt.Errorf("invalid clause %v for updateByCols", cls)
+	}
+	if len(changed) == 0 {
+		return 0, nil
+	}
+	sd := m.DB.Update(table).Where(cls).Set(changed)
+	return service.DeResult(sd.Executor().ExecContext(ctx))
+}
+
+func (m *Model) deleteByID(ctx context.Context, table string, id int64) (int64, error) {
+	if id <= 0 || table == "" {
+		return 0, fmt.Errorf("invalid id %d or table %s for deleteByID", id, table)
+	}
+
+	return m.deleteByCols(ctx, table, goqu.Ex{"id": id})
+}
+
+func (m *Model) deleteByCols(ctx context.Context, table string, cls goqu.Ex) (int64, error) {
+	if len(cls) == 0 {
+		return 0, fmt.Errorf("invalid clause %v for deleteByCols", cls)
+	}
+
+	sd := m.DB.Delete(table).Where(cls)
+	return service.DeResult(sd.Executor().ExecContext(ctx))
+}
+
+func (m *Model) offlineLabels(ctx context.Context, cls goqu.Ex) error {
+	ids := make([]int64, 0)
+	sd := m.DB.Select("id").
+		From(goqu.T(schema.TableLabel)).
+		Where(cls)
+	if err := sd.Executor().ScanValsContext(ctx, &ids); err != nil {
+		return err
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	rowsAffected, err := m.updateByCols(ctx, schema.TableLabel, goqu.Ex{"id": ids}, goqu.Record{
+		"offline_at": &now,
+		"status":     -1,
+	})
+	if rowsAffected > 0 {
+		util.Go(10*time.Second, func(gctx context.Context) {
+			m.tryIncreaseStatisticStatus(gctx, schema.LabelsTotalSize, -int(rowsAffected))
+			m.tryDeleteLabelsRules(gctx, ids)
+			m.tryDeleteUserAndGroupLabels(gctx, ids)
+		})
+	}
+	return err
+}
+
+func (m *Model) offlineSettingsInModule(ctx context.Context, moduleID int64, cls goqu.Ex) error {
+	cls["module_id"] = moduleID
+	ids := make([]int64, 0)
+	sd := m.DB.Select("id").
+		From(goqu.T(schema.TableSetting)).
+		Where(cls)
+	if err := sd.Executor().ScanValsContext(ctx, &ids); err != nil {
+		return err
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	rowsAffected, err := m.updateByCols(ctx, schema.TableSetting, goqu.Ex{"id": ids}, goqu.Record{
+		"offline_at": &now,
+		"status":     -1,
+	})
+	if rowsAffected > 0 {
+		util.Go(10*time.Second, func(gctx context.Context) {
+			m.tryIncreaseStatisticStatus(gctx, schema.SettingsTotalSize, -int(rowsAffected))
+			m.tryDeleteSettingsRules(gctx, ids)
+			m.tryDeleteUserAndGroupSettings(gctx, ids)
+			m.tryIncreaseModulesStatus(gctx, []int64{moduleID}, -1)
+		})
+	}
+	return err
+}
+
+func (m *Model) offlineModules(ctx context.Context, cls goqu.Ex) error {
+	ids := make([]int64, 0)
+	sd := m.DB.Select("id").
+		From(goqu.T(schema.TableModule)).
+		Where(cls)
+	if err := sd.Executor().ScanValsContext(ctx, &ids); err != nil {
+		return err
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	rowsAffected, err := m.updateByCols(ctx, schema.TableModule, goqu.Ex{"id": ids}, goqu.Record{
+		"offline_at": &now,
+		"status":     -1,
+	})
+	if rowsAffected > 0 {
+		util.Go(5*time.Second, func(gctx context.Context) {
+			m.tryIncreaseStatisticStatus(gctx, schema.ModulesTotalSize, -int(rowsAffected))
+		})
+		for i := range ids {
+			if err = m.offlineSettingsInModule(ctx, ids[i], goqu.Ex{"offline_at": nil}); err != nil {
+				return err
+			}
+		}
+	}
+	return err
+}
 
 func (m *Model) lock(ctx context.Context, key string, expire time.Duration) error {
 	now := time.Now().UTC()
 	lock := &schema.Lock{Name: key, ExpireAt: now.Add(expire)}
-	err := m.DB.Create(lock).Error
+	_, err := m.DB.Insert(schema.TableLock).Rows(lock).Executor().ExecContext(ctx)
 	if err != nil {
 		l := &schema.Lock{}
-		if e := m.DB.Where("`name` = ?", key).First(l).Error; e == nil {
+		sd := m.DB.From(schema.TableLock).Where(goqu.C("name").Eq(key)).Order(goqu.C("id").Asc()).Limit(1)
+		ok, _ := sd.Executor().ScanStructContext(ctx, l)
+		if ok {
 			if l.ExpireAt.Before(now) {
 				m.unlock(ctx, key) // 释放失效、异常的锁
-				err = m.DB.Create(lock).Error
+				_, err = m.DB.Insert(schema.TableLock).Rows(lock).Executor().ExecContext(ctx)
 			} else {
 				lock = l
 			}
@@ -126,15 +307,12 @@ func (m *Model) lock(ctx context.Context, key string, expire time.Duration) erro
 }
 
 func (m *Model) unlock(ctx context.Context, key string) {
-	if err := m.DB.Where("`name` = ?", key).Delete(&schema.Lock{}).Error; err != nil {
+	sd := m.DB.Delete(schema.TableLock).Where(goqu.C("name").Eq(key))
+	_, err := service.DeResult(sd.Executor().ExecContext(ctx))
+	if err != nil {
 		logging.Errf("unlock: key %s, error %v", key, err)
 	}
 }
-
-const refreshLabelStatusSQL = "select sum(t2.`status`) as Status " +
-	"from `group_label` t1, `urbs_group` t2 " +
-	"where t1.`label_id` = ? and t1.`group_id` = t2.`id` " +
-	"group by t1.`label_id`"
 
 // tryRefreshLabelStatus 更新指定 label 的 Status（灰度标签灰度进度，被作用的用户数，非精确）值
 // 比如用户因为属于 n 个群组而被重复设置灰度标签
@@ -150,27 +328,28 @@ func (m *Model) refreshLabelStatus(ctx context.Context, labelID int64) error {
 	}
 	defer m.unlock(ctx, key)
 
-	count := int64(0)
-	err := m.DB.Model(&schema.UserLabel{}).Where("`label_id` = ?", labelID).Count(&count).Error
+	sd := m.DB.From(schema.TableUserLabel).Where(goqu.C("label_id").Eq(labelID))
+	count, err := sd.CountContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	row := m.DB.Raw(refreshLabelStatusSQL, labelID).Row()
-	var status int64
-	if err = row.Scan(&status); err != nil && err != sql.ErrNoRows {
+	sd = m.DB.Select(
+		goqu.SUM(goqu.I("t2.status")).As("status")).
+		From(
+			goqu.T(schema.TableGroupLabel).As("t1"),
+			goqu.T(schema.TableGroup).As("t2")).
+		Where(goqu.I("t1.label_id").Eq(labelID),
+			goqu.I("t1.group_id").Eq(goqu.I("t2.id")))
+
+	status := int64(0)
+	if _, err := sd.Executor().ScanValContext(ctx, &status); err != nil {
 		return err
 	}
 
-	label := &schema.Label{ID: labelID}
-	err = m.DB.Model(label).UpdateColumn("status", count+status).Error
+	_, err = m.updateByID(ctx, schema.TableLabel, labelID, goqu.Record{"status": count + status})
 	return err
 }
-
-const refreshSettingStatus = "select sum(t2.`status`) as Status " +
-	"from `group_setting` t1, `urbs_group` t2 " +
-	"where t1.`setting_id` = ? and t1.`group_id` = t2.`id` " +
-	"group by t1.`setting_id`"
 
 // tryRefreshSettingStatus 更新指定 setting 的 Status（配置项灰度进度，被作用的用户数，非精确）值
 // 比如用户因为属于 n 个群组而被重复设置配置项
@@ -186,20 +365,26 @@ func (m *Model) refreshSettingStatus(ctx context.Context, settingID int64) error
 	}
 	defer m.unlock(ctx, key)
 
-	count := int64(0)
-	err := m.DB.Model(&schema.UserSetting{}).Where("`setting_id` = ?", settingID).Count(&count).Error
+	sd := m.DB.From(schema.TableUserSetting).Where(goqu.C("setting_id").Eq(settingID))
+	count, err := sd.CountContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	row := m.DB.Raw(refreshSettingStatus, settingID).Row()
-	var status int64
-	if err = row.Scan(&status); err != nil && err != sql.ErrNoRows {
+	sd = m.DB.Select(
+		goqu.SUM(goqu.I("t2.status")).As("status")).
+		From(
+			goqu.T(schema.TableGroupSetting).As("t1"),
+			goqu.T(schema.TableGroup).As("t2")).
+		Where(goqu.I("t1.setting_id").Eq(settingID),
+			goqu.I("t1.group_id").Eq(goqu.I("t2.id")))
+
+	status := int64(0)
+	if _, err := sd.Executor().ScanValContext(ctx, &status); err != nil {
 		return err
 	}
 
-	setting := &schema.Setting{ID: settingID}
-	err = m.DB.Model(setting).UpdateColumn("status", count+status).Error
+	_, err = m.updateByID(ctx, schema.TableSetting, settingID, goqu.Record{"status": count + status})
 	return err
 }
 
@@ -216,13 +401,13 @@ func (m *Model) refreshGroupStatus(ctx context.Context, groupID int64) error {
 	}
 	defer m.unlock(ctx, key)
 
-	count := int64(0)
-	err := m.DB.Model(&schema.UserGroup{}).Where("`group_id` = ?", groupID).Count(&count).Error
+	sd := m.DB.From(schema.TableUserGroup).Where(goqu.C("group_id").Eq(groupID))
+	count, err := sd.CountContext(ctx)
 	if err != nil {
 		return err
 	}
-	group := &schema.Group{ID: groupID}
-	err = m.DB.Model(group).UpdateColumn("status", count).Error
+
+	_, err = m.updateByID(ctx, schema.TableGroup, groupID, goqu.Record{"status": count})
 	return err
 }
 
@@ -239,13 +424,13 @@ func (m *Model) refreshModuleStatus(ctx context.Context, moduleID int64) error {
 	}
 	defer m.unlock(ctx, key)
 
-	count := int64(0)
-	err := m.DB.Model(&schema.Setting{}).Where("`module_id` = ? and `offline_at` is null", moduleID).Count(&count).Error
+	sd := m.DB.From(schema.TableSetting).Where(goqu.C("module_id").Eq(moduleID), goqu.C("offline_at").IsNull())
+	count, err := sd.CountContext(ctx)
 	if err != nil {
 		return err
 	}
-	module := &schema.Module{ID: moduleID}
-	err = m.DB.Model(module).UpdateColumn("status", count).Error
+
+	_, err = m.updateByID(ctx, schema.TableModule, moduleID, goqu.Record{"status": count})
 	return err
 }
 
@@ -256,31 +441,38 @@ func (m *Model) tryIncreaseStatisticStatus(ctx context.Context, key schema.Stati
 	}
 }
 func (m *Model) increaseStatisticStatus(ctx context.Context, key schema.StatisticKey, delta int) error {
-	exp := gorm.Expr("`status` + ?", delta)
+	exp := goqu.L("status + ?", delta)
 	if delta < 0 {
-		exp = gorm.Expr("`status` - ?", -delta)
+		exp = goqu.L("status - ?", -delta)
 	} else if delta == 0 {
 		return nil
 	}
-	const sql = "insert ignore into `urbs_statistic` (`name`, `status`) values (?, ?) " +
-		"on duplicate key update `status` = ?"
 
-	return m.DB.Exec(sql, key, 1, exp).Error
+	sd := m.DB.Insert(schema.TableStatistic).
+		Rows(goqu.Record{"name": key, "status": 1}).
+		OnConflict(goqu.DoUpdate("name", goqu.C("status").Set(exp)))
+
+	_, err := service.DeResult(sd.Executor().ExecContext(ctx))
+	return err
 }
 
 func (m *Model) updateStatisticStatus(ctx context.Context, key schema.StatisticKey, status int64) error {
-	const sql = "insert ignore into `urbs_statistic` (`name`, `status`) values (?, ?) " +
-		"on duplicate key update `status` = ?"
+	sd := m.DB.Insert(schema.TableStatistic).
+		Rows(goqu.Record{"name": key, "status": status}).
+		OnConflict(goqu.DoUpdate("name", goqu.C("status").Set(goqu.V(status))))
 
-	return m.DB.Exec(sql, key, status, status).Error
+	_, err := service.DeResult(sd.Executor().ExecContext(ctx))
+	return err
 }
 
 // updateStatisticStatus 更新指定 key 的 JSON 值
 func (m *Model) updateStatisticValue(ctx context.Context, key schema.StatisticKey, value string) error {
-	const sql = "insert ignore into `urbs_statistic` (`name`, `value`) values (?, ?) " +
-		"on duplicate key update `value` = ?"
+	sd := m.DB.Insert(schema.TableStatistic).
+		Rows(goqu.Record{"name": key, "value": value}).
+		OnConflict(goqu.DoUpdate("name", goqu.C("value").Set(goqu.V(value))))
 
-	return m.DB.Exec(sql, key, value, value).Error
+	_, err := service.DeResult(sd.Executor().ExecContext(ctx))
+	return err
 }
 
 // tryRefreshUsersTotalSize 更新用户总数
@@ -296,8 +488,7 @@ func (m *Model) refreshUsersTotalSize(ctx context.Context) error {
 	}
 	defer m.unlock(ctx, key)
 
-	count := int64(0)
-	err := m.DB.Model(&schema.User{}).Count(&count).Error
+	count, err := m.DB.From(schema.TableUser).CountContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -318,8 +509,7 @@ func (m *Model) refreshGroupsTotalSize(ctx context.Context) error {
 	}
 	defer m.unlock(ctx, key)
 
-	count := int64(0)
-	err := m.DB.Model(&schema.Group{}).Count(&count).Error
+	count, err := m.DB.From(schema.TableGroup).CountContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -340,8 +530,7 @@ func (m *Model) refreshProductsTotalSize(ctx context.Context) error {
 	}
 	defer m.unlock(ctx, key)
 
-	count := int64(0)
-	err := m.DB.Model(&schema.Product{}).Where("`offline_at` is null").Count(&count).Error
+	count, err := m.DB.From(schema.TableProduct).Where(goqu.C("offline_at").IsNull()).CountContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -362,8 +551,7 @@ func (m *Model) refreshLabelsTotalSize(ctx context.Context) error {
 	}
 	defer m.unlock(ctx, key)
 
-	count := int64(0)
-	err := m.DB.Model(&schema.Label{}).Where("`offline_at` is null").Count(&count).Error
+	count, err := m.DB.From(schema.TableLabel).Where(goqu.C("offline_at").IsNull()).CountContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -384,8 +572,7 @@ func (m *Model) refreshModulesTotalSize(ctx context.Context) error {
 	}
 	defer m.unlock(ctx, key)
 
-	count := int64(0)
-	err := m.DB.Model(&schema.Module{}).Where("`offline_at` is null").Count(&count).Error
+	count, err := m.DB.From(schema.TableModule).Where(goqu.C("offline_at").IsNull()).CountContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -406,8 +593,7 @@ func (m *Model) refreshSettingsTotalSize(ctx context.Context) error {
 	}
 	defer m.unlock(ctx, key)
 
-	count := int64(0)
-	err := m.DB.Model(&schema.Setting{}).Where("`offline_at` is null").Count(&count).Error
+	count, err := m.DB.From(schema.TableSetting).Where(goqu.C("offline_at").IsNull()).CountContext(ctx)
 	if err != nil {
 		return err
 	}
@@ -421,13 +607,14 @@ func (m *Model) tryIncreaseLabelsStatus(ctx context.Context, labelIDs []int64, d
 	}
 }
 func (m *Model) increaseLabelsStatus(ctx context.Context, labelIDs []int64, delta int) error {
-	exp := gorm.Expr("`status` + ?", delta)
+	exp := goqu.L("status + ?", delta)
 	if delta < 0 {
-		exp = gorm.Expr("`status` - ?", -delta)
+		exp = goqu.L("status - ?", -delta)
 	} else if delta == 0 {
 		return nil
 	}
-	return m.DB.Model(&schema.Label{}).Where("`id` in ( ? )", labelIDs).Update("status", exp).Error
+	_, err := m.updateByCols(ctx, schema.TableLabel, goqu.Ex{"id": labelIDs}, goqu.Record{"status": exp})
+	return err
 }
 
 func (m *Model) tryIncreaseSettingsStatus(ctx context.Context, settingIDs []int64, delta int) {
@@ -436,13 +623,14 @@ func (m *Model) tryIncreaseSettingsStatus(ctx context.Context, settingIDs []int6
 	}
 }
 func (m *Model) increaseSettingsStatus(ctx context.Context, settingIDs []int64, delta int) error {
-	exp := gorm.Expr("`status` + ?", delta)
+	exp := goqu.L("status + ?", delta)
 	if delta < 0 {
-		exp = gorm.Expr("`status` - ?", -delta)
+		exp = goqu.L("status - ?", -delta)
 	} else if delta == 0 {
 		return nil
 	}
-	return m.DB.Model(&schema.Setting{}).Where("`id` in ( ? )", settingIDs).Update("status", exp).Error
+	_, err := m.updateByCols(ctx, schema.TableSetting, goqu.Ex{"id": settingIDs}, goqu.Record{"status": exp})
+	return err
 }
 
 func (m *Model) tryIncreaseModulesStatus(ctx context.Context, moduleIDs []int64, delta int) {
@@ -451,20 +639,22 @@ func (m *Model) tryIncreaseModulesStatus(ctx context.Context, moduleIDs []int64,
 	}
 }
 func (m *Model) increaseModulesStatus(ctx context.Context, moduleIDs []int64, delta int) error {
-	exp := gorm.Expr("`status` + ?", delta)
+	exp := goqu.L("status + ?", delta)
 	if delta < 0 {
-		exp = gorm.Expr("`status` - ?", -delta)
+		exp = goqu.L("status - ?", -delta)
 	} else if delta == 0 {
 		return nil
 	}
-	return m.DB.Model(&schema.Module{}).Where("`id` in ( ? )", moduleIDs).Update("status", exp).Error
+	_, err := m.updateByCols(ctx, schema.TableModule, goqu.Ex{"id": moduleIDs}, goqu.Record{"status": exp})
+	return err
 }
 
 func (m *Model) tryDeleteUserAndGroupLabels(ctx context.Context, labelIDs []int64) {
 	var err error
 	if len(labelIDs) > 0 {
-		if err = m.DB.Exec("delete from `user_label` where `label_id` in ( ? )", labelIDs).Error; err == nil {
-			err = m.DB.Exec("delete from `group_label` where `label_id` in ( ? )", labelIDs).Error
+		_, err = m.deleteByCols(ctx, schema.TableUserLabel, goqu.Ex{"label_id": labelIDs})
+		if err == nil {
+			_, err = m.deleteByCols(ctx, schema.TableGroupLabel, goqu.Ex{"label_id": labelIDs})
 		}
 	}
 	if err != nil {
@@ -475,7 +665,7 @@ func (m *Model) tryDeleteUserAndGroupLabels(ctx context.Context, labelIDs []int6
 func (m *Model) tryDeleteLabelsRules(ctx context.Context, labelIDs []int64) {
 	var err error
 	if len(labelIDs) > 0 {
-		err = m.DB.Exec("delete from `label_rule` where `label_id` in ( ? )", labelIDs).Error
+		_, err = m.deleteByCols(ctx, schema.TableLabelRule, goqu.Ex{"label_id": labelIDs})
 	}
 	if err != nil {
 		logging.Errf("deleteLabelsRules with label_id [%v] error: %v", labelIDs, err)
@@ -485,8 +675,9 @@ func (m *Model) tryDeleteLabelsRules(ctx context.Context, labelIDs []int64) {
 func (m *Model) tryDeleteUserAndGroupSettings(ctx context.Context, settingIDs []int64) {
 	var err error
 	if len(settingIDs) > 0 {
-		if err = m.DB.Exec("delete from `user_setting` where `setting_id` in ( ? )", settingIDs).Error; err == nil {
-			err = m.DB.Exec("delete from `group_setting` where `setting_id` in ( ? )", settingIDs).Error
+		_, err = m.deleteByCols(ctx, schema.TableUserSetting, goqu.Ex{"setting_id": settingIDs})
+		if err == nil {
+			_, err = m.deleteByCols(ctx, schema.TableGroupSetting, goqu.Ex{"setting_id": settingIDs})
 		}
 	}
 	if err != nil {
@@ -497,7 +688,7 @@ func (m *Model) tryDeleteUserAndGroupSettings(ctx context.Context, settingIDs []
 func (m *Model) tryDeleteSettingsRules(ctx context.Context, settingIDs []int64) {
 	var err error
 	if len(settingIDs) > 0 {
-		err = m.DB.Exec("delete from `setting_rule` where `setting_id` in ( ? )", settingIDs).Error
+		_, err = m.deleteByCols(ctx, schema.TableSettingRule, goqu.Ex{"setting_id": settingIDs})
 	}
 	if err != nil {
 		logging.Errf("deleteSettingsRules with setting_id [%v] error: %v", settingIDs, err)

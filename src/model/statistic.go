@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 
+	"github.com/doug-martin/goqu/v9"
 	"github.com/teambition/urbs-setting/src/schema"
 )
 
@@ -14,15 +15,12 @@ type Statistic struct {
 // FindByKey ...
 func (m *Statistic) FindByKey(ctx context.Context, key schema.StatisticKey) (*schema.Statistic, error) {
 	statistic := &schema.Statistic{}
-	if err := m.DB.Where("`name` =  ?", key).First(&statistic).Error; err != nil {
+	ok, err := m.findOneByCols(ctx, schema.TableStatistic, goqu.Ex{"name": key}, "", statistic)
+	if err != nil {
 		return nil, err
 	}
+	if !ok {
+		return nil, nil
+	}
 	return statistic, nil
-}
-
-// FindByKeys ...
-func (m *Statistic) FindByKeys(ctx context.Context, keys []schema.StatisticKey) ([]schema.Statistic, error) {
-	statistics := make([]schema.Statistic, 0)
-	err := m.DB.Where("`name` in ( ? )", keys).Find(&statistics).Error
-	return statistics, err
 }

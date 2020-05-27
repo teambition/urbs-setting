@@ -6,16 +6,19 @@ import (
 	"time"
 )
 
+// TableUser is a table name in db.
+const TableUser = "urbs_user"
+
 // User 详见 ./sql/schema.sql table `urbs_user`
 // 记录用户外部唯一 ID，uid 和最近活跃时间
 // 缓存用户当前全部 label，根据 active_at 和 cache_label_expire 刷新
 // labels 格式：TODO
 type User struct {
-	ID        int64     `gorm:"column:id" json:"-"`
-	CreatedAt time.Time `gorm:"column:created_at" json:"createdAt"`
-	UID       string    `gorm:"column:uid" json:"uid"`            // varchar(63)，用户外部ID，表内唯一， 如 Teambition user id
-	ActiveAt  int64     `gorm:"column:active_at" json:"activeAt"` // 最近活跃时间戳，1970 以来的秒数，但不及时更新
-	Labels    string    `gorm:"column:labels" json:"labels"`      // varchar(8190)，缓存用户当前被设置的 labels
+	ID        int64     `db:"id" json:"-" goqu:"skipinsert"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt" goqu:"skipinsert"`
+	UID       string    `db:"uid" json:"uid"`            // varchar(63)，用户外部ID，表内唯一， 如 Teambition user id
+	ActiveAt  int64     `db:"active_at" json:"activeAt"` // 最近活跃时间戳，1970 以来的秒数，但不及时更新
+	Labels    string    `db:"labels" json:"labels"`      // varchar(8190)，缓存用户当前被设置的 labels
 }
 
 // GetUsersUID 返回 users 数组的 uid 数组
@@ -30,6 +33,16 @@ func GetUsersUID(users []User) []string {
 // TableName retuns table name
 func (User) TableName() string {
 	return "urbs_user"
+}
+
+// MyLabelInfo ...
+type MyLabelInfo struct {
+	ID        int64     `db:"id"`
+	CreatedAt time.Time `db:"created_at"`
+	Name      string    `db:"name"`
+	Channels  string    `db:"channels"`
+	Clients   string    `db:"clients"`
+	Product   string    `db:"product"`
 }
 
 // UserCacheLabel 用于在 User 数据上缓存 labels

@@ -31,7 +31,7 @@ func (a *Setting) ListByProduct(ctx *gear.Context) error {
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
-	res, err := a.blls.Setting.ListByProduct(ctx, req.Product, req.Pagination)
+	res, err := a.blls.Setting.List(ctx, req.Product, "", req.Pagination)
 	if err != nil {
 		return err
 	}
@@ -242,6 +242,34 @@ func (a *Setting) ListUsers(ctx *gear.Context) error {
 	return ctx.OkJSON(res)
 }
 
+// RollbackUserSetting ..
+func (a *Setting) RollbackUserSetting(ctx *gear.Context) error {
+	req := tpl.ProductModuleSettingUIDURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Setting.RollbackUserSetting(ctx, req.Product, req.Module, req.Setting, req.UID)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
+// DeleteUser ..
+func (a *Setting) DeleteUser(ctx *gear.Context) error {
+	req := tpl.ProductModuleSettingUIDURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Setting.DeleteUser(ctx, req.Product, req.Module, req.Setting, req.UID)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
 // ListGroups ..
 func (a *Setting) ListGroups(ctx *gear.Context) error {
 	req := tpl.ProductModuleSettingURL{}
@@ -249,6 +277,34 @@ func (a *Setting) ListGroups(ctx *gear.Context) error {
 		return err
 	}
 	res, err := a.blls.Setting.ListGroups(ctx, req.Product, req.Module, req.Setting, req.Pagination)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
+// RollbackGroupSetting ..
+func (a *Setting) RollbackGroupSetting(ctx *gear.Context) error {
+	req := tpl.ProductModuleSettingUIDURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Setting.RollbackGroupSetting(ctx, req.Product, req.Module, req.Setting, req.UID)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
+// DeleteGroup ..
+func (a *Setting) DeleteGroup(ctx *gear.Context) error {
+	req := tpl.ProductModuleSettingUIDURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Setting.DeleteGroup(ctx, req.Product, req.Module, req.Setting, req.UID)
 	if err != nil {
 		return err
 	}

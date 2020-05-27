@@ -308,6 +308,30 @@ func (b *Label) ListUsers(ctx context.Context, productName, labelName string, pg
 	return res, nil
 }
 
+// DeleteUser ...
+func (b *Label) DeleteUser(ctx context.Context, productName, labelName, uid string) (*tpl.BoolRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	label, err := b.ms.Label.Acquire(ctx, productID, labelName)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := b.ms.User.Acquire(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	rowsAffected, err := b.ms.Label.RemoveUserLabel(ctx, user.ID, label.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &tpl.BoolRes{Result: rowsAffected > 0}, nil
+}
+
 // ListGroups 返回产品下灰度标签的群组列表
 func (b *Label) ListGroups(ctx context.Context, productName, labelName string, pg tpl.Pagination) (*tpl.LabelGroupsInfoRes, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)
@@ -331,4 +355,28 @@ func (b *Label) ListGroups(ctx context.Context, productName, labelName string, p
 		res.Result = res.Result[:pg.PageSize]
 	}
 	return res, nil
+}
+
+// DeleteGroup ...
+func (b *Label) DeleteGroup(ctx context.Context, productName, labelName, uid string) (*tpl.BoolRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	label, err := b.ms.Label.Acquire(ctx, productID, labelName)
+	if err != nil {
+		return nil, err
+	}
+
+	group, err := b.ms.Group.Acquire(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	rowsAffected, err := b.ms.Label.RemoveGroupLabel(ctx, group.ID, label.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &tpl.BoolRes{Result: rowsAffected > 0}, nil
 }

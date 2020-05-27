@@ -4,7 +4,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/jinzhu/gorm"
 	"github.com/teambition/gear"
 	tracing "github.com/teambition/gear-tracing"
 
@@ -46,9 +45,6 @@ func NewApp() *gear.App {
 	app.Set(gear.SetParseError, func(err error) gear.HTTPError {
 		msg := err.Error()
 
-		if gorm.IsRecordNotFoundError(err) {
-			return gear.ErrNotFound.WithMsg(msg)
-		}
 		if strings.Contains(msg, "Error 1062: Duplicate") {
 			return gear.ErrConflict.WithMsg(msg)
 		}

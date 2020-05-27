@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/bll"
-	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
 )
 
@@ -70,12 +69,12 @@ func (a *User) ListLabels(ctx *gear.Context) error {
 
 // ListSettings 返回 user 的 settings，按照 setting 设置时间正序，支持分页
 func (a *User) ListSettings(ctx *gear.Context) error {
-	req := tpl.UIDPaginationURL{}
+	req := tpl.MySettingsQueryURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res, err := a.blls.User.ListSettings(ctx, req.UID, req.Pagination)
+	res, err := a.blls.User.ListSettings(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -91,7 +90,11 @@ func (a *User) ListSettingsUnionAll(ctx *gear.Context) error {
 		return err
 	}
 
-	res, err := a.blls.User.ListSettingsUnionAll(ctx, req.UID, req.Product, req.Channel, req.Client, req.Pagination)
+	if req.Product == "" {
+		return gear.ErrBadRequest.WithMsgf("product required")
+	}
+
+	res, err := a.blls.User.ListSettingsUnionAll(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -121,54 +124,5 @@ func (a *User) BatchAdd(ctx *gear.Context) error {
 		return err
 	}
 
-	return ctx.OkJSON(tpl.BoolRes{Result: true})
-}
-
-// RemoveLabel ..
-func (a *User) RemoveLabel(ctx *gear.Context) error {
-	req := tpl.UIDHIDURL{}
-	if err := ctx.ParseURL(&req); err != nil {
-		return err
-	}
-	labelID := service.HIDToID(req.HID, "label")
-	if labelID <= 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", req.HID)
-	}
-	if err := a.blls.User.RemoveLabel(ctx, req.UID, labelID); err != nil {
-		return err
-	}
-	return ctx.OkJSON(tpl.BoolRes{Result: true})
-}
-
-// RollbackSetting 回退当前设置值到上一个值
-// 更新值请用 POST /products/:product/modules/:module/settings/:setting+:assign 接口
-func (a *User) RollbackSetting(ctx *gear.Context) error {
-	req := tpl.UIDHIDURL{}
-	if err := ctx.ParseURL(&req); err != nil {
-		return err
-	}
-	settingID := service.HIDToID(req.HID, "setting")
-	if settingID <= 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid setting hid: %s", req.HID)
-	}
-	if err := a.blls.User.RollbackSetting(ctx, req.UID, settingID); err != nil {
-		return err
-	}
-	return ctx.OkJSON(tpl.BoolRes{Result: true})
-}
-
-// RemoveSetting ..
-func (a *User) RemoveSetting(ctx *gear.Context) error {
-	req := tpl.UIDHIDURL{}
-	if err := ctx.ParseURL(&req); err != nil {
-		return err
-	}
-	settingID := service.HIDToID(req.HID, "setting")
-	if settingID <= 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", req.HID)
-	}
-	if err := a.blls.User.RemoveSetting(ctx, req.UID, settingID); err != nil {
-		return err
-	}
 	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }

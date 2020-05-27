@@ -171,13 +171,13 @@ type LabelInfoRes struct {
 
 // MyLabel ...
 type MyLabel struct {
-	ID         int64     `json:"-"`
+	ID         int64     `json:"-" db:"id"`
 	HID        string    `json:"hid"`
-	Product    string    `json:"product"`
-	Name       string    `json:"name"`
-	Desc       string    `json:"desc"`
-	Release    int64     `json:"release"`
-	AssignedAt time.Time `json:"assignedAt"`
+	Product    string    `json:"product" db:"product"`
+	Name       string    `json:"name" db:"name"`
+	Desc       string    `json:"desc" db:"description"`
+	Release    int64     `json:"release" db:"rls"`
+	AssignedAt time.Time `json:"assignedAt" db:"assigned_at"`
 }
 
 // MyLabelsRes ...

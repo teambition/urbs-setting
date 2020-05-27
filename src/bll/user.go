@@ -8,6 +8,7 @@ import (
 	"github.com/teambition/urbs-setting/src/model"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/tpl"
+	"github.com/teambition/urbs-setting/src/util"
 )
 
 // User ...
@@ -55,9 +56,10 @@ func (b *User) ListCachedLabels(ctx context.Context, uid, product string) *tpl.C
 		if user = b.ms.TryApplyLabelRulesAndRefreshUserLabels(ctx, user.ID, now, true); user == nil {
 			return res
 		}
-	} else if conf.Config.IsCacheLabelExpired(now.Unix()-5, user.ActiveAt) {
-		// 提前 5s 异步处理
-		go b.ms.TryApplyLabelRulesAndRefreshUserLabels(ctx, user.ID, now, false)
+	} else if conf.Config.IsCacheLabelExpired(now.Unix()-5, user.ActiveAt) { // 提前 5s 异步处理
+		util.Go(10*time.Second, func(gctx context.Context) {
+			b.ms.TryApplyLabelRulesAndRefreshUserLabels(gctx, user.ID, now, false)
+		})
 	}
 
 	res.Result = user.GetLabels(product)
@@ -100,13 +102,38 @@ func (b *User) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (*
 }
 
 // ListSettings ...
-func (b *User) ListSettings(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
-	user, err := b.ms.User.Acquire(ctx, uid)
+func (b *User) ListSettings(ctx context.Context, req tpl.MySettingsQueryURL) (*tpl.MySettingsRes, error) {
+	userID, err := b.ms.User.AcquireID(ctx, req.UID)
 	if err != nil {
 		return nil, err
 	}
 
-	settings, total, err := b.ms.User.FindSettings(ctx, user.ID, pg)
+	var productID int64
+	var moduleID int64
+	var settingID int64
+
+	if req.Product != "" {
+		productID, err = b.ms.Product.AcquireID(ctx, req.Product)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if productID > 0 && req.Module != "" {
+		moduleID, err = b.ms.Module.AcquireID(ctx, productID, req.Module)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if moduleID > 0 && req.Setting != "" {
+		settingID, err = b.ms.Setting.AcquireID(ctx, moduleID, req.Setting)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	pg := req.Pagination
+	settings, total, err := b.ms.User.FindSettings(ctx, userID, productID, moduleID, settingID, pg)
 	if err != nil {
 		return nil, err
 	}
@@ -121,37 +148,50 @@ func (b *User) ListSettings(ctx context.Context, uid string, pg tpl.Pagination) 
 }
 
 // ListSettingsUnionAll ...
-func (b *User) ListSettingsUnionAll(ctx context.Context, uid, productName, channel, client string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
+func (b *User) ListSettingsUnionAll(ctx context.Context, req tpl.MySettingsQueryURL) (*tpl.MySettingsRes, error) {
 	res := &tpl.MySettingsRes{Result: []tpl.MySetting{}}
-	user, err := b.ms.User.Acquire(ctx, uid)
+	user, err := b.ms.User.Acquire(ctx, req.UID)
 	if err != nil {
 		return res, nil
 	}
 
-	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	var productID int64
+	var moduleID int64
+	var settingID int64
+	productID, err = b.ms.Product.AcquireID(ctx, req.Product)
+	if err != nil {
+		return nil, err
+	}
+	if req.Module != "" {
+		moduleID, err = b.ms.Module.AcquireID(ctx, productID, req.Module)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if req.Setting != "" {
+		settingID, err = b.ms.Setting.AcquireID(ctx, moduleID, req.Setting)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	groupIDs, err := b.ms.Group.FindIDsByUser(ctx, user.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	moduleIDs, err := b.ms.Module.FindIDsByProductID(ctx, productID)
-	if err != nil {
-		return nil, err
-	}
-
-	groupIDs, err := b.ms.Group.FindIDsByUserID(ctx, user.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	settings, err := b.ms.User.FindSettingsUnionAll(ctx, user.ID, groupIDs, moduleIDs, pg, channel, client)
+	pg := req.Pagination
+	settings, err := b.ms.User.FindSettingsUnionAll(ctx, groupIDs, user.ID, productID, moduleID, settingID, pg, req.Channel, req.Client)
 	if err != nil {
 		return nil, err
 	}
 	for i := range settings {
-		settings[i].Product = productName
+		settings[i].Product = req.Product
 	}
 	if pg.PageToken == "" { // 请求首页时尝试应用 SettingRules
-		go b.ms.TryApplySettingRules(ctx, productID, user.ID)
+		util.Go(10*time.Second, func(gctx context.Context) {
+			b.ms.TryApplySettingRules(gctx, productID, user.ID)
+		})
 	}
 
 	res.Result = settings
@@ -171,34 +211,4 @@ func (b *User) CheckExists(ctx context.Context, uid string) bool {
 // BatchAdd ...
 func (b *User) BatchAdd(ctx context.Context, users []string) error {
 	return b.ms.User.BatchAdd(ctx, users)
-}
-
-// RemoveLabel ...
-func (b *User) RemoveLabel(ctx context.Context, uid string, labelID int64) error {
-	user, err := b.ms.User.Acquire(ctx, uid)
-	if err != nil {
-		return err
-	}
-
-	return b.ms.Label.RemoveUserLabel(ctx, user.ID, labelID)
-}
-
-// RollbackSetting ...
-func (b *User) RollbackSetting(ctx context.Context, uid string, settingID int64) error {
-	user, err := b.ms.User.Acquire(ctx, uid)
-	if err != nil {
-		return err
-	}
-
-	return b.ms.Setting.RollbackUserSetting(ctx, user.ID, settingID)
-}
-
-// RemoveSetting ...
-func (b *User) RemoveSetting(ctx context.Context, uid string, settingID int64) error {
-	user, err := b.ms.User.Acquire(ctx, uid)
-	if err != nil {
-		return err
-	}
-
-	return b.ms.Setting.RemoveUserSetting(ctx, user.ID, settingID)
 }

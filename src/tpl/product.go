@@ -117,6 +117,23 @@ func (t *ProductLabelHIDURL) Validate() error {
 	return nil
 }
 
+// ProductLabelUIDURL ...
+type ProductLabelUIDURL struct {
+	ProductLabelURL
+	UID string `json:"uid" param:"uid"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *ProductLabelUIDURL) Validate() error {
+	if !validIDReg.MatchString(t.UID) {
+		return gear.ErrBadRequest.WithMsgf("invalid uid: %s", t.UID)
+	}
+	if err := t.ProductLabelURL.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ProductModuleURL ...
 type ProductModuleURL struct {
 	ProductPaginationURL
@@ -168,6 +185,23 @@ func (t *ProductModuleSettingHIDURL) Validate() error {
 	return nil
 }
 
+// ProductModuleSettingUIDURL ...
+type ProductModuleSettingUIDURL struct {
+	ProductModuleSettingURL
+	UID string `json:"uid" param:"uid"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *ProductModuleSettingUIDURL) Validate() error {
+	if !validIDReg.MatchString(t.UID) {
+		return gear.ErrBadRequest.WithMsgf("invalid uid: %s", t.UID)
+	}
+	if err := t.ProductModuleSettingURL.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ProductsRes ...
 type ProductsRes struct {
 	SuccessResponseType
@@ -182,11 +216,11 @@ type ProductRes struct {
 
 // ProductStatistics ...
 type ProductStatistics struct {
-	Labels   int64 `json:"labels"`
-	Modules  int64 `json:"modules"`
-	Settings int64 `json:"settings"`
-	Release  int64 `json:"release"`
-	Status   int64 `json:"status"`
+	Labels   int64 `json:"labels" db:"labels"`
+	Modules  int64 `json:"modules" db:"modules"`
+	Settings int64 `json:"settings" db:"settings"`
+	Release  int64 `json:"release" db:"release"`
+	Status   int64 `json:"status" db:"status"`
 }
 
 // ProductStatisticsRes ...

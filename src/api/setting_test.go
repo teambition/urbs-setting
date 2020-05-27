@@ -32,15 +32,15 @@ func createSetting(tt *TestTools, productName, moduleName string, values ...stri
 	var module schema.Module
 	if err == nil {
 		res.Content() // close http client
-		err = tt.DB.Where("name = ?", productName).First(&product).Error
+		_, err = tt.DB.ScanStruct(&product, "select * from `urbs_product` where `name` = ? limit 1", productName)
 	}
 
 	if err == nil {
-		err = tt.DB.Where("product_id = ? and name = ?", product.ID, moduleName).First(&module).Error
+		_, err = tt.DB.ScanStruct(&module, "select * from `urbs_module` where `product_id` = ? and `name` = ? limit 1", product.ID, moduleName)
 	}
 
 	if err == nil {
-		err = tt.DB.Where("module_id = ? and name = ?", module.ID, name).First(&setting).Error
+		_, err = tt.DB.ScanStruct(&setting, "select * from `urbs_setting` where `module_id` = ? and `name` = ? limit 1", module.ID, name)
 	}
 	return
 }
@@ -374,10 +374,12 @@ func TestSettingAPIs(t *testing.T) {
 			assert.Equal(group.UID, json.Result.Groups[0])
 
 			var count int64
-			assert.Nil(tt.DB.Table(`user_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
 			assert.Equal(int64(2), count)
 
-			assert.Nil(tt.DB.Table(`group_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
 			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings:unionAll?product=%s", tt.Host, users[0].UID, product.Name)).
@@ -419,10 +421,12 @@ func TestSettingAPIs(t *testing.T) {
 			assert.True(tpl.StringSliceHas(result.Users, users[2].UID))
 
 			var count int64
-			assert.Nil(tt.DB.Table(`user_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
 			assert.Equal(int64(3), count)
 
-			assert.Nil(tt.DB.Table(`group_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
 			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings:unionAll?product=%s", tt.Host, users[0].UID, product.Name)).
@@ -562,7 +566,8 @@ func TestSettingAPIs(t *testing.T) {
 			assert.Equal(group.UID, json.Result.Groups[0])
 
 			var count int64
-			assert.Nil(tt.DB.Table(`group_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
 			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:recall", tt.Host, product.Name, module.Name, setting.Name)).
@@ -578,7 +583,8 @@ func TestSettingAPIs(t *testing.T) {
 			res.JSON(&json2)
 			assert.True(json2.Result)
 
-			assert.Nil(tt.DB.Table(`group_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
 			assert.Equal(int64(0), count)
 		})
 	})
@@ -620,10 +626,12 @@ func TestSettingAPIs(t *testing.T) {
 			assert.Equal("x", result.Value)
 
 			var count int64
-			assert.Nil(tt.DB.Table(`user_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
 			assert.Equal(int64(3), count)
 
-			assert.Nil(tt.DB.Table(`group_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
 			res, err = request.Put(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:offline", tt.Host, product.Name, module.Name, setting.Name)).
@@ -636,15 +644,17 @@ func TestSettingAPIs(t *testing.T) {
 			assert.True(json2.Result)
 
 			time.Sleep(time.Millisecond * 100)
-			assert.Nil(tt.DB.Table(`user_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
 			assert.Equal(int64(0), count)
 
-			assert.Nil(tt.DB.Table(`group_setting`).Where("setting_id = ?", setting.ID).Count(&count).Error)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
 			assert.Equal(int64(0), count)
 
 			assert.Nil(setting.OfflineAt)
 			s := setting
-			assert.Nil(tt.DB.First(&s).Error)
+			_, err = tt.DB.ScanStruct(&s, "select * from `urbs_setting` where `id` = ? limit 1", s.ID)
 			assert.NotNil(s.OfflineAt)
 		})
 

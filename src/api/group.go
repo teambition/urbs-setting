@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/bll"
-	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
 )
 
@@ -59,12 +58,12 @@ func (a *Group) ListMembers(ctx *gear.Context) error {
 
 // ListSettings ..
 func (a *Group) ListSettings(ctx *gear.Context) error {
-	req := tpl.UIDPaginationURL{}
+	req := tpl.MySettingsQueryURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res, err := a.blls.Group.ListSettings(ctx, req.UID, req.Pagination)
+	res, err := a.blls.Group.ListSettings(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -158,54 +157,5 @@ func (a *Group) RemoveMembers(ctx *gear.Context) error {
 		return err
 	}
 
-	return ctx.OkJSON(tpl.BoolRes{Result: true})
-}
-
-// RemoveLabel ..
-func (a *Group) RemoveLabel(ctx *gear.Context) error {
-	req := tpl.UIDHIDURL{}
-	if err := ctx.ParseURL(&req); err != nil {
-		return err
-	}
-	labelID := service.HIDToID(req.HID, "label")
-	if labelID <= 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", req.HID)
-	}
-	if err := a.blls.Group.RemoveLabel(ctx, req.UID, labelID); err != nil {
-		return err
-	}
-	return ctx.OkJSON(tpl.BoolRes{Result: true})
-}
-
-// RollbackSetting 回退当前设置值到上一个值
-// 更新值请用 POST /products/:product/modules/:module/settings/:setting+:assign 接口
-func (a *Group) RollbackSetting(ctx *gear.Context) error {
-	req := tpl.UIDHIDURL{}
-	if err := ctx.ParseURL(&req); err != nil {
-		return err
-	}
-	settingID := service.HIDToID(req.HID, "setting")
-	if settingID <= 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid setting hid: %s", req.HID)
-	}
-	if err := a.blls.Group.RollbackSetting(ctx, req.UID, settingID); err != nil {
-		return err
-	}
-	return ctx.OkJSON(tpl.BoolRes{Result: true})
-}
-
-// RemoveSetting ..
-func (a *Group) RemoveSetting(ctx *gear.Context) error {
-	req := tpl.UIDHIDURL{}
-	if err := ctx.ParseURL(&req); err != nil {
-		return err
-	}
-	settingID := service.HIDToID(req.HID, "setting")
-	if settingID <= 0 {
-		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", req.HID)
-	}
-	if err := a.blls.Group.RemoveSetting(ctx, req.UID, settingID); err != nil {
-		return err
-	}
 	return ctx.OkJSON(tpl.BoolRes{Result: true})
 }

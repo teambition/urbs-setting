@@ -70,13 +70,38 @@ func (b *Group) ListMembers(ctx context.Context, uid string, pg tpl.Pagination) 
 }
 
 // ListSettings ...
-func (b *Group) ListSettings(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.MySettingsRes, error) {
-	group, err := b.ms.Group.Acquire(ctx, uid)
+func (b *Group) ListSettings(ctx context.Context, req tpl.MySettingsQueryURL) (*tpl.MySettingsRes, error) {
+	group, err := b.ms.Group.Acquire(ctx, req.UID)
 	if err != nil {
 		return nil, err
 	}
 
-	settings, total, err := b.ms.Group.FindSettings(ctx, group.ID, pg)
+	var productID int64
+	var moduleID int64
+	var settingID int64
+
+	if req.Product != "" {
+		productID, err = b.ms.Product.AcquireID(ctx, req.Product)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if productID > 0 && req.Module != "" {
+		moduleID, err = b.ms.Module.AcquireID(ctx, productID, req.Module)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if moduleID > 0 && req.Setting != "" {
+		settingID, err = b.ms.Setting.AcquireID(ctx, moduleID, req.Setting)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	pg := req.Pagination
+	settings, total, err := b.ms.Group.FindSettings(ctx, group.ID, productID, moduleID, settingID, pg)
 	if err != nil {
 		return nil, err
 	}
@@ -130,35 +155,6 @@ func (b *Group) RemoveMembers(ctx context.Context, uid, userUID string, syncLt i
 	}
 
 	return b.ms.Group.RemoveMembers(ctx, group.ID, userID, syncLt)
-}
-
-// RemoveLabel ...
-func (b *Group) RemoveLabel(ctx context.Context, uid string, labelID int64) error {
-	group, err := b.ms.Group.Acquire(ctx, uid)
-	if err != nil {
-		return err
-	}
-	return b.ms.Label.RemoveGroupLabel(ctx, group.ID, labelID)
-}
-
-// RollbackSetting ...
-func (b *Group) RollbackSetting(ctx context.Context, uid string, settingID int64) error {
-	group, err := b.ms.Group.Acquire(ctx, uid)
-	if err != nil {
-		return err
-	}
-
-	return b.ms.Setting.RollbackGroupSetting(ctx, group.ID, settingID)
-}
-
-// RemoveSetting ...
-func (b *Group) RemoveSetting(ctx context.Context, uid string, settingID int64) error {
-	group, err := b.ms.Group.Acquire(ctx, uid)
-	if err != nil {
-		return err
-	}
-
-	return b.ms.Setting.RemoveGroupSetting(ctx, group.ID, settingID)
 }
 
 // Update ...

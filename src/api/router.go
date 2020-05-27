@@ -64,12 +64,6 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Get("/users/:uid+:exists", apis.User.CheckExists)
 	// 批量添加用户
 	routerV1.Post("/users:batch", apis.User.BatchAdd)
-	// 移除指定用户的指定灰度标签
-	routerV1.Delete("/users/:uid/labels/:hid", apis.User.RemoveLabel)
-	// 回滚指定用户的指定配置项
-	routerV1.Put("/users/:uid/settings/:hid+:rollback", apis.User.RollbackSetting)
-	// 移除指定用户的指定配置项
-	routerV1.Delete("/users/:uid/settings/:hid", apis.User.RemoveSetting)
 
 	// ***** group ******
 	// 读取指定群组的灰度标签，支持条件筛选
@@ -92,12 +86,6 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Post("/groups/:uid/members:batch", apis.Group.BatchAddMembers)
 	// 指定群组根据条件清理成员
 	routerV1.Delete("/groups/:uid/members", apis.Group.RemoveMembers)
-	// 移除指定群组的指定灰度标签
-	routerV1.Delete("/groups/:uid/labels/:hid", apis.Group.RemoveLabel)
-	// 回滚指定群组的指定配置项
-	routerV1.Put("/groups/:uid/settings/:hid+:rollback", apis.Group.RollbackSetting)
-	// 移除指定群组的指定配置项
-	routerV1.Delete("/groups/:uid/settings/:hid", apis.Group.RemoveSetting)
 
 	// ***** product ******
 	// 读取产品列表，支持条件筛选
@@ -156,8 +144,16 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Get("/products/:product/modules/:module/settings/:setting/rules", apis.Setting.ListRules)
 	// 读取指定产品功能模块配置项的用户列表
 	routerV1.Get("/products/:product/modules/:module/settings/:setting/users", apis.Setting.ListUsers)
+	// 回滚指定用户的指定配置项
+	routerV1.Put("/products/:product/modules/:module/settings/:setting/users/:uid+:rollback", apis.Setting.RollbackUserSetting)
+	// 移除指定用户的指定配置项
+	routerV1.Delete("/products/:product/modules/:module/settings/:setting/users/:uid", apis.Setting.DeleteUser)
 	// 读取指定产品功能模块配置项的群组列表
 	routerV1.Get("/products/:product/modules/:module/settings/:setting/groups", apis.Setting.ListGroups)
+	// 回滚指定群组的指定配置项
+	routerV1.Put("/products/:product/modules/:module/settings/:setting/groups/:uid+:rollback", apis.Setting.RollbackGroupSetting)
+	// 移除指定群组的指定配置项
+	routerV1.Delete("/products/:product/modules/:module/settings/:setting/groups/:uid", apis.Setting.DeleteGroup)
 
 	// ***** label ******
 	// 读取指定产品灰度标签
@@ -178,16 +174,19 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Post("/products/:product/labels/:label+:recall", apis.Label.Recall)
 	// 创建指定产品灰度标签的灰度发布规则
 	routerV1.Post("/products/:product/labels/:label/rules", apis.Label.CreateRule)
+	// 读取指定产品灰度标签的灰度发布规则列表
+	routerV1.Get("/products/:product/labels/:label/rules", apis.Label.ListRules)
 	// 更新指定产品灰度标签的指定灰度发布规则
 	routerV1.Put("/products/:product/labels/:label/rules/:hid", apis.Label.UpdateRule)
 	// 删除指定产品灰度标签的指定灰度发布规则
 	routerV1.Delete("/products/:product/labels/:label/rules/:hid", apis.Label.DeleteRule)
-	// 读取指定产品灰度标签的灰度发布规则列表
-	routerV1.Get("/products/:product/labels/:label/rules", apis.Label.ListRules)
 	// 读取指定产品灰度标签的用户列表
 	routerV1.Get("/products/:product/labels/:label/users", apis.Label.ListUsers)
+	// 移除指定用户的指定灰度标签
+	routerV1.Delete("/products/:product/labels/:label/users/:uid", apis.Label.DeleteUser)
 	// 读取指定产品灰度标签的群组列表
 	routerV1.Get("/products/:product/labels/:label/groups", apis.Label.ListGroups)
-
+	// 移除指定群组的指定灰度标签
+	routerV1.Delete("/products/:product/labels/:label/groups/:uid", apis.Label.DeleteGroup)
 	return []*gear.Router{router, routerV1}
 }

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/DavidCai1993/request"
-	"github.com/jinzhu/gorm"
+	"github.com/doug-martin/goqu/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
@@ -29,14 +29,16 @@ func createUsers(tt *TestTools, count int) (users []schema.User, err error) {
 
 	if err == nil {
 		res.Content() // close http client
-		err = tt.DB.Where("uid in ( ? )", uids).Find(&users).Error
+		err = tt.DB.From("urbs_user").
+			Where(goqu.Ex{"uid": uids}).Order(goqu.C("id").Desc()).
+			Executor().ScanStructs(&users)
 	}
 	return
 }
 
-func cleanupUserLabels(db *gorm.DB, uid string) error {
-	return db.Table("urbs_user").Where("uid = ?", uid).Updates(map[string]interface{}{
-		"labels": "", "active_at": 0}).Error
+func cleanupUserLabels(db *goqu.Database, uid string) error {
+	_, err := db.Exec("update `urbs_user` set `labels` = '', `active_at` = 0 where `uid` = ?", uid)
+	return err
 }
 
 func TestUserAPIs(t *testing.T) {
@@ -357,10 +359,10 @@ func TestUserAPIs(t *testing.T) {
 			assert.True(json.Result[0].Release > 0)
 		})
 
-		t.Run(`"DELETE /v1/users/:uid/labels/:hid" should work`, func(t *testing.T) {
+		t.Run(`"DELETE /v1/products/:product/labels/:label/users/:uid" should work`, func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Delete(fmt.Sprintf("%s/v1/users/%s/labels/%s", tt.Host, users[3].UID, service.IDToHID(label.ID, "label"))).
+			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s/labels/%s/users/%s", tt.Host, product.Name, label.Name, users[3].UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -370,7 +372,7 @@ func TestUserAPIs(t *testing.T) {
 			assert.Nil(err)
 			assert.True(json.Result)
 
-			res, err = request.Delete(fmt.Sprintf("%s/v1/groups/%s/labels/%s", tt.Host, group.UID, service.IDToHID(label.ID, "label"))).
+			res, err = request.Delete(fmt.Sprintf("%s/v1/products/%s/labels/%s/groups/%s", tt.Host, product.Name, label.Name, group.UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -608,7 +610,7 @@ func TestUserAPIs(t *testing.T) {
 			_, err = res.JSON(&json)
 
 			assert.Nil(err)
-			assert.Equal(2, len(json.Result))
+			assert.Equal(1, len(json.Result))
 
 			res, err = request.Get(fmt.Sprintf("%s/v1/users/%s/settings:unionAll?product=%s&channel=beta&client=ios", tt.Host, users[0].UID, product.Name)).
 				End()
@@ -644,10 +646,10 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal(1, len(json.Result))
 		})
 
-		t.Run(`"PUT /v1/users/:uid/settings/:hid+:rollback" should work`, func(t *testing.T) {
+		t.Run(`"PUT /v1/products/:product/modules/:module/settings/:setting/users/:uid+:rollback" should work`, func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Put(fmt.Sprintf("%s/v1/users/%s/settings/%s:rollback", tt.Host, users[0].UID, service.IDToHID(setting0.ID, "setting"))).
+			res, err := request.Put(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/users/%s:rollback", tt.Host, product.Name, module.Name, setting0.Name, users[0].UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -675,10 +677,10 @@ func TestUserAPIs(t *testing.T) {
 			assert.Equal("", data.LastValue)
 		})
 
-		t.Run(`"DELETE /v1/users/:uid/settings/:hid" should work`, func(t *testing.T) {
+		t.Run(`"DELETE /v1/products/:product/modules/:module/settings/:setting/users/:uid" should work`, func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Delete(fmt.Sprintf("%s/v1/users/%s/settings/%s", tt.Host, users[0].UID, service.IDToHID(setting0.ID, "setting"))).
+			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/users/%s", tt.Host, product.Name, module.Name, setting0.Name, users[0].UID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)

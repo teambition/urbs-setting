@@ -84,23 +84,6 @@ func (t *UIDURL) Validate() error {
 	return nil
 }
 
-// UIDHIDURL ...
-type UIDHIDURL struct {
-	UIDURL
-	HID string `json:"hid" param:"hid"`
-}
-
-// Validate 实现 gear.BodyTemplate。
-func (t *UIDHIDURL) Validate() error {
-	if err := t.UIDURL.Validate(); err != nil {
-		return err
-	}
-	if !validHIDReg.MatchString(t.HID) {
-		return gear.ErrBadRequest.WithMsgf("invalid hid: %s", t.HID)
-	}
-	return nil
-}
-
 // UIDPaginationURL ...
 type UIDPaginationURL struct {
 	Pagination
@@ -221,4 +204,22 @@ func SortStringsAndCheck(sl []string) (ok bool) {
 		}
 	}
 	return true
+}
+
+// Int64SliceToInterface ...
+func Int64SliceToInterface(s []int64) []interface{} {
+	v := make([]interface{}, len(s))
+	for i := range s {
+		v[i] = s[i]
+	}
+	return v
+}
+
+// StrSliceToInterface ...
+func StrSliceToInterface(s []string) []interface{} {
+	v := make([]interface{}, len(s))
+	for i := range s {
+		v[i] = s[i]
+	}
+	return v
 }
