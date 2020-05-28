@@ -72,7 +72,7 @@ func (ms *Models) ApplyLabelRulesAndRefreshUserLabels(ctx context.Context, userI
 		}
 	}
 
-	if elapsed := time.Now().UTC().Sub(now) / time.Millisecond; elapsed > 100 {
+	if elapsed := time.Now().UTC().Sub(now) / time.Millisecond; elapsed > 200 {
 		logging.Warningf("ApplyLabelRulesAndRefreshUserLabels: userID %d, consumed %d ms, refreshed %v, start %v\n",
 			userID, elapsed, ok, now)
 	}
@@ -83,7 +83,7 @@ func (ms *Models) ApplyLabelRulesAndRefreshUserLabels(ctx context.Context, userI
 func (ms *Models) TryApplyLabelRulesAndRefreshUserLabels(ctx context.Context, userID int64, now time.Time, force bool) *schema.User {
 	user, err := ms.ApplyLabelRulesAndRefreshUserLabels(ctx, userID, now, force)
 	if err != nil {
-		logging.Errf("ApplyLabelRulesAndRefreshUserLabels: userID %d, error %v", userID, err)
+		logging.Warningf("ApplyLabelRulesAndRefreshUserLabels: userID %d, error %v", userID, err)
 		return nil
 	}
 	return user
@@ -99,7 +99,7 @@ func (ms *Models) TryApplySettingRules(ctx context.Context, productID, userID in
 	// 此处不要释放锁，锁期不再执行对应 setting rule
 	// defer ms.Model.unlock(ctx, key)
 	if err := ms.SettingRule.ApplyRules(ctx, productID, userID); err != nil {
-		logging.Errf("%s error: %v", key, err)
+		logging.Warningf("%s error: %v", key, err)
 	}
 }
 
@@ -310,7 +310,7 @@ func (m *Model) unlock(ctx context.Context, key string) {
 	sd := m.DB.Delete(schema.TableLock).Where(goqu.C("name").Eq(key))
 	_, err := service.DeResult(sd.Executor().ExecContext(ctx))
 	if err != nil {
-		logging.Errf("unlock: key %s, error %v", key, err)
+		logging.Warningf("unlock: key %s, error %v", key, err)
 	}
 }
 
@@ -318,7 +318,7 @@ func (m *Model) unlock(ctx context.Context, key string) {
 // 比如用户因为属于 n 个群组而被重复设置环境标签
 func (m *Model) tryRefreshLabelStatus(ctx context.Context, labelID int64) {
 	if err := m.refreshLabelStatus(ctx, labelID); err != nil {
-		logging.Errf("tryRefreshLabelStatus: labelID %d, error %v", labelID, err)
+		logging.Infof("tryRefreshLabelStatus: labelID %d, error %v", labelID, err)
 	}
 }
 func (m *Model) refreshLabelStatus(ctx context.Context, labelID int64) error {
@@ -355,7 +355,7 @@ func (m *Model) refreshLabelStatus(ctx context.Context, labelID int64) error {
 // 比如用户因为属于 n 个群组而被重复设置配置项
 func (m *Model) tryRefreshSettingStatus(ctx context.Context, settingID int64) {
 	if err := m.refreshSettingStatus(ctx, settingID); err != nil {
-		logging.Errf("tryRefreshSettingStatus: settingID %d, error %v", settingID, err)
+		logging.Infof("tryRefreshSettingStatus: settingID %d, error %v", settingID, err)
 	}
 }
 func (m *Model) refreshSettingStatus(ctx context.Context, settingID int64) error {
@@ -391,7 +391,7 @@ func (m *Model) refreshSettingStatus(ctx context.Context, settingID int64) error
 // tryRefreshGroupStatus 更新指定 group 的 Status（成员数量统计）值
 func (m *Model) tryRefreshGroupStatus(ctx context.Context, groupID int64) {
 	if err := m.refreshGroupStatus(ctx, groupID); err != nil {
-		logging.Errf("tryRefreshGroupStatus: groupID %d, error %v", groupID, err)
+		logging.Infof("tryRefreshGroupStatus: groupID %d, error %v", groupID, err)
 	}
 }
 func (m *Model) refreshGroupStatus(ctx context.Context, groupID int64) error {
@@ -414,7 +414,7 @@ func (m *Model) refreshGroupStatus(ctx context.Context, groupID int64) error {
 // tryRefreshModuleStatus 更新指定 module 的 Status（功能模块的配置项统计）值
 func (m *Model) tryRefreshModuleStatus(ctx context.Context, moduleID int64) {
 	if err := m.refreshModuleStatus(ctx, moduleID); err != nil {
-		logging.Errf("tryRefreshModuleStatus: moduleID %d, error %v", moduleID, err)
+		logging.Infof("tryRefreshModuleStatus: moduleID %d, error %v", moduleID, err)
 	}
 }
 func (m *Model) refreshModuleStatus(ctx context.Context, moduleID int64) error {
@@ -437,7 +437,7 @@ func (m *Model) refreshModuleStatus(ctx context.Context, moduleID int64) error {
 // tryIncreaseStatisticStatus 加减指定 key 的统计值
 func (m *Model) tryIncreaseStatisticStatus(ctx context.Context, key schema.StatisticKey, delta int) {
 	if err := m.increaseStatisticStatus(ctx, key, delta); err != nil {
-		logging.Errf("tryIncreaseStatisticStatus: key %s, delta: %d, error %v", key, delta, err)
+		logging.Infof("tryIncreaseStatisticStatus: key %s, delta: %d, error %v", key, delta, err)
 	}
 }
 func (m *Model) increaseStatisticStatus(ctx context.Context, key schema.StatisticKey, delta int) error {
@@ -478,7 +478,7 @@ func (m *Model) updateStatisticValue(ctx context.Context, key schema.StatisticKe
 // tryRefreshUsersTotalSize 更新用户总数
 func (m *Model) tryRefreshUsersTotalSize(ctx context.Context) {
 	if err := m.refreshUsersTotalSize(ctx); err != nil {
-		logging.Errf("refreshUsersTotalSize: error %v", err)
+		logging.Infof("refreshUsersTotalSize: error %v", err)
 	}
 }
 func (m *Model) refreshUsersTotalSize(ctx context.Context) error {
@@ -499,7 +499,7 @@ func (m *Model) refreshUsersTotalSize(ctx context.Context) error {
 // tryRefreshGroupsTotalSize 更新群组总数
 func (m *Model) tryRefreshGroupsTotalSize(ctx context.Context) {
 	if err := m.refreshGroupsTotalSize(ctx); err != nil {
-		logging.Errf("refreshGroupsTotalSize: error %v", err)
+		logging.Infof("refreshGroupsTotalSize: error %v", err)
 	}
 }
 func (m *Model) refreshGroupsTotalSize(ctx context.Context) error {
@@ -520,7 +520,7 @@ func (m *Model) refreshGroupsTotalSize(ctx context.Context) error {
 // tryRefreshProductsTotalSize 更新产品总数
 func (m *Model) tryRefreshProductsTotalSize(ctx context.Context) {
 	if err := m.refreshProductsTotalSize(ctx); err != nil {
-		logging.Errf("refreshProductsTotalSize: error %v", err)
+		logging.Infof("refreshProductsTotalSize: error %v", err)
 	}
 }
 func (m *Model) refreshProductsTotalSize(ctx context.Context) error {
@@ -541,7 +541,7 @@ func (m *Model) refreshProductsTotalSize(ctx context.Context) error {
 // tryRefreshLabelsTotalSize 更新标签总数
 func (m *Model) tryRefreshLabelsTotalSize(ctx context.Context) {
 	if err := m.refreshLabelsTotalSize(ctx); err != nil {
-		logging.Errf("refreshLabelsTotalSize: error %v", err)
+		logging.Infof("refreshLabelsTotalSize: error %v", err)
 	}
 }
 func (m *Model) refreshLabelsTotalSize(ctx context.Context) error {
@@ -562,7 +562,7 @@ func (m *Model) refreshLabelsTotalSize(ctx context.Context) error {
 // tryRefreshModulesTotalSize 更新模块总数
 func (m *Model) tryRefreshModulesTotalSize(ctx context.Context) {
 	if err := m.refreshModulesTotalSize(ctx); err != nil {
-		logging.Errf("refreshModulesTotalSize: error %v", err)
+		logging.Infof("refreshModulesTotalSize: error %v", err)
 	}
 }
 func (m *Model) refreshModulesTotalSize(ctx context.Context) error {
@@ -583,7 +583,7 @@ func (m *Model) refreshModulesTotalSize(ctx context.Context) error {
 // tryRefreshSettingsTotalSize 更新配置项总数
 func (m *Model) tryRefreshSettingsTotalSize(ctx context.Context) {
 	if err := m.refreshSettingsTotalSize(ctx); err != nil {
-		logging.Errf("refreshSettingsTotalSize: error %v", err)
+		logging.Infof("refreshSettingsTotalSize: error %v", err)
 	}
 }
 func (m *Model) refreshSettingsTotalSize(ctx context.Context) error {
@@ -603,7 +603,7 @@ func (m *Model) refreshSettingsTotalSize(ctx context.Context) error {
 
 func (m *Model) tryIncreaseLabelsStatus(ctx context.Context, labelIDs []int64, delta int) {
 	if err := m.increaseLabelsStatus(ctx, labelIDs, delta); err != nil {
-		logging.Errf("increaseLabelsStatus: labelIDs [%v], delta: %d, error %v", labelIDs, delta, err)
+		logging.Infof("increaseLabelsStatus: labelIDs [%v], delta: %d, error %v", labelIDs, delta, err)
 	}
 }
 func (m *Model) increaseLabelsStatus(ctx context.Context, labelIDs []int64, delta int) error {
@@ -623,7 +623,7 @@ func (m *Model) increaseLabelsStatus(ctx context.Context, labelIDs []int64, delt
 
 func (m *Model) tryIncreaseSettingsStatus(ctx context.Context, settingIDs []int64, delta int) {
 	if err := m.increaseSettingsStatus(ctx, settingIDs, delta); err != nil {
-		logging.Errf("increaseSettingsStatus: settingIDs [%v], delta: %d, error %v", settingIDs, delta, err)
+		logging.Infof("increaseSettingsStatus: settingIDs [%v], delta: %d, error %v", settingIDs, delta, err)
 	}
 }
 func (m *Model) increaseSettingsStatus(ctx context.Context, settingIDs []int64, delta int) error {
@@ -643,7 +643,7 @@ func (m *Model) increaseSettingsStatus(ctx context.Context, settingIDs []int64, 
 
 func (m *Model) tryIncreaseModulesStatus(ctx context.Context, moduleIDs []int64, delta int) {
 	if err := m.increaseModulesStatus(ctx, moduleIDs, delta); err != nil {
-		logging.Errf("increaseModulesStatus: moduleIDs [%v], delta: %d, error %v", moduleIDs, delta, err)
+		logging.Infof("increaseModulesStatus: moduleIDs [%v], delta: %d, error %v", moduleIDs, delta, err)
 	}
 }
 func (m *Model) increaseModulesStatus(ctx context.Context, moduleIDs []int64, delta int) error {
@@ -670,7 +670,7 @@ func (m *Model) tryDeleteUserAndGroupLabels(ctx context.Context, labelIDs []int6
 		}
 	}
 	if err != nil {
-		logging.Errf("deleteUserAndGroupLabels with label_id [%v] error: %v", labelIDs, err)
+		logging.Warningf("deleteUserAndGroupLabels with label_id [%v] error: %v", labelIDs, err)
 	}
 }
 
@@ -680,7 +680,7 @@ func (m *Model) tryDeleteLabelsRules(ctx context.Context, labelIDs []int64) {
 		_, err = m.deleteByCols(ctx, schema.TableLabelRule, goqu.Ex{"label_id": labelIDs})
 	}
 	if err != nil {
-		logging.Errf("deleteLabelsRules with label_id [%v] error: %v", labelIDs, err)
+		logging.Warningf("deleteLabelsRules with label_id [%v] error: %v", labelIDs, err)
 	}
 }
 
@@ -693,7 +693,7 @@ func (m *Model) tryDeleteUserAndGroupSettings(ctx context.Context, settingIDs []
 		}
 	}
 	if err != nil {
-		logging.Errf("deleteUserAndGroupSettings with setting_id [%v] error: %v", settingIDs, err)
+		logging.Warningf("deleteUserAndGroupSettings with setting_id [%v] error: %v", settingIDs, err)
 	}
 }
 
@@ -703,6 +703,6 @@ func (m *Model) tryDeleteSettingsRules(ctx context.Context, settingIDs []int64) 
 		_, err = m.deleteByCols(ctx, schema.TableSettingRule, goqu.Ex{"setting_id": settingIDs})
 	}
 	if err != nil {
-		logging.Errf("deleteSettingsRules with setting_id [%v] error: %v", settingIDs, err)
+		logging.Warningf("deleteSettingsRules with setting_id [%v] error: %v", settingIDs, err)
 	}
 }

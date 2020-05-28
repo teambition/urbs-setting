@@ -91,8 +91,8 @@ func (m *Label) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([
 			goqu.C("offline_at").IsNull())
 
 	if pg.Q != "" {
-		sdc = sdc.Where(goqu.C("name").Like(pg.Q))
-		sd = sd.Where(goqu.C("name").Like(pg.Q))
+		sdc = sdc.Where(goqu.C("name").ILike(pg.Q))
+		sd = sd.Where(goqu.C("name").ILike(pg.Q))
 	}
 
 	sd = sd.Order(goqu.C("id").Desc()).Limit(uint(pg.PageSize + 1))
@@ -308,8 +308,8 @@ func (m *Label) ListUsers(ctx context.Context, labelID int64, pg tpl.Pagination)
 			goqu.I("t1.user_id").Eq(goqu.I("t2.id")))
 
 	if pg.Q != "" {
-		sdc = sdc.Where(goqu.I("t2.uid").Like(pg.Q))
-		sd = sd.Where(goqu.I("t2.uid").Like(pg.Q))
+		sdc = sdc.Where(goqu.I("t2.uid").ILike(pg.Q))
+		sd = sd.Where(goqu.I("t2.uid").ILike(pg.Q))
 	}
 
 	sd = sd.Order(goqu.I("t1.id").Desc()).Limit(uint(pg.PageSize + 1))
@@ -369,8 +369,8 @@ func (m *Label) ListGroups(ctx context.Context, labelID int64, pg tpl.Pagination
 			goqu.I("t1.group_id").Eq(goqu.I("t2.id")))
 
 	if pg.Q != "" {
-		sdc = sdc.Where(goqu.I("t2.uid").Like(pg.Q))
-		sd = sd.Where(goqu.I("t2.uid").Like(pg.Q))
+		sdc = sdc.Where(goqu.I("t2.uid").ILike(pg.Q))
+		sd = sd.Where(goqu.I("t2.uid").ILike(pg.Q))
 	}
 
 	sd = sd.Order(goqu.I("t1.id").Desc()).Limit(uint(pg.PageSize + 1))

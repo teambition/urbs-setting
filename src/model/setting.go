@@ -120,8 +120,8 @@ func (m *Setting) Find(ctx context.Context, productID, moduleID int64, pg tpl.Pa
 		goqu.I("t1.offline_at").IsNull())
 
 	if pg.Q != "" {
-		sdc = sdc.Where(goqu.I("t1.name").Like(pg.Q))
-		sd = sd.Where(goqu.I("t1.name").Like(pg.Q))
+		sdc = sdc.Where(goqu.I("t1.name").ILike(pg.Q))
+		sd = sd.Where(goqu.I("t1.name").ILike(pg.Q))
 	}
 
 	sd = sd.Order(goqu.I("t1.id").Desc()).Limit(uint(pg.PageSize + 1))
@@ -379,8 +379,8 @@ func (m *Setting) ListUsers(ctx context.Context, settingID int64, pg tpl.Paginat
 			goqu.I("t1.user_id").Eq(goqu.I("t2.id")))
 
 	if pg.Q != "" {
-		sdc = sdc.Where(goqu.I("t2.uid").Like(pg.Q))
-		sd = sd.Where(goqu.I("t2.uid").Like(pg.Q))
+		sdc = sdc.Where(goqu.I("t2.uid").ILike(pg.Q))
+		sd = sd.Where(goqu.I("t2.uid").ILike(pg.Q))
 	}
 
 	sd = sd.Order(goqu.I("t1.id").Desc()).Limit(uint(pg.PageSize + 1))
@@ -442,8 +442,8 @@ func (m *Setting) ListGroups(ctx context.Context, settingID int64, pg tpl.Pagina
 			goqu.I("t1.group_id").Eq(goqu.I("t2.id")))
 
 	if pg.Q != "" {
-		sdc = sdc.Where(goqu.I("t2.uid").Like(pg.Q))
-		sd = sd.Where(goqu.I("t2.uid").Like(pg.Q))
+		sdc = sdc.Where(goqu.I("t2.uid").ILike(pg.Q))
+		sd = sd.Where(goqu.I("t2.uid").ILike(pg.Q))
 	}
 
 	sd = sd.Order(goqu.I("t1.id").Desc()).Limit(uint(pg.PageSize + 1))

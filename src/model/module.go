@@ -78,8 +78,8 @@ func (m *Module) Find(ctx context.Context, productID int64, pg tpl.Pagination) (
 			goqu.C("offline_at").IsNull())
 
 	if pg.Q != "" {
-		sdc = sdc.Where(goqu.C("name").Like(pg.Q))
-		sd = sd.Where(goqu.C("name").Like(pg.Q))
+		sdc = sdc.Where(goqu.C("name").ILike(pg.Q))
+		sd = sd.Where(goqu.C("name").ILike(pg.Q))
 	}
 
 	sd = sd.Order(goqu.C("id").Desc()).Limit(uint(pg.PageSize + 1))

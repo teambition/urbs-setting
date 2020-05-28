@@ -67,13 +67,13 @@ func (m *User) Find(ctx context.Context, pg tpl.Pagination) ([]schema.User, int,
 	var total int64
 	var err error
 	if pg.Q != "" {
-		sdc = sdc.Where(goqu.C("uid").Like(pg.Q))
+		sdc = sdc.Where(goqu.C("uid").ILike(pg.Q))
 		total, err = sdc.CountContext(ctx)
 		if err != nil {
 			return nil, 0, err
 		}
 
-		sd = sd.Where(goqu.C("uid").Like(pg.Q))
+		sd = sd.Where(goqu.C("uid").ILike(pg.Q))
 	}
 
 	sd = sd.Order(goqu.C("id").Desc()).Limit(uint(pg.PageSize + 1))
@@ -237,7 +237,7 @@ func (m *User) FindSettingsUnionAll(ctx context.Context, groupIDs []int64, userI
 		}
 
 		if pg.Q != "" {
-			sd = sd.Where(goqu.I("t2.name").Like(pg.Q))
+			sd = sd.Where(goqu.I("t2.name").ILike(pg.Q))
 		}
 
 		sd = sd.Where(
@@ -267,7 +267,7 @@ func (m *User) FindSettingsUnionAll(ctx context.Context, groupIDs []int64, userI
 			}
 
 			if pg.Q != "" {
-				gsd = gsd.Where(goqu.I("t2.name").Like(pg.Q))
+				gsd = gsd.Where(goqu.I("t2.name").ILike(pg.Q))
 			}
 
 			gsd = gsd.Where(
@@ -362,8 +362,8 @@ func (m *User) FindLabels(ctx context.Context, userID int64, pg tpl.Pagination) 
 			goqu.I("t1.label_id").Eq(goqu.I("t2.id")))
 
 	if pg.Q != "" {
-		sdc = sdc.Where(goqu.I("t2.name").Like(pg.Q))
-		sd = sd.Where(goqu.I("t2.name").Like(pg.Q))
+		sdc = sdc.Where(goqu.I("t2.name").ILike(pg.Q))
+		sd = sd.Where(goqu.I("t2.name").ILike(pg.Q))
 	}
 
 	sdc = sdc.Where(goqu.I("t2.product_id").Eq(goqu.I("t3.id")))
@@ -446,8 +446,8 @@ func (m *User) FindSettings(ctx context.Context, userID, productID, moduleID, se
 	}
 
 	if pg.Q != "" {
-		sdc = sdc.Where(goqu.I("t2.name").Like(pg.Q))
-		sd = sd.Where(goqu.I("t2.name").Like(pg.Q))
+		sdc = sdc.Where(goqu.I("t2.name").ILike(pg.Q))
+		sd = sd.Where(goqu.I("t2.name").ILike(pg.Q))
 	}
 
 	sdc = sdc.Where(goqu.I("t2.module_id").Eq(goqu.I("t3.id")))

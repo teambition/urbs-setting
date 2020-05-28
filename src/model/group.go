@@ -65,8 +65,8 @@ func (m *Group) Find(ctx context.Context, kind string, pg tpl.Pagination) ([]sch
 		sd = sd.Where(goqu.C("kind").Eq(kind))
 	}
 	if pg.Q != "" {
-		sdc = sdc.Where(goqu.C("uid").Like(pg.Q))
-		sd = sd.Where(goqu.C("uid").Like(pg.Q))
+		sdc = sdc.Where(goqu.C("uid").ILike(pg.Q))
+		sd = sd.Where(goqu.C("uid").ILike(pg.Q))
 	}
 	sd = sd.Order(goqu.C("id").Desc()).Limit(uint(pg.PageSize + 1))
 
@@ -112,8 +112,8 @@ func (m *Group) FindLabels(ctx context.Context, groupID int64, pg tpl.Pagination
 			goqu.I("t1.label_id").Eq(goqu.I("t2.id")))
 
 	if pg.Q != "" {
-		sdc = sdc.Where(goqu.I("t2.name").Like(pg.Q))
-		sd = sd.Where(goqu.I("t2.name").Like(pg.Q))
+		sdc = sdc.Where(goqu.I("t2.name").ILike(pg.Q))
+		sd = sd.Where(goqu.I("t2.name").ILike(pg.Q))
 	}
 
 	sdc = sdc.Where(goqu.I("t2.product_id").Eq(goqu.I("t3.id")))
@@ -197,8 +197,8 @@ func (m *Group) FindSettings(ctx context.Context, groupID, productID, moduleID, 
 	}
 
 	if pg.Q != "" {
-		sdc = sdc.Where(goqu.I("t2.name").Like(pg.Q))
-		sd = sd.Where(goqu.I("t2.name").Like(pg.Q))
+		sdc = sdc.Where(goqu.I("t2.name").ILike(pg.Q))
+		sd = sd.Where(goqu.I("t2.name").ILike(pg.Q))
 	}
 
 	sdc = sdc.Where(goqu.I("t2.module_id").Eq(goqu.I("t3.id")))
@@ -341,8 +341,8 @@ func (m *Group) FindMembers(ctx context.Context, groupID int64, pg tpl.Paginatio
 			goqu.I("t1.user_id").Eq(goqu.I("t2.id")))
 
 	if pg.Q != "" {
-		sdc = sdc.Where(goqu.I("t2.uid").Like(pg.Q))
-		sd = sd.Where(goqu.I("t2.uid").Like(pg.Q))
+		sdc = sdc.Where(goqu.I("t2.uid").ILike(pg.Q))
+		sd = sd.Where(goqu.I("t2.uid").ILike(pg.Q))
 	}
 
 	sd = sd.Order(goqu.I("t1.id").Desc()).Limit(uint(pg.PageSize + 1))
