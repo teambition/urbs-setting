@@ -155,12 +155,12 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force boo
 		if err != nil {
 			return err
 		}
-		defer scanner.Close()
 
 		set := make(map[int64]struct{})
 		for scanner.Next() {
 			myLabelInfo := schema.MyLabelInfo{}
 			if err := scanner.ScanStruct(&myLabelInfo); err != nil {
+				scanner.Close()
 				return err
 			}
 			if _, ok := set[myLabelInfo.ID]; ok {
@@ -178,6 +178,13 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force boo
 				Clients:  tpl.StringToSlice(myLabelInfo.Clients),
 				Channels: tpl.StringToSlice(myLabelInfo.Channels),
 			})
+		}
+
+		if err := scanner.Close(); err != nil {
+			return err
+		}
+		if err := scanner.Err(); err != nil {
+			return err
 		}
 
 		refreshed = true
