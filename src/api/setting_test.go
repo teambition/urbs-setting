@@ -589,6 +589,109 @@ func TestSettingAPIs(t *testing.T) {
 		})
 	})
 
+	t.Run(`"PUT /v1/products/:product/modules/:module/settings/:setting+:cleanup"`, func(t *testing.T) {
+		product, err := createProduct(tt)
+		assert.Nil(t, err)
+
+		module, err := createModule(tt, product.Name)
+		assert.Nil(t, err)
+
+		setting, err := createSetting(tt, product.Name, module.Name, "x", "y")
+		assert.Nil(t, err)
+
+		users, err := createUsers(tt, 3)
+		assert.Nil(t, err)
+
+		group, err := createGroup(tt)
+		assert.Nil(t, err)
+
+		t.Run("should work", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:assign", tt.Host, product.Name, module.Name, setting.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.UsersGroupsBody{
+					Users:  schema.GetUsersUID(users),
+					Groups: []string{group.UID},
+					Value:  "x",
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.SettingReleaseInfoRes{}
+			res.JSON(&json)
+			result := json.Result
+			assert.Equal(int64(1), result.Release)
+			assert.Equal("x", result.Value)
+
+			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/rules", tt.Host, product.Name, module.Name, setting.Name)).
+				Set("Content-Type", "application/json").
+				Send(map[string]interface{}{
+					"kind":  "userPercent",
+					"value": "y",
+					"rule": map[string]interface{}{
+						"value": 100,
+					},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			var count int64
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
+			assert.Equal(int64(3), count)
+
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
+			assert.Equal(int64(1), count)
+
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `setting_rule` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
+			assert.Equal(int64(1), count)
+
+			res, err = request.Delete(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:cleanup", tt.Host, product.Name, module.Name, setting.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json2 := tpl.BoolRes{}
+			res.JSON(&json2)
+			assert.True(json2.Result)
+
+			time.Sleep(time.Millisecond * 100)
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
+			assert.Equal(int64(0), count)
+
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
+			assert.Equal(int64(0), count)
+
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `setting_rule` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
+			assert.Equal(int64(0), count)
+
+			s := setting
+			_, err = tt.DB.ScanStruct(&s, "select * from `urbs_setting` where `id` = ? limit 1", s.ID)
+			assert.Equal(int64(0), s.Status)
+		})
+
+		t.Run("should work idempotent", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s:cleanup", tt.Host, product.Name, module.Name, setting.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.BoolRes{}
+			res.JSON(&json)
+			assert.True(json.Result)
+		})
+	})
+
 	t.Run(`"PUT /v1/products/:product/modules/:module/settings/:setting+:offline"`, func(t *testing.T) {
 		product, err := createProduct(tt)
 		assert.Nil(t, err)
@@ -625,12 +728,29 @@ func TestSettingAPIs(t *testing.T) {
 			assert.Equal(int64(1), result.Release)
 			assert.Equal("x", result.Value)
 
+			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/rules", tt.Host, product.Name, module.Name, setting.Name)).
+				Set("Content-Type", "application/json").
+				Send(map[string]interface{}{
+					"kind":  "userPercent",
+					"value": "y",
+					"rule": map[string]interface{}{
+						"value": 100,
+					},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
 			var count int64
 			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_setting` where `setting_id` = ?", setting.ID)
 			assert.Nil(err)
 			assert.Equal(int64(3), count)
 
 			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
+			assert.Equal(int64(1), count)
+
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `setting_rule` where `setting_id` = ?", setting.ID)
 			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
@@ -649,6 +769,10 @@ func TestSettingAPIs(t *testing.T) {
 			assert.Equal(int64(0), count)
 
 			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_setting` where `setting_id` = ?", setting.ID)
+			assert.Nil(err)
+			assert.Equal(int64(0), count)
+
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `setting_rule` where `setting_id` = ?", setting.ID)
 			assert.Nil(err)
 			assert.Equal(int64(0), count)
 

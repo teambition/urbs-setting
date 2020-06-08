@@ -153,6 +153,26 @@ func (b *Label) Recall(ctx context.Context, productName, labelName string, relea
 	return res, nil
 }
 
+// Cleanup ...
+func (b *Label) Cleanup(ctx context.Context, productName, labelName string) (*tpl.BoolRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	label, err := b.ms.Label.Acquire(ctx, productID, labelName)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &tpl.BoolRes{Result: false}
+	if err = b.ms.Label.Cleanup(ctx, label.ID); err != nil {
+		return nil, err
+	}
+	res.Result = true
+	return res, nil
+}
+
 // CreateRule ...
 func (b *Label) CreateRule(ctx context.Context, productName, labelName string, body tpl.LabelRuleBody) (*tpl.LabelRuleInfoRes, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)

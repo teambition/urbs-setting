@@ -225,6 +225,31 @@ func (b *Setting) Recall(ctx context.Context, productName, moduleName, settingNa
 	return res, nil
 }
 
+// Cleanup ...
+func (b *Setting) Cleanup(ctx context.Context, productName, moduleName, settingName string) (*tpl.BoolRes, error) {
+	productID, err := b.ms.Product.AcquireID(ctx, productName)
+	if err != nil {
+		return nil, err
+	}
+
+	module, err := b.ms.Module.Acquire(ctx, productID, moduleName)
+	if err != nil {
+		return nil, err
+	}
+
+	setting, err := b.ms.Setting.Acquire(ctx, module.ID, settingName)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &tpl.BoolRes{Result: false}
+	if err = b.ms.Setting.Cleanup(ctx, setting.ID); err != nil {
+		return nil, err
+	}
+	res.Result = true
+	return res, nil
+}
+
 // CreateRule ...
 func (b *Setting) CreateRule(ctx context.Context, productName, moduleName, settingName string, body tpl.SettingRuleBody) (*tpl.SettingRuleInfoRes, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)

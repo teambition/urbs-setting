@@ -134,6 +134,8 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Post("/products/:product/modules/:module/settings/:setting+:assign", apis.Setting.Assign)
 	// 批量撤销对用户或群组设置的产品功能模块配置项
 	routerV1.Post("/products/:product/modules/:module/settings/:setting+:recall", apis.Setting.Recall)
+	// 清除指定产品功能模块配置项下所有的用户、群组和百分比规则
+	routerV1.Delete("/products/:product/modules/:module/settings/:setting+:cleanup", apis.Setting.Cleanup)
 	// 创建指定产品功能模块配置项的灰度发布规则
 	routerV1.Post("/products/:product/modules/:module/settings/:setting/rules", apis.Setting.CreateRule)
 	// 更新指定产品功能模块配置项的指定灰度发布规则
@@ -172,6 +174,8 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Post("/products/:product/labels/:label+:assign", apis.Label.Assign)
 	// 批量撤销对用户或群组设置的产品环境标签
 	routerV1.Post("/products/:product/labels/:label+:recall", apis.Label.Recall)
+	// 清除产品环境标签下所有的用户、群组和百分比规则
+	routerV1.Delete("/products/:product/labels/:label+:cleanup", apis.Label.Cleanup)
 	// 创建指定产品环境标签的灰度发布规则
 	routerV1.Post("/products/:product/labels/:label/rules", apis.Label.CreateRule)
 	// 读取指定产品环境标签的灰度发布规则列表

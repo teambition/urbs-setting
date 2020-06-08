@@ -271,6 +271,24 @@ func (m *Setting) Delete(ctx context.Context, id int64) error {
 	return err
 }
 
+// Cleanup 清除指定产品功能模块配置项下所有的用户、群组和百分比规则
+func (m *Setting) Cleanup(ctx context.Context, id int64) error {
+	_, err := m.deleteByCols(ctx, schema.TableSettingRule, goqu.Ex{"setting_id": id})
+	if err != nil {
+		return err
+	}
+	_, err = m.deleteByCols(ctx, schema.TableGroupSetting, goqu.Ex{"setting_id": id})
+	if err != nil {
+		return err
+	}
+	_, err = m.deleteByCols(ctx, schema.TableUserSetting, goqu.Ex{"setting_id": id})
+	if err != nil {
+		return err
+	}
+	_, err = m.updateByID(ctx, schema.TableSetting, id, goqu.Record{"status": 0})
+	return err
+}
+
 // RemoveUserSetting 删除用户的 setting
 func (m *Setting) RemoveUserSetting(ctx context.Context, userID, settingID int64) (int64, error) {
 	rowsAffected, err := m.deleteByCols(ctx, schema.TableUserSetting,

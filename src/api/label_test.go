@@ -489,6 +489,102 @@ func TestLabelAPIs(t *testing.T) {
 		})
 	})
 
+	t.Run(`"PUT /v1/products/:product/labels/:label+:cleanup"`, func(t *testing.T) {
+		label, err := createLabel(tt, product.Name)
+		assert.Nil(t, err)
+
+		users, err := createUsers(tt, 3)
+		assert.Nil(t, err)
+
+		group, err := createGroup(tt)
+		assert.Nil(t, err)
+
+		t.Run("should work", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s:assign", tt.Host, product.Name, label.Name)).
+				Set("Content-Type", "application/json").
+				Send(tpl.UsersGroupsBody{
+					Users:  schema.GetUsersUID(users),
+					Groups: []string{group.UID},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+			res.Content() // close http client
+
+			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s/rules", tt.Host, product.Name, label.Name)).
+				Set("Content-Type", "application/json").
+				Send(map[string]interface{}{
+					"kind": "userPercent",
+					"rule": map[string]interface{}{
+						"value": 100,
+					},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			var count int64
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_label` where `label_id` = ?", label.ID)
+			assert.Nil(err)
+			assert.Equal(int64(3), count)
+
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_label` where `label_id` = ?", label.ID)
+			assert.Nil(err)
+			assert.Equal(int64(1), count)
+
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `label_rule` where `label_id` = ?", label.ID)
+			assert.Nil(err)
+			assert.Equal(int64(1), count)
+
+			res, err = request.Delete(fmt.Sprintf("%s/v1/products/%s/labels/%s:cleanup", tt.Host, product.Name, label.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.BoolRes{}
+			res.JSON(&json)
+			assert.True(json.Result)
+
+			l := label
+			_, err = tt.DB.ScanStruct(&l, "select * from `urbs_label` where `id` = ? limit 1", label.ID)
+			assert.Nil(err)
+			assert.Equal(int64(0), l.Status)
+
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_label` where `label_id` = ?", label.ID)
+			assert.Nil(err)
+			assert.Equal(int64(0), count)
+
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_label` where `label_id` = ?", label.ID)
+			assert.Nil(err)
+			assert.Equal(int64(0), count)
+
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `label_rule` where `label_id` = ?", label.ID)
+			assert.Nil(err)
+			assert.Equal(int64(0), count)
+		})
+
+		t.Run("should work idempotent", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s/labels/%s:cleanup", tt.Host, product.Name, label.Name)).
+				End()
+			assert.Nil(err)
+
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.BoolRes{}
+			res.JSON(&json)
+			assert.True(json.Result)
+
+			l := label
+			_, err = tt.DB.ScanStruct(&l, "select * from `urbs_label` where `id` = ? limit 1", label.ID)
+			assert.Nil(err)
+			assert.Equal(int64(0), l.Status)
+		})
+	})
+
 	t.Run(`"PUT /v1/products/:product/labels/:label+:offline"`, func(t *testing.T) {
 		label, err := createLabel(tt, product.Name)
 		assert.Nil(t, err)
@@ -513,12 +609,28 @@ func TestLabelAPIs(t *testing.T) {
 			assert.Equal(200, res.StatusCode)
 			res.Content() // close http client
 
+			res, err = request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s/rules", tt.Host, product.Name, label.Name)).
+				Set("Content-Type", "application/json").
+				Send(map[string]interface{}{
+					"kind": "userPercent",
+					"rule": map[string]interface{}{
+						"value": 100,
+					},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
 			var count int64
 			_, err = tt.DB.ScanVal(&count, "select count(*) from `user_label` where `label_id` = ?", label.ID)
 			assert.Nil(err)
 			assert.Equal(int64(3), count)
 
 			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_label` where `label_id` = ?", label.ID)
+			assert.Nil(err)
+			assert.Equal(int64(1), count)
+
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `label_rule` where `label_id` = ?", label.ID)
 			assert.Nil(err)
 			assert.Equal(int64(1), count)
 
@@ -542,6 +654,10 @@ func TestLabelAPIs(t *testing.T) {
 			assert.Equal(int64(0), count)
 
 			_, err = tt.DB.ScanVal(&count, "select count(*) from `group_label` where `label_id` = ?", label.ID)
+			assert.Nil(err)
+			assert.Equal(int64(0), count)
+
+			_, err = tt.DB.ScanVal(&count, "select count(*) from `label_rule` where `label_id` = ?", label.ID)
 			assert.Nil(err)
 			assert.Equal(int64(0), count)
 		})

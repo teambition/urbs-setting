@@ -153,6 +153,20 @@ func (a *Setting) Recall(ctx *gear.Context) error {
 	return ctx.OkJSON(res)
 }
 
+// Cleanup ..
+func (a *Setting) Cleanup(ctx *gear.Context) error {
+	req := tpl.ProductModuleSettingURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Setting.Cleanup(ctx, req.Product, req.Module, req.Setting)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
 // CreateRule ..
 func (a *Setting) CreateRule(ctx *gear.Context) error {
 	req := tpl.ProductModuleSettingURL{}

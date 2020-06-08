@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file starting fro
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 -----
+## [1.5.0] - 2020-06-08
+
+**Change:**
+
+- Add API `DELETE /v1/products/{product}/modules/{module}/settings/{setting}:cleanup` that cleanup all rules, users and groups on the setting.
+- Add API `DELETE /v1/products/{product}/labels/{label}:cleanup` that cleanup all rules, users and groups on the label.
+
 ## [1.4.0] - 2020-05-27
 
 **Change:**

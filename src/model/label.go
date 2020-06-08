@@ -221,6 +221,24 @@ func (m *Label) Delete(ctx context.Context, id int64) error {
 	return err
 }
 
+// Cleanup 清除产品环境标签下所有的用户、群组和百分比规则
+func (m *Label) Cleanup(ctx context.Context, id int64) error {
+	_, err := m.deleteByCols(ctx, schema.TableLabelRule, goqu.Ex{"label_id": id})
+	if err != nil {
+		return err
+	}
+	_, err = m.deleteByCols(ctx, schema.TableGroupLabel, goqu.Ex{"label_id": id})
+	if err != nil {
+		return err
+	}
+	_, err = m.deleteByCols(ctx, schema.TableUserLabel, goqu.Ex{"label_id": id})
+	if err != nil {
+		return err
+	}
+	_, err = m.updateByID(ctx, schema.TableLabel, id, goqu.Record{"status": 0})
+	return err
+}
+
 // RemoveUserLabel 删除用户的 label
 func (m *Label) RemoveUserLabel(ctx context.Context, userID, labelID int64) (int64, error) {
 	rowsAffected, err := m.deleteByCols(ctx, schema.TableUserLabel, goqu.Ex{"user_id": userID, "label_id": labelID})

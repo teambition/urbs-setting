@@ -128,6 +128,20 @@ func (a *Label) Recall(ctx *gear.Context) error {
 	return ctx.OkJSON(res)
 }
 
+// Cleanup ..
+func (a *Label) Cleanup(ctx *gear.Context) error {
+	req := tpl.ProductLabelURL{}
+	if err := ctx.ParseURL(&req); err != nil {
+		return err
+	}
+
+	res, err := a.blls.Label.Cleanup(ctx, req.Product, req.Label)
+	if err != nil {
+		return err
+	}
+	return ctx.OkJSON(res)
+}
+
 // CreateRule ..
 func (a *Label) CreateRule(ctx *gear.Context) error {
 	req := tpl.ProductLabelURL{}
