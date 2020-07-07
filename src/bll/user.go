@@ -2,6 +2,7 @@ package bll
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/teambition/urbs-setting/src/conf"
@@ -42,12 +43,23 @@ func (b *User) List(ctx context.Context, pg tpl.Pagination) (*tpl.UsersRes, erro
 func (b *User) ListCachedLabels(ctx context.Context, uid, product string) *tpl.CacheLabelsInfoRes {
 	now := time.Now().UTC()
 	res := &tpl.CacheLabelsInfoRes{Result: []schema.UserCacheLabel{}, Timestamp: now.Unix()}
+
 	if product == "" {
+		return res
+	}
+
+	productID, err := b.ms.Product.AcquireID(ctx, product)
+	if err != nil {
 		return res
 	}
 
 	user, err := b.ms.User.Acquire(ctx, uid)
 	if err != nil {
+		if strings.HasPrefix(uid, "anon-") {
+			if labels, err := b.ms.LabelRule.ApplyRulesToAnonymous(ctx, uid, productID); err == nil {
+				res.Result = labels
+			}
+		}
 		return res
 	}
 
@@ -133,7 +145,7 @@ func (b *User) ListSettings(ctx context.Context, req tpl.MySettingsQueryURL) (*t
 	}
 
 	pg := req.Pagination
-	settings, total, err := b.ms.User.FindSettings(ctx, userID, productID, moduleID, settingID, pg)
+	settings, total, err := b.ms.User.FindSettings(ctx, userID, productID, moduleID, settingID, pg, req.Channel, req.Client)
 	if err != nil {
 		return nil, err
 	}
@@ -150,18 +162,28 @@ func (b *User) ListSettings(ctx context.Context, req tpl.MySettingsQueryURL) (*t
 // ListSettingsUnionAll ...
 func (b *User) ListSettingsUnionAll(ctx context.Context, req tpl.MySettingsQueryURL) (*tpl.MySettingsRes, error) {
 	res := &tpl.MySettingsRes{Result: []tpl.MySetting{}}
-	user, err := b.ms.User.Acquire(ctx, req.UID)
-	if err != nil {
-		return res, nil
-	}
 
 	var productID int64
 	var moduleID int64
 	var settingID int64
-	productID, err = b.ms.Product.AcquireID(ctx, req.Product)
+	productID, err := b.ms.Product.AcquireID(ctx, req.Product)
 	if err != nil {
 		return nil, err
 	}
+
+	user, err := b.ms.User.Acquire(ctx, req.UID)
+	if err != nil {
+		if strings.HasPrefix(req.UID, "anon-") {
+			if settings, err := b.ms.SettingRule.ApplyRulesToAnonymous(ctx, req.UID, productID, req.Channel, req.Client); err == nil {
+				for i := range settings {
+					settings[i].Product = req.Product
+				}
+				res.Result = settings
+			}
+		}
+		return res, nil
+	}
+
 	if req.Module != "" {
 		moduleID, err = b.ms.Module.AcquireID(ctx, productID, req.Module)
 		if err != nil {

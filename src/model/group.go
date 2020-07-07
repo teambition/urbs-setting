@@ -146,7 +146,7 @@ func (m *Group) FindLabels(ctx context.Context, groupID int64, pg tpl.Pagination
 }
 
 // FindSettings 根据 Group ID, updateGt, productName 返回其 settings 数据。
-func (m *Group) FindSettings(ctx context.Context, groupID, productID, moduleID, settingID int64, pg tpl.Pagination) ([]tpl.MySetting, int, error) {
+func (m *Group) FindSettings(ctx context.Context, groupID, productID, moduleID, settingID int64, pg tpl.Pagination, channel, client string) ([]tpl.MySetting, int, error) {
 	data := []tpl.MySetting{}
 	cursor := pg.TokenToID()
 
@@ -194,6 +194,16 @@ func (m *Group) FindSettings(ctx context.Context, groupID, productID, moduleID, 
 	} else {
 		sdc = sdc.Where(goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
 		sd = sd.Where(goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
+	}
+
+	if channel != "" {
+		sdc = sdc.Where(goqu.L("FIND_IN_SET(?, ?)", channel, goqu.I("t2.channels")))
+		sd = sd.Where(goqu.L("FIND_IN_SET(?, ?)", channel, goqu.I("t2.channels")))
+	}
+
+	if client != "" {
+		sdc = sdc.Where(goqu.L("FIND_IN_SET(?, ?)", client, goqu.I("t2.clients")))
+		sd = sd.Where(goqu.L("FIND_IN_SET(?, ?)", client, goqu.I("t2.clients")))
 	}
 
 	if pg.Q != "" {

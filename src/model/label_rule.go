@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"hash/crc32"
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
@@ -60,6 +61,74 @@ func (m *LabelRule) ApplyRules(ctx context.Context, userID int64, excludeLabels 
 		}
 	}
 	return len(ids), nil
+}
+
+// ApplyRulesToAnonymous ...
+func (m *LabelRule) ApplyRulesToAnonymous(ctx context.Context, anonymousID string, productID int64) ([]schema.UserCacheLabel, error) {
+	rules := []schema.LabelRule{}
+	sd := m.DB.From(schema.TableLabelRule).
+		Where(
+			goqu.C("kind").Eq("userPercent"),
+			goqu.C("product_id").Eq(productID)).
+		Order(goqu.C("updated_at").Desc()).Limit(200)
+	err := sd.Executor().ScanStructsContext(ctx, &rules)
+	if err != nil {
+		return nil, err
+	}
+
+	anonID := int64(crc32.ChecksumIEEE([]byte(anonymousID)))
+	labelIDs := make([]int64, 0)
+	for _, rule := range rules {
+		p := rule.ToPercent()
+		if p > 0 && (int((anonID+rule.CreatedAt.Unix())%100) <= p) {
+			// 百分比规则无效或者用户不在百分比区间内
+			labelIDs = append(labelIDs, rule.LabelID)
+		}
+	}
+
+	data := make([]schema.UserCacheLabel, 0)
+	if len(labelIDs) > 0 {
+		sd := m.DB.Select(
+			goqu.I("t1.id"),
+			goqu.I("t1.name"),
+			goqu.I("t1.channels"),
+			goqu.I("t1.clients")).
+			From(goqu.T(schema.TableLabel).As("t1")).
+			Where(goqu.I("t1.id").In(labelIDs))
+
+		scanner, err := sd.Executor().ScannerContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		mp := make(map[int64]schema.UserCacheLabel)
+		for scanner.Next() {
+			myLabelInfo := schema.MyLabelInfo{}
+			if err := scanner.ScanStruct(&myLabelInfo); err != nil {
+				scanner.Close()
+				return nil, err
+			}
+
+			mp[myLabelInfo.ID] = schema.UserCacheLabel{
+				Label:    myLabelInfo.Name,
+				Clients:  tpl.StringToSlice(myLabelInfo.Clients),
+				Channels: tpl.StringToSlice(myLabelInfo.Channels),
+			}
+		}
+
+		scanner.Close()
+		if err := scanner.Err(); err != nil {
+			return nil, err
+		}
+
+		for _, id := range labelIDs {
+			if label, ok := mp[id]; ok {
+				data = append(data, label)
+			}
+		}
+	}
+
+	return data, nil
 }
 
 // Acquire ...

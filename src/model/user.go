@@ -291,6 +291,7 @@ func (m *User) FindSettingsUnionAll(ctx context.Context, groupIDs []int64, userI
 		}
 
 		count := 0
+		var nextCursor time.Time
 		for scanner.Next() {
 			count++
 			mySetting := tpl.MySetting{}
@@ -299,6 +300,7 @@ func (m *User) FindSettingsUnionAll(ctx context.Context, groupIDs []int64, userI
 				return nil, err
 			}
 
+			nextCursor = mySetting.AssignedAt
 			if _, ok := set[mySetting.ID]; ok {
 				continue // 去重
 			}
@@ -330,9 +332,8 @@ func (m *User) FindSettingsUnionAll(ctx context.Context, groupIDs []int64, userI
 		if len(data) >= size {
 			break // get enough
 		}
-		nt := data[len(data)-1].AssignedAt.UTC()
 		// select next page
-		cursor = nt.Unix()*1000 + int64(nt.Nanosecond()/1000000) - 1
+		cursor = nextCursor.Unix()*1000 + int64(nextCursor.Nanosecond()/1000000) - 1
 	}
 
 	return data, nil
@@ -403,7 +404,7 @@ func (m *User) FindLabels(ctx context.Context, userID int64, pg tpl.Pagination) 
 }
 
 // FindSettings 根据用户 ID 返回 settings 数据。
-func (m *User) FindSettings(ctx context.Context, userID, productID, moduleID, settingID int64, pg tpl.Pagination) ([]tpl.MySetting, int, error) {
+func (m *User) FindSettings(ctx context.Context, userID, productID, moduleID, settingID int64, pg tpl.Pagination, channel, client string) ([]tpl.MySetting, int, error) {
 	data := []tpl.MySetting{}
 	cursor := pg.TokenToID()
 	sdc := m.DB.Select().
@@ -450,6 +451,16 @@ func (m *User) FindSettings(ctx context.Context, userID, productID, moduleID, se
 	} else {
 		sdc = sdc.Where(goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
 		sd = sd.Where(goqu.I("t1.setting_id").Eq(goqu.I("t2.id")))
+	}
+
+	if channel != "" {
+		sdc = sdc.Where(goqu.L("FIND_IN_SET(?, ?)", channel, goqu.I("t2.channels")))
+		sd = sd.Where(goqu.L("FIND_IN_SET(?, ?)", channel, goqu.I("t2.channels")))
+	}
+
+	if client != "" {
+		sdc = sdc.Where(goqu.L("FIND_IN_SET(?, ?)", client, goqu.I("t2.clients")))
+		sd = sd.Where(goqu.L("FIND_IN_SET(?, ?)", client, goqu.I("t2.clients")))
 	}
 
 	if pg.Q != "" {

@@ -101,7 +101,7 @@ func (b *Group) ListSettings(ctx context.Context, req tpl.MySettingsQueryURL) (*
 	}
 
 	pg := req.Pagination
-	settings, total, err := b.ms.Group.FindSettings(ctx, group.ID, productID, moduleID, settingID, pg)
+	settings, total, err := b.ms.Group.FindSettings(ctx, group.ID, productID, moduleID, settingID, pg, req.Channel, req.Client)
 	if err != nil {
 		return nil, err
 	}

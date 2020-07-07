@@ -901,6 +901,32 @@ func TestSettingAPIs(t *testing.T) {
 			assert.True(data.AssignedAt.After(time2020))
 		})
 
+		t.Run(`"GET /v1/users/:uid/settings:unionAll" should support anonymous user`, func(t *testing.T) {
+			assert := assert.New(t)
+			res, err := request.Get(fmt.Sprintf("%s/v1/users/%s/settings:unionAll?product=%s", tt.Host, "anon-"+user.UID, product.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.MySettingsRes{}
+			_, err = res.JSON(&json)
+
+			assert.Nil(err)
+			assert.Equal(1, len(json.Result))
+			assert.Equal("", json.NextPageToken)
+
+			data := json.Result[0]
+			assert.Equal(service.IDToHID(setting.ID, "setting"), data.HID)
+			assert.Equal(module.Name, data.Module)
+			assert.Equal(setting.Name, data.Name)
+			assert.Equal("y", data.Value)
+			assert.True(data.AssignedAt.After(time2020))
+		})
+
 		t.Run(`"GET /v1/products/:product/modules/:module/settings/:setting/rules" should work`, func(t *testing.T) {
 			assert := assert.New(t)
 			res, err := request.Get(fmt.Sprintf("%s/v1/products/%s/modules/%s/settings/%s/rules", tt.Host, product.Name, module.Name, setting.Name)).

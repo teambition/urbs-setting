@@ -3,7 +3,7 @@
     get:
       tags:
         - User
-      summary: 该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定 uid 用户在指定 product 产品下的所有（未分页，最多 400 条）环境标签，包括从 group 群组继承的环境标签，按照 label 指派时间反序。网关只会取匹配 client 和 channel 的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在 config.cache_label_expire 配置，默认为 1 分钟，建议生产配置为 5 分钟。当 uid 对应用户不存在或 product 对应产品不存在时，该接口会返回空环境标签列表
+      summary: 该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定 uid 用户在指定 product 产品下的所有（未分页，最多 400 条）环境标签，包括从 group 群组继承的环境标签，按照 label 指派时间反序。网关只会取匹配 client 和 channel 的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在 config.cache_label_expire 配置，默认为 1 分钟，建议生产配置为 5 分钟。当 uid 对应用户不存在或 product 对应产品不存在时，该接口会返回空环境标签列表。当 uid 对应的用户不存在但以 `anon-` 开头时则为匿名用户，百分比发布规则对匿名用户生效。
       parameters:
         - $ref: "#/components/parameters/PathUID"
         - $ref: "#/components/parameters/QueryProduct"
@@ -31,7 +31,7 @@
     get:
       tags:
         - User
-      summary: 该接口为客户端提供用户的产品功能模块配置项信息，用于客户端功能灰度。获取指定 uid 用户在指定 product 产品下的功能模块配置项信息列表，包括从 group 群组继承的配置项信息列表，按照 setting 值更新时间 updatedAt 反序。该 API 支持分页，默认获取最新更新的前 10 条，分页参数 nextPageToken 为更新时间 updatedAt 值（进行了 encodeURI 转义）。如果客户端本地缓存了 setting 列表，可以判断 nextPageToken 的值，如果 **为空** 或者其值小于本地缓存的最大 updatedAt 值，就不用读取下一页了。该 API 还支持 channel 和 client 参数，让客户端只读取匹配 client 和 channel 的 setting 列表。当 uid 对应用户不存在时，该接口会返回空配置项列表
+      summary: 该接口为客户端提供用户的产品功能模块配置项信息，用于客户端功能灰度。获取指定 uid 用户在指定 product 产品下的功能模块配置项信息列表，包括从 group 群组继承的配置项信息列表，按照 setting 值更新时间 updatedAt 反序。该 API 支持分页，默认获取最新更新的前 10 条，分页参数 nextPageToken 为更新时间 updatedAt 值（进行了 encodeURI 转义）。如果客户端本地缓存了 setting 列表，可以判断 nextPageToken 的值，如果 **为空** 或者其值小于本地缓存的最大 updatedAt 值，就不用读取下一页了。该 API 还支持 channel 和 client 参数，让客户端只读取匹配 client 和 channel 的 setting 列表。当 uid 对应用户不存在时，该接口会返回空配置项列表。当 uid 对应的用户不存在但以 `anon-` 开头时则为匿名用户，百分比发布规则对匿名用户生效。
       security:
         - HeaderAuthorizationJWT: {}
       parameters:
@@ -93,6 +93,8 @@
         - $ref: "#/components/parameters/QueryProduct"
         - $ref: "#/components/parameters/QueryModule"
         - $ref: "#/components/parameters/QuerySetting"
+        - $ref: "#/components/parameters/QueryChannel"
+        - $ref: "#/components/parameters/QueryClient"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
         - $ref: "#/components/parameters/QueryQ"

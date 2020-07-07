@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file starting fro
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 -----
+## [1.6.0] - 2020-07-07
+
+**Change:**
+- `GET /users/:uid/labels:cache` and `GET /v1/users/:uid/settings:unionAll` support anonymous user, uid should with prefix `anon-`.
+- `GET /v1/users/:uid/settings` and `GET /v1/groups/:uid/settings` support `channel` and `client` query.
+
 ## [1.5.0] - 2020-06-08
 
 **Change:**

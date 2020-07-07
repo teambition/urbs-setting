@@ -29,6 +29,8 @@
         - $ref: "#/components/parameters/QueryProduct"
         - $ref: "#/components/parameters/QueryModule"
         - $ref: "#/components/parameters/QuerySetting"
+        - $ref: "#/components/parameters/QueryChannel"
+        - $ref: "#/components/parameters/QueryClient"
         - $ref: "#/components/parameters/QueryPageSize"
         - $ref: "#/components/parameters/QueryPageToken"
         - $ref: "#/components/parameters/QueryQ"

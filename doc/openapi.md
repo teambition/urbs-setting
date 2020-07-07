@@ -58,7 +58,7 @@ Accept: application/json
   "name": "urbs-setting",
   "version": "v1.2.0",
   "gitSHA1": "cd7e82a",
-  "buildTime": "2020-05-27T08:08:05.634Z"
+  "buildTime": "2020-07-07T09:12:47.806Z"
 }
 ```
 
@@ -124,7 +124,7 @@ This operation does not require authentication
 
 User 用户相关接口
 
-## 该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定 uid 用户在指定 product 产品下的所有（未分页，最多 400 条）环境标签，包括从 group 群组继承的环境标签，按照 label 指派时间反序。网关只会取匹配 client 和 channel 的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在 config.cache_label_expire 配置，默认为 1 分钟，建议生产配置为 5 分钟。当 uid 对应用户不存在或 product 对应产品不存在时，该接口会返回空环境标签列表
+## 该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定 uid 用户在指定 product 产品下的所有（未分页，最多 400 条）环境标签，包括从 group 群组继承的环境标签，按照 label 指派时间反序。网关只会取匹配 client 和 channel 的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在 config.cache_label_expire 配置，默认为 1 分钟，建议生产配置为 5 分钟。当 uid 对应用户不存在或 product 对应产品不存在时，该接口会返回空环境标签列表。当 uid 对应的用户不存在但以 `anon-` 开头时则为匿名用户，百分比发布规则对匿名用户生效。
 
 > Code samples
 
@@ -144,7 +144,7 @@ Accept: application/json
 
 `GET /users/{uid}/labels:cache`
 
-<h3 id="该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定-uid-用户在指定-product-产品下的所有（未分页，最多-400-条）环境标签，包括从-group-群组继承的环境标签，按照-label-指派时间反序。网关只会取匹配-client-和-channel-的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在-config.cache_label_expire-配置，默认为-1-分钟，建议生产配置为-5-分钟。当-uid-对应用户不存在或-product-对应产品不存在时，该接口会返回空环境标签列表-parameters">Parameters</h3>
+<h3 id="该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定-uid-用户在指定-product-产品下的所有（未分页，最多-400-条）环境标签，包括从-group-群组继承的环境标签，按照-label-指派时间反序。网关只会取匹配-client-和-channel-的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在-config.cache_label_expire-配置，默认为-1-分钟，建议生产配置为-5-分钟。当-uid-对应用户不存在或-product-对应产品不存在时，该接口会返回空环境标签列表。当-uid-对应的用户不存在但以-`anon-`-开头时则为匿名用户，百分比发布规则对匿名用户生效。-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -176,13 +176,13 @@ Accept: application/json
 }
 ```
 
-<h3 id="该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定-uid-用户在指定-product-产品下的所有（未分页，最多-400-条）环境标签，包括从-group-群组继承的环境标签，按照-label-指派时间反序。网关只会取匹配-client-和-channel-的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在-config.cache_label_expire-配置，默认为-1-分钟，建议生产配置为-5-分钟。当-uid-对应用户不存在或-product-对应产品不存在时，该接口会返回空环境标签列表-responses">Responses</h3>
+<h3 id="该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定-uid-用户在指定-product-产品下的所有（未分页，最多-400-条）环境标签，包括从-group-群组继承的环境标签，按照-label-指派时间反序。网关只会取匹配-client-和-channel-的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在-config.cache_label_expire-配置，默认为-1-分钟，建议生产配置为-5-分钟。当-uid-对应用户不存在或-product-对应产品不存在时，该接口会返回空环境标签列表。当-uid-对应的用户不存在但以-`anon-`-开头时则为匿名用户，百分比发布规则对匿名用户生效。-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|用于网关的用户环境标签列表返回结果|Inline|
 
-<h3 id="该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定-uid-用户在指定-product-产品下的所有（未分页，最多-400-条）环境标签，包括从-group-群组继承的环境标签，按照-label-指派时间反序。网关只会取匹配-client-和-channel-的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在-config.cache_label_expire-配置，默认为-1-分钟，建议生产配置为-5-分钟。当-uid-对应用户不存在或-product-对应产品不存在时，该接口会返回空环境标签列表-responseschema">Response Schema</h3>
+<h3 id="该接口为灰度网关提供用户的灰度信息，用于服务端灰度。获取指定-uid-用户在指定-product-产品下的所有（未分页，最多-400-条）环境标签，包括从-group-群组继承的环境标签，按照-label-指派时间反序。网关只会取匹配-client-和-channel-的第一条。标签列表不是实时数据，会被服务缓存，缓存时间在-config.cache_label_expire-配置，默认为-1-分钟，建议生产配置为-5-分钟。当-uid-对应用户不存在或-product-对应产品不存在时，该接口会返回空环境标签列表。当-uid-对应的用户不存在但以-`anon-`-开头时则为匿名用户，百分比发布规则对匿名用户生效。-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -240,7 +240,7 @@ Authorization: string
       "uid": "5e82d747fe02a50021d339f3",
       "labels": "{\"teambition\":[{\"l\":\"dev\"}]}",
       "activeAt": 1585636012,
-      "createdAt": "2020-05-27T08:08:05.640Z"
+      "createdAt": "2020-07-07T09:12:47.812Z"
     }
   ]
 }
@@ -269,7 +269,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 HeaderAuthorizationJWT
 </aside>
 
-## 该接口为客户端提供用户的产品功能模块配置项信息，用于客户端功能灰度。获取指定 uid 用户在指定 product 产品下的功能模块配置项信息列表，包括从 group 群组继承的配置项信息列表，按照 setting 值更新时间 updatedAt 反序。该 API 支持分页，默认获取最新更新的前 10 条，分页参数 nextPageToken 为更新时间 updatedAt 值（进行了 encodeURI 转义）。如果客户端本地缓存了 setting 列表，可以判断 nextPageToken 的值，如果 **为空** 或者其值小于本地缓存的最大 updatedAt 值，就不用读取下一页了。该 API 还支持 channel 和 client 参数，让客户端只读取匹配 client 和 channel 的 setting 列表。当 uid 对应用户不存在时，该接口会返回空配置项列表
+## 该接口为客户端提供用户的产品功能模块配置项信息，用于客户端功能灰度。获取指定 uid 用户在指定 product 产品下的功能模块配置项信息列表，包括从 group 群组继承的配置项信息列表，按照 setting 值更新时间 updatedAt 反序。该 API 支持分页，默认获取最新更新的前 10 条，分页参数 nextPageToken 为更新时间 updatedAt 值（进行了 encodeURI 转义）。如果客户端本地缓存了 setting 列表，可以判断 nextPageToken 的值，如果 **为空** 或者其值小于本地缓存的最大 updatedAt 值，就不用读取下一页了。该 API 还支持 channel 和 client 参数，让客户端只读取匹配 client 和 channel 的 setting 列表。当 uid 对应用户不存在时，该接口会返回空配置项列表。当 uid 对应的用户不存在但以 `anon-` 开头时则为匿名用户，百分比发布规则对匿名用户生效。
 
 > Code samples
 
@@ -291,7 +291,7 @@ Authorization: string
 
 `GET /v1/users/{uid}/settings:unionAll`
 
-<h3 id="该接口为客户端提供用户的产品功能模块配置项信息，用于客户端功能灰度。获取指定-uid-用户在指定-product-产品下的功能模块配置项信息列表，包括从-group-群组继承的配置项信息列表，按照-setting-值更新时间-updatedat-反序。该-api-支持分页，默认获取最新更新的前-10-条，分页参数-nextpagetoken-为更新时间-updatedat-值（进行了-encodeuri-转义）。如果客户端本地缓存了-setting-列表，可以判断-nextpagetoken-的值，如果-**为空**-或者其值小于本地缓存的最大-updatedat-值，就不用读取下一页了。该-api-还支持-channel-和-client-参数，让客户端只读取匹配-client-和-channel-的-setting-列表。当-uid-对应用户不存在时，该接口会返回空配置项列表-parameters">Parameters</h3>
+<h3 id="该接口为客户端提供用户的产品功能模块配置项信息，用于客户端功能灰度。获取指定-uid-用户在指定-product-产品下的功能模块配置项信息列表，包括从-group-群组继承的配置项信息列表，按照-setting-值更新时间-updatedat-反序。该-api-支持分页，默认获取最新更新的前-10-条，分页参数-nextpagetoken-为更新时间-updatedat-值（进行了-encodeuri-转义）。如果客户端本地缓存了-setting-列表，可以判断-nextpagetoken-的值，如果-**为空**-或者其值小于本地缓存的最大-updatedat-值，就不用读取下一页了。该-api-还支持-channel-和-client-参数，让客户端只读取匹配-client-和-channel-的-setting-列表。当-uid-对应用户不存在时，该接口会返回空配置项列表。当-uid-对应的用户不存在但以-`anon-`-开头时则为匿名用户，百分比发布规则对匿名用户生效。-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -323,19 +323,19 @@ Authorization: string
       "value": "disable",
       "lastValue": "",
       "release": 1,
-      "assignedAt": "2020-05-27T08:08:05.641Z"
+      "assignedAt": "2020-07-07T09:12:47.813Z"
     }
   ]
 }
 ```
 
-<h3 id="该接口为客户端提供用户的产品功能模块配置项信息，用于客户端功能灰度。获取指定-uid-用户在指定-product-产品下的功能模块配置项信息列表，包括从-group-群组继承的配置项信息列表，按照-setting-值更新时间-updatedat-反序。该-api-支持分页，默认获取最新更新的前-10-条，分页参数-nextpagetoken-为更新时间-updatedat-值（进行了-encodeuri-转义）。如果客户端本地缓存了-setting-列表，可以判断-nextpagetoken-的值，如果-**为空**-或者其值小于本地缓存的最大-updatedat-值，就不用读取下一页了。该-api-还支持-channel-和-client-参数，让客户端只读取匹配-client-和-channel-的-setting-列表。当-uid-对应用户不存在时，该接口会返回空配置项列表-responses">Responses</h3>
+<h3 id="该接口为客户端提供用户的产品功能模块配置项信息，用于客户端功能灰度。获取指定-uid-用户在指定-product-产品下的功能模块配置项信息列表，包括从-group-群组继承的配置项信息列表，按照-setting-值更新时间-updatedat-反序。该-api-支持分页，默认获取最新更新的前-10-条，分页参数-nextpagetoken-为更新时间-updatedat-值（进行了-encodeuri-转义）。如果客户端本地缓存了-setting-列表，可以判断-nextpagetoken-的值，如果-**为空**-或者其值小于本地缓存的最大-updatedat-值，就不用读取下一页了。该-api-还支持-channel-和-client-参数，让客户端只读取匹配-client-和-channel-的-setting-列表。当-uid-对应用户不存在时，该接口会返回空配置项列表。当-uid-对应的用户不存在但以-`anon-`-开头时则为匿名用户，百分比发布规则对匿名用户生效。-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|用户或群组被指派的配置项列表返回结果|Inline|
 
-<h3 id="该接口为客户端提供用户的产品功能模块配置项信息，用于客户端功能灰度。获取指定-uid-用户在指定-product-产品下的功能模块配置项信息列表，包括从-group-群组继承的配置项信息列表，按照-setting-值更新时间-updatedat-反序。该-api-支持分页，默认获取最新更新的前-10-条，分页参数-nextpagetoken-为更新时间-updatedat-值（进行了-encodeuri-转义）。如果客户端本地缓存了-setting-列表，可以判断-nextpagetoken-的值，如果-**为空**-或者其值小于本地缓存的最大-updatedat-值，就不用读取下一页了。该-api-还支持-channel-和-client-参数，让客户端只读取匹配-client-和-channel-的-setting-列表。当-uid-对应用户不存在时，该接口会返回空配置项列表-responseschema">Response Schema</h3>
+<h3 id="该接口为客户端提供用户的产品功能模块配置项信息，用于客户端功能灰度。获取指定-uid-用户在指定-product-产品下的功能模块配置项信息列表，包括从-group-群组继承的配置项信息列表，按照-setting-值更新时间-updatedat-反序。该-api-支持分页，默认获取最新更新的前-10-条，分页参数-nextpagetoken-为更新时间-updatedat-值（进行了-encodeuri-转义）。如果客户端本地缓存了-setting-列表，可以判断-nextpagetoken-的值，如果-**为空**-或者其值小于本地缓存的最大-updatedat-值，就不用读取下一页了。该-api-还支持-channel-和-client-参数，让客户端只读取匹配-client-和-channel-的-setting-列表。当-uid-对应用户不存在时，该接口会返回空配置项列表。当-uid-对应的用户不存在但以-`anon-`-开头时则为匿名用户，百分比发布规则对匿名用户生效。-responseschema">Response Schema</h3>
 
 Status Code **200**
 
@@ -404,7 +404,7 @@ Authorization: string
       "name": "task-share",
       "desc": "string",
       "release": 1,
-      "assignedAt": "2020-05-27T08:08:05.641Z"
+      "assignedAt": "2020-07-07T09:12:47.813Z"
     }
   ]
 }
@@ -475,7 +475,7 @@ Authorization: string
     "uid": "5e82d747fe02a50021d339f3",
     "labels": "{\"teambition\":[{\"l\":\"dev\"}]}",
     "activeAt": 1585636012,
-    "createdAt": "2020-05-27T08:08:05.642Z"
+    "createdAt": "2020-07-07T09:12:47.813Z"
   }
 }
 ```
@@ -534,6 +534,8 @@ Authorization: string
 |product|query|string|true|产品名称|
 |module|query|string|false|功能模块名称|
 |setting|query|string|false|配置项名称|
+|channel|query|string|false|版本通道，必须为服务端配置的有效值，只返回匹配 channel 的 setting/label 列表|
+|client|query|string|false|客户端类型，必须为服务端配置的有效值，只返回匹配 client 的 setting/label 列表|
 |pageSize|query|integer(int32)|false|分页大小，默认为 10，(1-1000]|
 |pageToken|query|string|false|分页请求标记，来自于响应结果的 nextPageToken|
 |q|query|string|false|部分列表类 API 支持搜索，q 为搜索关键词|
@@ -555,7 +557,7 @@ Authorization: string
       "value": "disable",
       "lastValue": "",
       "release": 1,
-      "assignedAt": "2020-05-27T08:08:05.642Z"
+      "assignedAt": "2020-07-07T09:12:47.814Z"
     }
   ]
 }
@@ -770,7 +772,7 @@ Authorization: string
       "name": "task-share",
       "desc": "string",
       "release": 1,
-      "assignedAt": "2020-05-27T08:08:05.643Z"
+      "assignedAt": "2020-07-07T09:12:47.816Z"
     }
   ]
 }
@@ -833,6 +835,8 @@ Authorization: string
 |product|query|string|true|产品名称|
 |module|query|string|false|功能模块名称|
 |setting|query|string|false|配置项名称|
+|channel|query|string|false|版本通道，必须为服务端配置的有效值，只返回匹配 channel 的 setting/label 列表|
+|client|query|string|false|客户端类型，必须为服务端配置的有效值，只返回匹配 client 的 setting/label 列表|
 |pageSize|query|integer(int32)|false|分页大小，默认为 10，(1-1000]|
 |pageToken|query|string|false|分页请求标记，来自于响应结果的 nextPageToken|
 |q|query|string|false|部分列表类 API 支持搜索，q 为搜索关键词|
@@ -854,7 +858,7 @@ Authorization: string
       "value": "disable",
       "lastValue": "",
       "release": 1,
-      "assignedAt": "2020-05-27T08:08:05.644Z"
+      "assignedAt": "2020-07-07T09:12:47.816Z"
     }
   ]
 }
@@ -936,8 +940,8 @@ Authorization: string
       "desc": "string",
       "syncAt": 1585636012,
       "status": 99,
-      "createdAt": "2020-05-27T08:08:05.645Z",
-      "updatedAt": "2020-05-27T08:08:05.645Z"
+      "createdAt": "2020-07-07T09:12:47.817Z",
+      "updatedAt": "2020-07-07T09:12:47.817Z"
     }
   ]
 }
@@ -1160,8 +1164,8 @@ Authorization: string
     "desc": "string",
     "syncAt": 1585636012,
     "status": 99,
-    "createdAt": "2020-05-27T08:08:05.646Z",
-    "updatedAt": "2020-05-27T08:08:05.646Z"
+    "createdAt": "2020-07-07T09:12:47.818Z",
+    "updatedAt": "2020-07-07T09:12:47.818Z"
   }
 }
 ```
@@ -1366,7 +1370,7 @@ Authorization: string
     {
       "user": "5e82d747fe02a50021d339f3",
       "syncAt": 1585636012,
-      "createdAt": "2020-05-27T08:08:05.647Z"
+      "createdAt": "2020-07-07T09:12:47.819Z"
     }
   ]
 }
@@ -1504,8 +1508,8 @@ Authorization: string
       "name": "urbs",
       "desc": "string",
       "status": 0,
-      "createdAt": "2020-05-27T08:08:05.649Z",
-      "updatedAt": "2020-05-27T08:08:05.649Z",
+      "createdAt": "2020-07-07T09:12:47.821Z",
+      "updatedAt": "2020-07-07T09:12:47.821Z",
       "deletedAt": null,
       "offlineAt": null
     }
@@ -1600,8 +1604,8 @@ Authorization: string
     "name": "urbs",
     "desc": "string",
     "status": 0,
-    "createdAt": "2020-05-27T08:08:05.649Z",
-    "updatedAt": "2020-05-27T08:08:05.649Z",
+    "createdAt": "2020-07-07T09:12:47.821Z",
+    "updatedAt": "2020-07-07T09:12:47.821Z",
     "deletedAt": null,
     "offlineAt": null
   }
@@ -1703,8 +1707,8 @@ Authorization: string
     "desc": "string",
     "syncAt": 1585636012,
     "status": 99,
-    "createdAt": "2020-05-27T08:08:05.649Z",
-    "updatedAt": "2020-05-27T08:08:05.649Z"
+    "createdAt": "2020-07-07T09:12:47.822Z",
+    "updatedAt": "2020-07-07T09:12:47.822Z"
   }
 }
 ```
@@ -1978,8 +1982,8 @@ Authorization: string
       ],
       "status": 100,
       "release": 2,
-      "createdAt": "2020-05-27T08:08:05.650Z",
-      "updatedAt": "2020-05-27T08:08:05.650Z",
+      "createdAt": "2020-07-07T09:12:47.823Z",
+      "updatedAt": "2020-07-07T09:12:47.823Z",
       "offlineAt": null
     }
   ]
@@ -2080,8 +2084,8 @@ Authorization: string
     ],
     "status": 100,
     "release": 2,
-    "createdAt": "2020-05-27T08:08:05.651Z",
-    "updatedAt": "2020-05-27T08:08:05.651Z",
+    "createdAt": "2020-07-07T09:12:47.823Z",
+    "updatedAt": "2020-07-07T09:12:47.823Z",
     "offlineAt": null
   }
 }
@@ -2187,8 +2191,8 @@ Authorization: string
     ],
     "status": 100,
     "release": 2,
-    "createdAt": "2020-05-27T08:08:05.652Z",
-    "updatedAt": "2020-05-27T08:08:05.652Z",
+    "createdAt": "2020-07-07T09:12:47.824Z",
+    "updatedAt": "2020-07-07T09:12:47.824Z",
     "offlineAt": null
   }
 }
@@ -2488,7 +2492,7 @@ Authorization: string
   "result": [
     {
       "labelHID": "urbs",
-      "assignedAt": "2020-05-27T08:08:05.653Z",
+      "assignedAt": "2020-07-07T09:12:47.825Z",
       "release": 2,
       "user": "50c32afae8cf1439d35a87e6"
     }
@@ -2621,7 +2625,7 @@ Authorization: string
   "result": [
     {
       "labelHID": "urbs",
-      "assignedAt": "2020-05-27T08:08:05.654Z",
+      "assignedAt": "2020-07-07T09:12:47.826Z",
       "release": 2,
       "group": "50c32afae8cf1439d35a87e6",
       "kind": "organization",
@@ -2761,8 +2765,8 @@ Authorization: string
       "kind": "userPercent",
       "rule": "{\"value\": 10}",
       "release": 2,
-      "createdAt": "2020-05-27T08:08:05.655Z",
-      "updatedAt": "2020-05-27T08:08:05.655Z"
+      "createdAt": "2020-07-07T09:12:47.826Z",
+      "updatedAt": "2020-07-07T09:12:47.826Z"
     }
   ]
 }
@@ -2854,8 +2858,8 @@ Authorization: string
     "kind": "userPercent",
     "rule": "{\"value\": 10}",
     "release": 2,
-    "createdAt": "2020-05-27T08:08:05.655Z",
-    "updatedAt": "2020-05-27T08:08:05.655Z"
+    "createdAt": "2020-07-07T09:12:47.827Z",
+    "updatedAt": "2020-07-07T09:12:47.827Z"
   }
 }
 ```
@@ -2947,8 +2951,8 @@ Authorization: string
     "kind": "userPercent",
     "rule": "{\"value\": 10}",
     "release": 2,
-    "createdAt": "2020-05-27T08:08:05.656Z",
-    "updatedAt": "2020-05-27T08:08:05.656Z"
+    "createdAt": "2020-07-07T09:12:47.828Z",
+    "updatedAt": "2020-07-07T09:12:47.828Z"
   }
 }
 ```
@@ -3089,8 +3093,8 @@ Authorization: string
       "name": "urbs",
       "desc": "string",
       "status": 0,
-      "createdAt": "2020-05-27T08:08:05.657Z",
-      "updatedAt": "2020-05-27T08:08:05.657Z",
+      "createdAt": "2020-07-07T09:12:47.828Z",
+      "updatedAt": "2020-07-07T09:12:47.828Z",
       "offlineAt": null
     }
   ]
@@ -3176,8 +3180,8 @@ Authorization: string
     "name": "urbs",
     "desc": "string",
     "status": 0,
-    "createdAt": "2020-05-27T08:08:05.657Z",
-    "updatedAt": "2020-05-27T08:08:05.657Z",
+    "createdAt": "2020-07-07T09:12:47.829Z",
+    "updatedAt": "2020-07-07T09:12:47.829Z",
     "offlineAt": null
   }
 }
@@ -3260,8 +3264,8 @@ Authorization: string
     "name": "urbs",
     "desc": "string",
     "status": 0,
-    "createdAt": "2020-05-27T08:08:05.658Z",
-    "updatedAt": "2020-05-27T08:08:05.658Z",
+    "createdAt": "2020-07-07T09:12:47.829Z",
+    "updatedAt": "2020-07-07T09:12:47.829Z",
     "offlineAt": null
   }
 }
@@ -3415,8 +3419,8 @@ Authorization: string
         "true",
         "false"
       ],
-      "createdAt": "2020-05-27T08:08:05.659Z",
-      "updatedAt": "2020-05-27T08:08:05.659Z",
+      "createdAt": "2020-07-07T09:12:47.830Z",
+      "updatedAt": "2020-07-07T09:12:47.830Z",
       "offlineAt": null
     }
   ]
@@ -3518,8 +3522,8 @@ Authorization: string
         "true",
         "false"
       ],
-      "createdAt": "2020-05-27T08:08:05.660Z",
-      "updatedAt": "2020-05-27T08:08:05.660Z",
+      "createdAt": "2020-07-07T09:12:47.831Z",
+      "updatedAt": "2020-07-07T09:12:47.831Z",
       "offlineAt": null
     }
   ]
@@ -3634,8 +3638,8 @@ Authorization: string
         "true",
         "false"
       ],
-      "createdAt": "2020-05-27T08:08:05.660Z",
-      "updatedAt": "2020-05-27T08:08:05.660Z",
+      "createdAt": "2020-07-07T09:12:47.832Z",
+      "updatedAt": "2020-07-07T09:12:47.832Z",
       "offlineAt": null
     }
   ]
@@ -3732,8 +3736,8 @@ Authorization: string
       "true",
       "false"
     ],
-    "createdAt": "2020-05-27T08:08:05.661Z",
-    "updatedAt": "2020-05-27T08:08:05.661Z",
+    "createdAt": "2020-07-07T09:12:47.832Z",
+    "updatedAt": "2020-07-07T09:12:47.832Z",
     "offlineAt": null
   }
 }
@@ -3845,8 +3849,8 @@ Authorization: string
       "true",
       "false"
     ],
-    "createdAt": "2020-05-27T08:08:05.662Z",
-    "updatedAt": "2020-05-27T08:08:05.662Z",
+    "createdAt": "2020-07-07T09:12:47.833Z",
+    "updatedAt": "2020-07-07T09:12:47.833Z",
     "offlineAt": null
   }
 }
@@ -4159,8 +4163,8 @@ Authorization: string
       "rule": "{\"value\": 10}",
       "value": "x",
       "release": 2,
-      "createdAt": "2020-05-27T08:08:05.663Z",
-      "updatedAt": "2020-05-27T08:08:05.663Z"
+      "createdAt": "2020-07-07T09:12:47.835Z",
+      "updatedAt": "2020-07-07T09:12:47.835Z"
     }
   ]
 }
@@ -4359,7 +4363,7 @@ Authorization: string
   "result": [
     {
       "settingHID": "urbs",
-      "assignedAt": "2020-05-27T08:08:05.665Z",
+      "assignedAt": "2020-07-07T09:12:47.837Z",
       "release": 2,
       "group": "50c32afae8cf1439d35a87e6",
       "kind": "organization",
@@ -4810,7 +4814,7 @@ HeaderAuthorizationJWT
   "name": "urbs-setting",
   "version": "v1.2.0",
   "gitSHA1": "cd7e82a",
-  "buildTime": "2020-05-27T08:08:05.668Z"
+  "buildTime": "2020-07-07T09:12:47.840Z"
 }
 
 ```
@@ -4871,8 +4875,8 @@ HeaderAuthorizationJWT
   ],
   "status": 100,
   "release": 2,
-  "createdAt": "2020-05-27T08:08:05.668Z",
-  "updatedAt": "2020-05-27T08:08:05.668Z",
+  "createdAt": "2020-07-07T09:12:47.840Z",
+  "updatedAt": "2020-07-07T09:12:47.840Z",
   "offlineAt": null
 }
 
@@ -4905,7 +4909,7 @@ HeaderAuthorizationJWT
   "name": "task-share",
   "desc": "string",
   "release": 1,
-  "assignedAt": "2020-05-27T08:08:05.668Z"
+  "assignedAt": "2020-07-07T09:12:47.840Z"
 }
 
 ```
@@ -4935,7 +4939,7 @@ HeaderAuthorizationJWT
   "value": "disable",
   "lastValue": "",
   "release": 1,
-  "assignedAt": "2020-05-27T08:08:05.669Z"
+  "assignedAt": "2020-07-07T09:12:47.841Z"
 }
 
 ```
@@ -4963,7 +4967,7 @@ HeaderAuthorizationJWT
   "uid": "5e82d747fe02a50021d339f3",
   "labels": "{\"teambition\":[{\"l\":\"dev\"}]}",
   "activeAt": 1585636012,
-  "createdAt": "2020-05-27T08:08:05.669Z"
+  "createdAt": "2020-07-07T09:12:47.841Z"
 }
 
 ```
@@ -4988,8 +4992,8 @@ HeaderAuthorizationJWT
   "desc": "string",
   "syncAt": 1585636012,
   "status": 99,
-  "createdAt": "2020-05-27T08:08:05.669Z",
-  "updatedAt": "2020-05-27T08:08:05.669Z"
+  "createdAt": "2020-07-07T09:12:47.841Z",
+  "updatedAt": "2020-07-07T09:12:47.841Z"
 }
 
 ```
@@ -5014,7 +5018,7 @@ HeaderAuthorizationJWT
 {
   "user": "5e82d747fe02a50021d339f3",
   "syncAt": 1585636012,
-  "createdAt": "2020-05-27T08:08:05.669Z"
+  "createdAt": "2020-07-07T09:12:47.841Z"
 }
 
 ```
@@ -5036,8 +5040,8 @@ HeaderAuthorizationJWT
   "name": "urbs",
   "desc": "string",
   "status": 0,
-  "createdAt": "2020-05-27T08:08:05.669Z",
-  "updatedAt": "2020-05-27T08:08:05.669Z",
+  "createdAt": "2020-07-07T09:12:47.841Z",
+  "updatedAt": "2020-07-07T09:12:47.841Z",
   "deletedAt": null,
   "offlineAt": null
 }
@@ -5090,8 +5094,8 @@ HeaderAuthorizationJWT
   "name": "urbs",
   "desc": "string",
   "status": 0,
-  "createdAt": "2020-05-27T08:08:05.669Z",
-  "updatedAt": "2020-05-27T08:08:05.669Z",
+  "createdAt": "2020-07-07T09:12:47.842Z",
+  "updatedAt": "2020-07-07T09:12:47.842Z",
   "offlineAt": null
 }
 
@@ -5132,8 +5136,8 @@ HeaderAuthorizationJWT
     "true",
     "false"
   ],
-  "createdAt": "2020-05-27T08:08:05.669Z",
-  "updatedAt": "2020-05-27T08:08:05.669Z",
+  "createdAt": "2020-07-07T09:12:47.842Z",
+  "updatedAt": "2020-07-07T09:12:47.842Z",
   "offlineAt": null
 }
 
@@ -5190,7 +5194,7 @@ HeaderAuthorizationJWT
 ```json
 {
   "labelHID": "urbs",
-  "assignedAt": "2020-05-27T08:08:05.670Z",
+  "assignedAt": "2020-07-07T09:12:47.842Z",
   "release": 2,
   "group": "50c32afae8cf1439d35a87e6",
   "kind": "organization",
@@ -5219,7 +5223,7 @@ HeaderAuthorizationJWT
 ```json
 {
   "labelHID": "urbs",
-  "assignedAt": "2020-05-27T08:08:05.670Z",
+  "assignedAt": "2020-07-07T09:12:47.842Z",
   "release": 2,
   "user": "50c32afae8cf1439d35a87e6"
 }
@@ -5246,8 +5250,8 @@ HeaderAuthorizationJWT
   "kind": "userPercent",
   "rule": "{\"value\": 10}",
   "release": 2,
-  "createdAt": "2020-05-27T08:08:05.670Z",
-  "updatedAt": "2020-05-27T08:08:05.670Z"
+  "createdAt": "2020-07-07T09:12:47.843Z",
+  "updatedAt": "2020-07-07T09:12:47.843Z"
 }
 
 ```
@@ -5300,7 +5304,7 @@ HeaderAuthorizationJWT
 ```json
 {
   "settingHID": "urbs",
-  "assignedAt": "2020-05-27T08:08:05.671Z",
+  "assignedAt": "2020-07-07T09:12:47.843Z",
   "release": 2,
   "group": "50c32afae8cf1439d35a87e6",
   "kind": "organization",
@@ -5338,8 +5342,8 @@ HeaderAuthorizationJWT
   "rule": "{\"value\": 10}",
   "value": "x",
   "release": 2,
-  "createdAt": "2020-05-27T08:08:05.671Z",
-  "updatedAt": "2020-05-27T08:08:05.671Z"
+  "createdAt": "2020-07-07T09:12:47.843Z",
+  "updatedAt": "2020-07-07T09:12:47.843Z"
 }
 
 ```

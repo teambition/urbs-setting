@@ -764,6 +764,27 @@ func TestLabelAPIs(t *testing.T) {
 			assert.Equal(label.Name, data.Label)
 		})
 
+		t.Run(`"GET /users/:uid/labels:cache" should support anonymous user`, func(t *testing.T) {
+			assert := assert.New(t)
+			res, err := request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, "anon-"+user.UID, product.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.CacheLabelsInfoRes{}
+			_, err = res.JSON(&json)
+
+			assert.Nil(err)
+			assert.Equal(1, len(json.Result))
+
+			data := json.Result[0]
+			assert.Equal(label.Name, data.Label)
+		})
+
 		t.Run(`"GET /v1/products/:product/labels/:label/rules" should work`, func(t *testing.T) {
 			assert := assert.New(t)
 			res, err := request.Get(fmt.Sprintf("%s/v1/products/%s/labels/%s/rules", tt.Host, product.Name, label.Name)).
