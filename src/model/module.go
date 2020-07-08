@@ -64,13 +64,13 @@ func (m *Module) AcquireID(ctx context.Context, productID int64, moduleName stri
 func (m *Module) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([]schema.Module, int, error) {
 	modules := make([]schema.Module, 0)
 	cursor := pg.TokenToID()
-	sdc := m.DB.Select().
+	sdc := m.RdDB.Select().
 		From(goqu.T(schema.TableModule)).
 		Where(
 			goqu.C("product_id").Eq(productID),
 			goqu.C("offline_at").IsNull())
 
-	sd := m.DB.Select().
+	sd := m.RdDB.Select().
 		From(goqu.T(schema.TableModule)).
 		Where(
 			goqu.C("id").Lte(cursor),

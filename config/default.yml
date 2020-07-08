@@ -11,6 +11,14 @@ mysql:
   parameters: loc=UTC&readTimeout=10s&writeTimeout=10s&timeout=10s&multiStatements=false
   max_idle_conns: 8
   max_open_conns: 64
+mysql_read:
+  host: localhost:3306
+  user: root
+  password: password
+  database: urbs
+  parameters: loc=UTC&readTimeout=10s&writeTimeout=10s&timeout=10s&multiStatements=false
+  max_idle_conns: 8
+  max_open_conns: 64
 channels:
   - stable
   - beta

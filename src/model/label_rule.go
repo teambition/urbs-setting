@@ -21,7 +21,7 @@ type LabelRule struct {
 func (m *LabelRule) ApplyRules(ctx context.Context, userID int64, excludeLabels []int64) (int, error) {
 	rules := []schema.LabelRule{}
 	// 不把 excludeLabels 放入查询条件，从而尽量复用查询缓存
-	sd := m.DB.From(schema.TableLabelRule).
+	sd := m.RdDB.From(schema.TableLabelRule).
 		Where(goqu.C("kind").Eq("userPercent")).Order(goqu.C("updated_at").Desc()).Limit(200)
 	err := sd.Executor().ScanStructsContext(ctx, &rules)
 	if err != nil {
@@ -66,7 +66,7 @@ func (m *LabelRule) ApplyRules(ctx context.Context, userID int64, excludeLabels 
 // ApplyRulesToAnonymous ...
 func (m *LabelRule) ApplyRulesToAnonymous(ctx context.Context, anonymousID string, productID int64) ([]schema.UserCacheLabel, error) {
 	rules := []schema.LabelRule{}
-	sd := m.DB.From(schema.TableLabelRule).
+	sd := m.RdDB.From(schema.TableLabelRule).
 		Where(
 			goqu.C("kind").Eq("userPercent"),
 			goqu.C("product_id").Eq(productID)).
@@ -88,7 +88,7 @@ func (m *LabelRule) ApplyRulesToAnonymous(ctx context.Context, anonymousID strin
 
 	data := make([]schema.UserCacheLabel, 0)
 	if len(labelIDs) > 0 {
-		sd := m.DB.Select(
+		sd := m.RdDB.Select(
 			goqu.I("t1.id"),
 			goqu.I("t1.name"),
 			goqu.I("t1.channels"),
@@ -143,7 +143,7 @@ func (m *LabelRule) Acquire(ctx context.Context, labelRuleID int64) (*schema.Lab
 // Find ...
 func (m *LabelRule) Find(ctx context.Context, productID, labelID int64) ([]schema.LabelRule, error) {
 	labelRules := make([]schema.LabelRule, 0)
-	sd := m.DB.From(schema.TableLabelRule).
+	sd := m.RdDB.From(schema.TableLabelRule).
 		Where(goqu.C("product_id").Eq(productID), goqu.C("label_id").Eq(labelID)).
 		Order(goqu.C("id").Desc()).Limit(10)
 

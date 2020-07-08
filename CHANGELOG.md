@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file starting fro
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 -----
+## [1.7.0] - 2020-07-08
+
+**Change:**
+- Support primary and secondary mysql connections.
+
 ## [1.6.0] - 2020-07-07
 
 **Change:**

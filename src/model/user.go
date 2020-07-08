@@ -61,8 +61,8 @@ func (m *User) AcquireID(ctx context.Context, uid string) (int64, error) {
 func (m *User) Find(ctx context.Context, pg tpl.Pagination) ([]schema.User, int, error) {
 	users := make([]schema.User, 0)
 	cursor := pg.TokenToID()
-	sdc := m.DB.From(schema.TableUser)
-	sd := m.DB.From(schema.TableUser).Where(goqu.C("id").Lte(cursor))
+	sdc := m.RdDB.From(schema.TableUser)
+	sd := m.RdDB.From(schema.TableUser).Where(goqu.C("id").Lte(cursor))
 
 	var total int64
 	var err error
@@ -210,7 +210,7 @@ func (m *User) FindSettingsUnionAll(ctx context.Context, groupIDs []int64, userI
 	set := make(map[int64]struct{})
 	size := pg.PageSize + 1
 
-	s := m.DB.Select(
+	s := m.RdDB.Select(
 		goqu.I("t1.rls"),
 		goqu.I("t1.updated_at").As("assigned_at"),
 		goqu.I("t1.value"),
@@ -344,7 +344,7 @@ func (m *User) FindLabels(ctx context.Context, userID int64, pg tpl.Pagination) 
 	data := []tpl.MyLabel{}
 	cursor := pg.TokenToID()
 
-	sdc := m.DB.Select().
+	sdc := m.RdDB.Select().
 		From(
 			goqu.T(schema.TableUserLabel).As("t1"),
 			goqu.T(schema.TableLabel).As("t2"),
@@ -353,7 +353,7 @@ func (m *User) FindLabels(ctx context.Context, userID int64, pg tpl.Pagination) 
 			goqu.I("t1.user_id").Eq(userID),
 			goqu.I("t1.label_id").Eq(goqu.I("t2.id")))
 
-	sd := m.DB.Select(
+	sd := m.RdDB.Select(
 		goqu.I("t1.rls"),
 		goqu.I("t1.created_at").As("assigned_at"),
 		goqu.I("t2.id"),
@@ -407,7 +407,7 @@ func (m *User) FindLabels(ctx context.Context, userID int64, pg tpl.Pagination) 
 func (m *User) FindSettings(ctx context.Context, userID, productID, moduleID, settingID int64, pg tpl.Pagination, channel, client string) ([]tpl.MySetting, int, error) {
 	data := []tpl.MySetting{}
 	cursor := pg.TokenToID()
-	sdc := m.DB.Select().
+	sdc := m.RdDB.Select().
 		From(
 			goqu.T(schema.TableUserSetting).As("t1"),
 			goqu.T(schema.TableSetting).As("t2"),
@@ -415,7 +415,7 @@ func (m *User) FindSettings(ctx context.Context, userID, productID, moduleID, se
 			goqu.T(schema.TableProduct).As("t4")).
 		Where(goqu.I("t1.user_id").Eq(userID))
 
-	sd := m.DB.Select(
+	sd := m.RdDB.Select(
 		goqu.I("t1.rls"),
 		goqu.I("t1.updated_at").As("assigned_at"),
 		goqu.I("t1.value"),

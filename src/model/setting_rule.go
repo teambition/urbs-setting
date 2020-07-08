@@ -18,7 +18,7 @@ type SettingRule struct {
 // ApplyRules ...
 func (m *SettingRule) ApplyRules(ctx context.Context, productID, userID int64) error {
 	rules := []schema.SettingRule{}
-	sd := m.DB.From(schema.TableSettingRule).
+	sd := m.RdDB.From(schema.TableSettingRule).
 		Where(goqu.C("product_id").Eq(productID), goqu.C("kind").Eq("userPercent")).
 		Order(goqu.C("updated_at").Desc()).Limit(1000)
 	err := sd.Executor().ScanStructsContext(ctx, &rules)
@@ -73,7 +73,7 @@ func (m *SettingRule) ApplyRules(ctx context.Context, productID, userID int64) e
 // ApplyRulesToAnonymous ...
 func (m *SettingRule) ApplyRulesToAnonymous(ctx context.Context, anonymousID string, productID int64, channel, client string) ([]tpl.MySetting, error) {
 	rules := []schema.SettingRule{}
-	sd := m.DB.From(schema.TableSettingRule).
+	sd := m.RdDB.From(schema.TableSettingRule).
 		Where(goqu.C("product_id").Eq(productID), goqu.C("kind").Eq("userPercent")).
 		Order(goqu.C("updated_at").Desc()).Limit(1000)
 	err := sd.Executor().ScanStructsContext(ctx, &rules)
@@ -93,7 +93,7 @@ func (m *SettingRule) ApplyRulesToAnonymous(ctx context.Context, anonymousID str
 
 	data := make([]tpl.MySetting, 0)
 	if len(ids) > 0 {
-		sd := m.DB.Select(
+		sd := m.RdDB.Select(
 			goqu.I("t1.rls"),
 			goqu.I("t1.updated_at").As("assigned_at"),
 			goqu.I("t1.value"),
@@ -160,7 +160,7 @@ func (m *SettingRule) Acquire(ctx context.Context, settingRuleID int64) (*schema
 // Find ...
 func (m *SettingRule) Find(ctx context.Context, productID, settingID int64) ([]schema.SettingRule, error) {
 	settingRules := make([]schema.SettingRule, 0)
-	sd := m.DB.From(schema.TableSettingRule).
+	sd := m.RdDB.From(schema.TableSettingRule).
 		Where(goqu.C("product_id").Eq(productID), goqu.C("setting_id").Eq(settingID)).
 		Order(goqu.C("id").Desc()).Limit(10)
 

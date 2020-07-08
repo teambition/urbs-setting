@@ -70,13 +70,13 @@ func (m *Product) AcquireID(ctx context.Context, productName string) (int64, err
 func (m *Product) Find(ctx context.Context, pg tpl.Pagination) ([]schema.Product, int, error) {
 	products := make([]schema.Product, 0)
 	cursor := pg.TokenToID()
-	sdc := m.DB.Select().
+	sdc := m.RdDB.Select().
 		From(goqu.T(schema.TableProduct)).
 		Where(
 			goqu.C("deleted_at").IsNull(),
 			goqu.C("offline_at").IsNull())
 
-	sd := m.DB.Select().
+	sd := m.RdDB.Select().
 		From(goqu.T(schema.TableProduct)).
 		Where(
 			goqu.C("id").Lte(cursor),
@@ -161,7 +161,7 @@ func (m *Product) Delete(ctx context.Context, productID int64) error {
 // Statistics 返回产品的统计数据
 func (m *Product) Statistics(ctx context.Context, productID int64) (*tpl.ProductStatistics, error) {
 	res := &tpl.ProductStatistics{}
-	sd := m.DB.Select(
+	sd := m.RdDB.Select(
 		goqu.COUNT("id").As("labels"),
 		goqu.L("IFNULL(SUM(`status`), 0)").As("status"),
 		goqu.L("IFNULL(SUM(`rls`), 0)").As("release")).
@@ -175,7 +175,7 @@ func (m *Product) Statistics(ctx context.Context, productID int64) (*tpl.Product
 	}
 
 	moduleIDs := make([]int64, 0)
-	sd = m.DB.Select("id").
+	sd = m.RdDB.Select("id").
 		From(goqu.T(schema.TableModule)).
 		Where(
 			goqu.C("product_id").Eq(productID),
@@ -186,7 +186,7 @@ func (m *Product) Statistics(ctx context.Context, productID int64) (*tpl.Product
 
 	if len(moduleIDs) > 0 {
 		res.Modules = int64(len(moduleIDs))
-		sd = m.DB.Select(
+		sd = m.RdDB.Select(
 			goqu.COUNT("id").As("settings"),
 			goqu.L("IFNULL(SUM(`status`), 0)").As("status"),
 			goqu.L("IFNULL(SUM(`rls`), 0)").As("release")).

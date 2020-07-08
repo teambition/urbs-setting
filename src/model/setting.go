@@ -79,7 +79,7 @@ func (m *Setting) Find(ctx context.Context, productID, moduleID int64, pg tpl.Pa
 	data := make([]schema.Setting, 0)
 	cursor := pg.TokenToID()
 
-	sdc := m.DB.Select().
+	sdc := m.RdDB.Select().
 		From(
 			goqu.T(schema.TableSetting).As("t1"),
 			goqu.T(schema.TableModule).As("t2")).
@@ -87,7 +87,7 @@ func (m *Setting) Find(ctx context.Context, productID, moduleID int64, pg tpl.Pa
 			goqu.I("t2.product_id").Eq(productID),
 			goqu.I("t2.offline_at").IsNull())
 
-	sd := m.DB.Select(
+	sd := m.RdDB.Select(
 		goqu.I("t1.id"),
 		goqu.I("t1.created_at"),
 		goqu.I("t1.updated_at"),
@@ -373,7 +373,7 @@ func (m *Setting) ListUsers(ctx context.Context, settingID int64, pg tpl.Paginat
 	data := []tpl.SettingUserInfo{}
 	cursor := pg.TokenToID()
 
-	sdc := m.DB.Select().
+	sdc := m.RdDB.Select().
 		From(
 			goqu.T(schema.TableUserSetting).As("t1"),
 			goqu.T(schema.TableUser).As("t2")).
@@ -381,7 +381,7 @@ func (m *Setting) ListUsers(ctx context.Context, settingID int64, pg tpl.Paginat
 			goqu.I("t1.setting_id").Eq(settingID),
 			goqu.I("t1.user_id").Eq(goqu.I("t2.id")))
 
-	sd := m.DB.Select(
+	sd := m.RdDB.Select(
 		goqu.I("t1.id"),
 		goqu.I("t1.updated_at").As("assigned_at"),
 		goqu.I("t1.rls"),
@@ -433,7 +433,7 @@ func (m *Setting) ListUsers(ctx context.Context, settingID int64, pg tpl.Paginat
 func (m *Setting) ListGroups(ctx context.Context, settingID int64, pg tpl.Pagination) ([]tpl.SettingGroupInfo, int, error) {
 	data := []tpl.SettingGroupInfo{}
 	cursor := pg.TokenToID()
-	sdc := m.DB.Select().
+	sdc := m.RdDB.Select().
 		From(
 			goqu.T(schema.TableGroupSetting).As("t1"),
 			goqu.T(schema.TableGroup).As("t2")).
@@ -441,7 +441,7 @@ func (m *Setting) ListGroups(ctx context.Context, settingID int64, pg tpl.Pagina
 			goqu.I("t1.setting_id").Eq(settingID),
 			goqu.I("t1.group_id").Eq(goqu.I("t2.id")))
 
-	sd := m.DB.Select(
+	sd := m.RdDB.Select(
 		goqu.I("t1.id"),
 		goqu.I("t1.updated_at").As("assigned_at"),
 		goqu.I("t1.rls"),

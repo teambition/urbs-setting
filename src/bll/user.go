@@ -48,12 +48,13 @@ func (b *User) ListCachedLabels(ctx context.Context, uid, product string) *tpl.C
 		return res
 	}
 
-	productID, err := b.ms.Product.AcquireID(ctx, product)
+	readCtx := context.WithValue(ctx, model.ReadDB, true)
+	productID, err := b.ms.Product.AcquireID(readCtx, product)
 	if err != nil {
 		return res
 	}
 
-	user, err := b.ms.User.Acquire(ctx, uid)
+	user, err := b.ms.User.Acquire(readCtx, uid)
 	if err != nil {
 		if strings.HasPrefix(uid, "anon-") {
 			if labels, err := b.ms.LabelRule.ApplyRulesToAnonymous(ctx, uid, productID); err == nil {
@@ -115,7 +116,8 @@ func (b *User) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (*
 
 // ListSettings ...
 func (b *User) ListSettings(ctx context.Context, req tpl.MySettingsQueryURL) (*tpl.MySettingsRes, error) {
-	userID, err := b.ms.User.AcquireID(ctx, req.UID)
+	readCtx := context.WithValue(ctx, model.ReadDB, true)
+	userID, err := b.ms.User.AcquireID(readCtx, req.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -125,20 +127,20 @@ func (b *User) ListSettings(ctx context.Context, req tpl.MySettingsQueryURL) (*t
 	var settingID int64
 
 	if req.Product != "" {
-		productID, err = b.ms.Product.AcquireID(ctx, req.Product)
+		productID, err = b.ms.Product.AcquireID(readCtx, req.Product)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if productID > 0 && req.Module != "" {
-		moduleID, err = b.ms.Module.AcquireID(ctx, productID, req.Module)
+		moduleID, err = b.ms.Module.AcquireID(readCtx, productID, req.Module)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if moduleID > 0 && req.Setting != "" {
-		settingID, err = b.ms.Setting.AcquireID(ctx, moduleID, req.Setting)
+		settingID, err = b.ms.Setting.AcquireID(readCtx, moduleID, req.Setting)
 		if err != nil {
 			return nil, err
 		}
@@ -162,16 +164,17 @@ func (b *User) ListSettings(ctx context.Context, req tpl.MySettingsQueryURL) (*t
 // ListSettingsUnionAll ...
 func (b *User) ListSettingsUnionAll(ctx context.Context, req tpl.MySettingsQueryURL) (*tpl.MySettingsRes, error) {
 	res := &tpl.MySettingsRes{Result: []tpl.MySetting{}}
+	readCtx := context.WithValue(ctx, model.ReadDB, true)
 
 	var productID int64
 	var moduleID int64
 	var settingID int64
-	productID, err := b.ms.Product.AcquireID(ctx, req.Product)
+	productID, err := b.ms.Product.AcquireID(readCtx, req.Product)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := b.ms.User.Acquire(ctx, req.UID)
+	user, err := b.ms.User.Acquire(readCtx, req.UID)
 	if err != nil {
 		if strings.HasPrefix(req.UID, "anon-") {
 			if settings, err := b.ms.SettingRule.ApplyRulesToAnonymous(ctx, req.UID, productID, req.Channel, req.Client); err == nil {
@@ -185,25 +188,25 @@ func (b *User) ListSettingsUnionAll(ctx context.Context, req tpl.MySettingsQuery
 	}
 
 	if req.Module != "" {
-		moduleID, err = b.ms.Module.AcquireID(ctx, productID, req.Module)
+		moduleID, err = b.ms.Module.AcquireID(readCtx, productID, req.Module)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if req.Setting != "" {
-		settingID, err = b.ms.Setting.AcquireID(ctx, moduleID, req.Setting)
+		settingID, err = b.ms.Setting.AcquireID(readCtx, moduleID, req.Setting)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	groupIDs, err := b.ms.Group.FindIDsByUser(ctx, user.ID)
+	groupIDs, err := b.ms.Group.FindIDsByUser(readCtx, user.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	pg := req.Pagination
-	settings, err := b.ms.User.FindSettingsUnionAll(ctx, groupIDs, user.ID, productID, moduleID, settingID, pg, req.Channel, req.Client)
+	settings, err := b.ms.User.FindSettingsUnionAll(readCtx, groupIDs, user.ID, productID, moduleID, settingID, pg, req.Channel, req.Client)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +229,7 @@ func (b *User) ListSettingsUnionAll(ctx context.Context, req tpl.MySettingsQuery
 
 // CheckExists ...
 func (b *User) CheckExists(ctx context.Context, uid string) bool {
-	user, _ := b.ms.User.FindByUID(ctx, uid, "id")
+	user, _ := b.ms.User.FindByUID(context.WithValue(ctx, model.ReadDB, true), uid, "id")
 	return user != nil
 }
 

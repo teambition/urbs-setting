@@ -17,10 +17,16 @@ func init() {
 	util.DigProvide(NewModels)
 }
 
+type dbMode string
+
+// ReadDB ...
+const ReadDB dbMode = "ReadDB"
+
 // Model ...
 type Model struct {
-	SQL *service.SQL
-	DB  *goqu.Database
+	SQL  *service.SQL
+	DB   *goqu.Database
+	RdDB *goqu.Database
 }
 
 // Models ...
@@ -40,7 +46,7 @@ type Models struct {
 
 // NewModels ...
 func NewModels(sql *service.SQL) *Models {
-	m := &Model{SQL: sql, DB: sql.DB}
+	m := &Model{SQL: sql, DB: sql.DB, RdDB: sql.RdDB}
 	return &Models{
 		Model:       m,
 		Healthz:     &Healthz{m},
@@ -109,7 +115,12 @@ func (m *Model) findOneByID(ctx context.Context, table string, id int64, i inter
 		return fmt.Errorf("invalid id %d or table %s for findOneByID", id, table)
 	}
 
-	sd := m.DB.From(table).Where(goqu.C("id").Eq(id)).Order(goqu.C("id").Asc()).Limit(1)
+	db := m.DB
+	if ctx.Value(ReadDB) != nil {
+		db = m.RdDB
+	}
+	sd := db.From(table).Where(goqu.C("id").Eq(id)).Order(goqu.C("id").Asc()).Limit(1)
+
 	ok, err := sd.Executor().ScanStructContext(ctx, i)
 	if err != nil {
 		return err
@@ -125,7 +136,11 @@ func (m *Model) findOneByCols(ctx context.Context, table string, cls goqu.Ex, se
 		return false, fmt.Errorf("invalid clause %v for findOneByCols", cls)
 	}
 
-	sd := m.DB.From(table).Where(cls).Order(goqu.C("id").Asc()).Limit(1)
+	db := m.DB
+	if ctx.Value(ReadDB) != nil {
+		db = m.RdDB
+	}
+	sd := db.From(table).Where(cls).Order(goqu.C("id").Asc()).Limit(1)
 	if selectStr != "" {
 		sd = sd.Select(goqu.L(selectStr))
 	}

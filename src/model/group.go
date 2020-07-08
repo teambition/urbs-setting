@@ -58,8 +58,8 @@ func (m *Group) AcquireID(ctx context.Context, uid string) (int64, error) {
 func (m *Group) Find(ctx context.Context, kind string, pg tpl.Pagination) ([]schema.Group, int, error) {
 	groups := make([]schema.Group, 0)
 	cursor := pg.TokenToID()
-	sdc := m.DB.From(schema.TableGroup)
-	sd := m.DB.From(schema.TableGroup).Where(goqu.C("id").Lte(cursor))
+	sdc := m.RdDB.From(schema.TableGroup)
+	sd := m.RdDB.From(schema.TableGroup).Where(goqu.C("id").Lte(cursor))
 	if kind != "" {
 		sdc = sdc.Where(goqu.C("kind").Eq(kind))
 		sd = sd.Where(goqu.C("kind").Eq(kind))
@@ -86,7 +86,7 @@ func (m *Group) FindLabels(ctx context.Context, groupID int64, pg tpl.Pagination
 	data := make([]tpl.MyLabel, 0)
 	cursor := pg.TokenToID()
 
-	sdc := m.DB.Select().
+	sdc := m.RdDB.Select().
 		From(
 			goqu.T(schema.TableGroupLabel).As("t1"),
 			goqu.T(schema.TableLabel).As("t2"),
@@ -95,7 +95,7 @@ func (m *Group) FindLabels(ctx context.Context, groupID int64, pg tpl.Pagination
 			goqu.I("t1.group_id").Eq(groupID),
 			goqu.I("t1.label_id").Eq(goqu.I("t2.id")))
 
-	sd := m.DB.Select(
+	sd := m.RdDB.Select(
 		goqu.I("t1.rls"),
 		goqu.I("t1.created_at").As("assigned_at"),
 		goqu.I("t2.id"),
@@ -150,7 +150,7 @@ func (m *Group) FindSettings(ctx context.Context, groupID, productID, moduleID, 
 	data := []tpl.MySetting{}
 	cursor := pg.TokenToID()
 
-	sdc := m.DB.Select().
+	sdc := m.RdDB.Select().
 		From(
 			goqu.T(schema.TableGroupSetting).As("t1"),
 			goqu.T(schema.TableSetting).As("t2"),
@@ -158,7 +158,7 @@ func (m *Group) FindSettings(ctx context.Context, groupID, productID, moduleID, 
 			goqu.T(schema.TableProduct).As("t4")).
 		Where(goqu.I("t1.group_id").Eq(groupID))
 
-	sd := m.DB.Select(
+	sd := m.RdDB.Select(
 		goqu.I("t1.rls"),
 		goqu.I("t1.updated_at").As("assigned_at"),
 		goqu.I("t1.value"),
@@ -329,7 +329,7 @@ func (m *Group) FindMembers(ctx context.Context, groupID int64, pg tpl.Paginatio
 	data := []tpl.GroupMember{}
 	cursor := pg.TokenToID()
 
-	sdc := m.DB.Select().
+	sdc := m.RdDB.Select().
 		From(
 			goqu.T(schema.TableUserGroup).As("t1"),
 			goqu.T(schema.TableUser).As("t2")).
@@ -337,7 +337,7 @@ func (m *Group) FindMembers(ctx context.Context, groupID int64, pg tpl.Paginatio
 			goqu.I("t1.group_id").Eq(groupID),
 			goqu.I("t1.user_id").Eq(goqu.I("t2.id")))
 
-	sd := m.DB.Select(
+	sd := m.RdDB.Select(
 		goqu.I("t1.id"),
 		goqu.I("t2.uid"),
 		goqu.I("t1.created_at"),
@@ -385,7 +385,7 @@ func (m *Group) FindMembers(ctx context.Context, groupID int64, pg tpl.Paginatio
 // FindIDsByUser 根据 userID 查找加入的 Group ID 数组
 func (m *Group) FindIDsByUser(ctx context.Context, userID int64) ([]int64, error) {
 	ids := make([]int64, 0)
-	sd := m.DB.From(schema.TableUserGroup).Where(goqu.C("user_id").Eq(userID)).Limit(1000)
+	sd := m.RdDB.From(schema.TableUserGroup).Where(goqu.C("user_id").Eq(userID)).Limit(1000)
 	if err := sd.PluckContext(ctx, &ids, "group_id"); err != nil {
 		return nil, err
 	}

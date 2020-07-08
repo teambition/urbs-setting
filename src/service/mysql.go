@@ -23,8 +23,9 @@ func init() {
 
 // SQL ...
 type SQL struct {
-	db *sql.DB
-	DB *goqu.Database
+	db   *sql.DB
+	DB   *goqu.Database
+	RdDB *goqu.Database
 }
 
 // DBStats ...
@@ -34,8 +35,21 @@ func (s *SQL) DBStats() sql.DBStats {
 
 // NewDB ...
 func NewDB() *SQL {
-	cfg := conf.Config.MySQL
+	db := connectDB(conf.Config.MySQL)
+	rdDB := db
+	if conf.Config.MySQLRd.Host != "" {
+		rdDB = connectDB(conf.Config.MySQLRd)
+	}
 
+	dialect := goqu.Dialect("mysql")
+	return &SQL{
+		db:   db,
+		DB:   dialect.DB(db),
+		RdDB: dialect.DB(rdDB),
+	}
+}
+
+func connectDB(cfg conf.SQL) *sql.DB {
 	if cfg.MaxIdleConns <= 0 {
 		cfg.MaxIdleConns = 8
 	}
@@ -75,12 +89,7 @@ func NewDB() *SQL {
 	db.SetMaxOpenConns(cfg.MaxOpenConns)
 	// SetConnMaxLifetiment 设置连接的最大可复用时间。
 	// db.SetConnMaxLifetime(time.Hour)
-
-	dialect := goqu.Dialect("mysql")
-	return &SQL{
-		db: db,
-		DB: dialect.DB(db),
-	}
+	return db
 }
 
 // DeResult ...

@@ -77,13 +77,13 @@ func (m *Label) Find(ctx context.Context, productID int64, pg tpl.Pagination) ([
 	labels := make([]schema.Label, 0)
 	cursor := pg.TokenToID()
 
-	sdc := m.DB.Select().
+	sdc := m.RdDB.Select().
 		From(goqu.T(schema.TableLabel)).
 		Where(
 			goqu.C("product_id").Eq(productID),
 			goqu.C("offline_at").IsNull())
 
-	sd := m.DB.Select().
+	sd := m.RdDB.Select().
 		From(goqu.T(schema.TableLabel)).
 		Where(
 			goqu.C("product_id").Eq(productID),
@@ -304,7 +304,7 @@ func (m *Label) ListUsers(ctx context.Context, labelID int64, pg tpl.Pagination)
 	data := []tpl.LabelUserInfo{}
 	cursor := pg.TokenToID()
 
-	sdc := m.DB.Select().
+	sdc := m.RdDB.Select().
 		From(
 			goqu.T(schema.TableUserLabel).As("t1"),
 			goqu.T(schema.TableUser).As("t2")).
@@ -312,7 +312,7 @@ func (m *Label) ListUsers(ctx context.Context, labelID int64, pg tpl.Pagination)
 			goqu.I("t1.label_id").Eq(labelID),
 			goqu.I("t1.user_id").Eq(goqu.I("t2.id")))
 
-	sd := m.DB.Select(
+	sd := m.RdDB.Select(
 		goqu.I("t1.id"),
 		goqu.I("t1.created_at").As("assigned_at"),
 		goqu.I("t1.rls"),
@@ -362,7 +362,7 @@ func (m *Label) ListUsers(ctx context.Context, labelID int64, pg tpl.Pagination)
 func (m *Label) ListGroups(ctx context.Context, labelID int64, pg tpl.Pagination) ([]tpl.LabelGroupInfo, int, error) {
 	data := []tpl.LabelGroupInfo{}
 	cursor := pg.TokenToID()
-	sdc := m.DB.Select().
+	sdc := m.RdDB.Select().
 		From(
 			goqu.T(schema.TableGroupLabel).As("t1"),
 			goqu.T(schema.TableGroup).As("t2")).
@@ -370,7 +370,7 @@ func (m *Label) ListGroups(ctx context.Context, labelID int64, pg tpl.Pagination
 			goqu.I("t1.label_id").Eq(labelID),
 			goqu.I("t1.group_id").Eq(goqu.I("t2.id")))
 
-	sd := m.DB.Select(
+	sd := m.RdDB.Select(
 		goqu.I("t1.id"),
 		goqu.I("t1.created_at").As("assigned_at"),
 		goqu.I("t1.rls"),

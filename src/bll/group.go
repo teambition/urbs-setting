@@ -12,9 +12,9 @@ type Group struct {
 	ms *model.Models
 }
 
-// List 返回群组列表，TODO：支持分页
+// List 返回群组列表
 func (b *Group) List(ctx context.Context, kind string, pg tpl.Pagination) (*tpl.GroupsRes, error) {
-	groups, total, err := b.ms.Group.Find(ctx, kind, pg)
+	groups, total, err := b.ms.Group.Find(context.WithValue(ctx, model.ReadDB, true), kind, pg)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (b *Group) List(ctx context.Context, kind string, pg tpl.Pagination) (*tpl.
 
 // ListLabels ...
 func (b *Group) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.MyLabelsRes, error) {
-	group, err := b.ms.Group.Acquire(ctx, uid)
+	group, err := b.ms.Group.Acquire(context.WithValue(ctx, model.ReadDB, true), uid)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (b *Group) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (
 
 // ListMembers ...
 func (b *Group) ListMembers(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.GroupMembersRes, error) {
-	group, err := b.ms.Group.Acquire(ctx, uid)
+	group, err := b.ms.Group.Acquire(context.WithValue(ctx, model.ReadDB, true), uid)
 	if err != nil {
 		return nil, err
 	}
@@ -76,32 +76,33 @@ func (b *Group) ListSettings(ctx context.Context, req tpl.MySettingsQueryURL) (*
 		return nil, err
 	}
 
+	readCtx := context.WithValue(ctx, model.ReadDB, true)
 	var productID int64
 	var moduleID int64
 	var settingID int64
 
 	if req.Product != "" {
-		productID, err = b.ms.Product.AcquireID(ctx, req.Product)
+		productID, err = b.ms.Product.AcquireID(readCtx, req.Product)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if productID > 0 && req.Module != "" {
-		moduleID, err = b.ms.Module.AcquireID(ctx, productID, req.Module)
+		moduleID, err = b.ms.Module.AcquireID(readCtx, productID, req.Module)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if moduleID > 0 && req.Setting != "" {
-		settingID, err = b.ms.Setting.AcquireID(ctx, moduleID, req.Setting)
+		settingID, err = b.ms.Setting.AcquireID(readCtx, moduleID, req.Setting)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	pg := req.Pagination
-	settings, total, err := b.ms.Group.FindSettings(ctx, group.ID, productID, moduleID, settingID, pg, req.Channel, req.Client)
+	settings, total, err := b.ms.Group.FindSettings(readCtx, group.ID, productID, moduleID, settingID, pg, req.Channel, req.Client)
 	if err != nil {
 		return nil, err
 	}

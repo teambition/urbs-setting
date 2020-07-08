@@ -37,6 +37,7 @@ type ConfigTpl struct {
 	KeyFile          string   `json:"key_file" yaml:"key_file"`
 	Logger           Logger   `json:"logger" yaml:"logger"`
 	MySQL            SQL      `json:"mysql" yaml:"mysql"`
+	MySQLRd          SQL      `json:"mysql_read" yaml:"mysql_read"`
 	CacheLabelExpire string   `json:"cache_label_expire" yaml:"cache_label_expire"`
 	Channels         []string `json:"channels" yaml:"channels"`
 	Clients          []string `json:"clients" yaml:"clients"`
