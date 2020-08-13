@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file starting fro
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 -----
+## [1.7.1] - 2020-08-13
+
+**Change:**
+- Don't apply label rule in a product when someone exists.
+
 ## [1.7.0] - 2020-07-08
 
 **Change:**

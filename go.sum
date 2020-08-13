@@ -95,6 +95,8 @@ github.com/teambition/compressible-go v1.0.1/go.mod h1:K91wjCUqzpuY2ZpSi039mt4Wz
 github.com/teambition/gear v1.12.2/go.mod h1:VPFnRhfwYQiRDTzxEtzwfzAVDIcsbkX6i/AGOcRedy4=
 github.com/teambition/gear v1.21.2 h1:mwmfe5SOh9a5kQdoyYqdix/FGswtvu4QPkDzHNvkTLg=
 github.com/teambition/gear v1.21.2/go.mod h1:berJp67mxgCZ1ZKgv1oCVV9WpWko3zAgIGYtaN4iGW0=
+github.com/teambition/gear v1.21.4 h1:aLlpMdgAuMmZoc/hAHRUgLkBE9Uz9yu+adH8EA6vzUo=
+github.com/teambition/gear v1.21.4/go.mod h1:berJp67mxgCZ1ZKgv1oCVV9WpWko3zAgIGYtaN4iGW0=
 github.com/teambition/gear-auth v1.7.0 h1:8RYk2IwMYpnUCYf3YjGuOOwG9sj+NzQKYf3XJxQ1CRY=
 github.com/teambition/gear-auth v1.7.0/go.mod h1:U194Q5AX9BEHakk+tcabPVy2qDjv53i+hlbjdSIjR/0=
 github.com/teambition/gear-tracing v1.1.1 h1:LDAqXdXI5A7Xa2woMnr+0rgw29e5XbQRxHuUN8FxxAU=

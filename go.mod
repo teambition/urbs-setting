@@ -7,7 +7,7 @@ require (
 	github.com/doug-martin/goqu/v9 v9.9.0
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/stretchr/testify v1.5.1
-	github.com/teambition/gear v1.21.2
+	github.com/teambition/gear v1.21.4
 	github.com/teambition/gear-auth v1.7.0
 	github.com/teambition/gear-tracing v1.1.1
 	go.uber.org/dig v1.8.0
