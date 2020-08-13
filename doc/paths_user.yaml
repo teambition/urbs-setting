@@ -76,6 +76,7 @@
       parameters:
         - $ref: '#/components/parameters/HeaderAuthorization'
         - $ref: "#/components/parameters/PathUID"
+        - $ref: "#/components/parameters/QueryProduct"
       responses:
         '200':
           $ref: '#/components/responses/UserRes'

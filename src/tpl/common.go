@@ -84,6 +84,23 @@ func (t *UIDURL) Validate() error {
 	return nil
 }
 
+// UIDAndProductURL ...
+type UIDAndProductURL struct {
+	UID     string `json:"uid" param:"uid"`
+	Product string `json:"product" query:"product"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *UIDAndProductURL) Validate() error {
+	if !validIDReg.MatchString(t.UID) {
+		return gear.ErrBadRequest.WithMsgf("invalid uid: %s", t.UID)
+	}
+	if t.Product != "" && !validNameReg.MatchString(t.Product) {
+		return gear.ErrBadRequest.WithMsgf("invalid product name: %s", t.Product)
+	}
+	return nil
+}
+
 // UIDPaginationURL ...
 type UIDPaginationURL struct {
 	Pagination

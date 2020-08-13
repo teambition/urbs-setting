@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
+	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
@@ -18,11 +19,14 @@ type LabelRule struct {
 }
 
 // ApplyRules ...
-func (m *LabelRule) ApplyRules(ctx context.Context, userID int64, excludeLabels []int64) (int, error) {
+func (m *LabelRule) ApplyRules(ctx context.Context, productID int64, userID int64, excludeLabels []int64) (int, error) {
 	rules := []schema.LabelRule{}
 	// 不把 excludeLabels 放入查询条件，从而尽量复用查询缓存
-	sd := m.RdDB.From(schema.TableLabelRule).
-		Where(goqu.C("kind").Eq("userPercent")).Order(goqu.C("updated_at").Desc()).Limit(200)
+	exps := []exp.Expression{goqu.C("kind").Eq("userPercent")}
+	if productID > 0 {
+		exps = append(exps, goqu.C("product_id").Eq(productID))
+	}
+	sd := m.RdDB.From(schema.TableLabelRule).Where(exps...).Order(goqu.C("updated_at").Desc()).Limit(200)
 	err := sd.Executor().ScanStructsContext(ctx, &rules)
 	if err != nil {
 		return 0, err

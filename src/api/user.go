@@ -39,12 +39,12 @@ func (a *User) ListCachedLabels(ctx *gear.Context) error {
 
 // RefreshCachedLabels 强制更新 user 的 labels 缓存
 func (a *User) RefreshCachedLabels(ctx *gear.Context) error {
-	req := tpl.UIDURL{}
+	req := tpl.UIDAndProductURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	user, err := a.blls.User.RefreshCachedLabels(ctx, req.UID)
+	user, err := a.blls.User.RefreshCachedLabels(ctx, req.Product, req.UID)
 	if err != nil {
 		return err
 	}

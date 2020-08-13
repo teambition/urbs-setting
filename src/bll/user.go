@@ -66,12 +66,12 @@ func (b *User) ListCachedLabels(ctx context.Context, uid, product string) *tpl.C
 
 	// user 上缓存的 labels 过期，则刷新获取最新，RefreshUser 要考虑并发场景
 	if user.ActiveAt == 0 {
-		if user = b.ms.TryApplyLabelRulesAndRefreshUserLabels(ctx, user.ID, now, true); user == nil {
+		if user = b.ms.TryApplyLabelRulesAndRefreshUserLabels(ctx, productID, product, user.ID, now, true); user == nil {
 			return res
 		}
 	} else if conf.Config.IsCacheLabelExpired(now.Unix()-5, user.ActiveAt) { // 提前 5s 异步处理
 		util.Go(10*time.Second, func(gctx context.Context) {
-			b.ms.TryApplyLabelRulesAndRefreshUserLabels(gctx, user.ID, now, false)
+			b.ms.TryApplyLabelRulesAndRefreshUserLabels(gctx, productID, product, user.ID, now, false)
 		})
 	}
 
@@ -81,13 +81,20 @@ func (b *User) ListCachedLabels(ctx context.Context, uid, product string) *tpl.C
 }
 
 // RefreshCachedLabels ...
-func (b *User) RefreshCachedLabels(ctx context.Context, uid string) (*schema.User, error) {
+func (b *User) RefreshCachedLabels(ctx context.Context, product, uid string) (*schema.User, error) {
 	user, err := b.ms.User.Acquire(ctx, uid)
 	if err != nil {
 		return nil, err
 	}
-
-	if user, err = b.ms.ApplyLabelRulesAndRefreshUserLabels(ctx, user.ID, time.Now().UTC(), true); err != nil {
+	readCtx := context.WithValue(ctx, model.ReadDB, true)
+	var productID int64 = 0
+	if product != "" {
+		productID, err = b.ms.Product.AcquireID(readCtx, product)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if user, err = b.ms.ApplyLabelRulesAndRefreshUserLabels(ctx, productID, product, user.ID, time.Now().UTC(), true); err != nil {
 		return nil, err
 	}
 	return user, nil

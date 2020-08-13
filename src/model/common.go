@@ -65,10 +65,11 @@ func NewModels(sql *service.SQL) *Models {
 // ***** 以下为需要组合多个 model 接口能力而对外暴露的接口 *****
 
 // ApplyLabelRulesAndRefreshUserLabels ...
-func (ms *Models) ApplyLabelRulesAndRefreshUserLabels(ctx context.Context, userID int64, now time.Time, force bool) (*schema.User, error) {
+func (ms *Models) ApplyLabelRulesAndRefreshUserLabels(ctx context.Context, productID int64, product string, userID int64, now time.Time, force bool) (*schema.User, error) {
 	user, labelIDs, ok, err := ms.User.RefreshLabels(ctx, userID, now.Unix(), force)
-	if ok {
-		hit, err := ms.LabelRule.ApplyRules(ctx, userID, labelIDs)
+	userProductLables := user.GetLabels(product)
+	if ok && len(userProductLables) == 0 {
+		hit, err := ms.LabelRule.ApplyRules(ctx, productID, userID, labelIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -86,8 +87,8 @@ func (ms *Models) ApplyLabelRulesAndRefreshUserLabels(ctx context.Context, userI
 }
 
 // TryApplyLabelRulesAndRefreshUserLabels ...
-func (ms *Models) TryApplyLabelRulesAndRefreshUserLabels(ctx context.Context, userID int64, now time.Time, force bool) *schema.User {
-	user, err := ms.ApplyLabelRulesAndRefreshUserLabels(ctx, userID, now, force)
+func (ms *Models) TryApplyLabelRulesAndRefreshUserLabels(ctx context.Context, productID int64, product string, userID int64, now time.Time, force bool) *schema.User {
+	user, err := ms.ApplyLabelRulesAndRefreshUserLabels(ctx, productID, product, userID, now, force)
 	if err != nil {
 		logging.Warningf("ApplyLabelRulesAndRefreshUserLabels: userID %d, error %v", userID, err)
 		return nil

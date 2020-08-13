@@ -689,11 +689,15 @@ func TestLabelAPIs(t *testing.T) {
 		label, err := createLabel(tt, product.Name)
 		assert.Nil(t, err)
 
+		label2, err := createLabel(tt, product.Name)
+		assert.Nil(t, err)
+
 		users, err := createUsers(tt, 1)
 		assert.Nil(t, err)
 		user := users[0]
 
 		var rule tpl.LabelRuleInfo
+		var rule2 tpl.LabelRuleInfo
 
 		t.Run(`"POST /v1/products/:product/labels/:label/rules" should work`, func(t *testing.T) {
 			assert := assert.New(t)
@@ -764,6 +768,81 @@ func TestLabelAPIs(t *testing.T) {
 			assert.Equal(label.Name, data.Label)
 		})
 
+		t.Run(`"POST /v1/products/:product/labels/:label/rules" label2 should work`, func(t *testing.T) {
+			assert := assert.New(t)
+			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s/rules", tt.Host, product.Name, label2.Name)).
+				Set("Content-Type", "application/json").
+				Send(map[string]interface{}{
+					"kind": "userPercent",
+					"rule": map[string]interface{}{
+						"value": 100,
+					},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.True(strings.Contains(text, `"rule":{"value":100}`))
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.LabelRuleInfoRes{}
+			res.JSON(&json)
+			data := json.Result
+			assert.True(service.HIDToID(data.HID, "label_rule") > int64(0))
+			assert.Equal(label2.ID, service.HIDToID(data.LabelHID, "label"))
+			assert.Equal("userPercent", data.Kind)
+			assert.True(data.CreatedAt.UTC().Unix() > int64(0))
+			assert.True(data.UpdatedAt.UTC().Unix() > int64(0))
+			assert.Equal(int64(1), data.Release)
+
+			rule2 = data
+		})
+
+		t.Run(`"PUT /users/:uid/labels:cache" should not apply label2 rules`, func(t *testing.T) {
+			assert := assert.New(t)
+			res, err := request.Put(fmt.Sprintf("%s/v1/users/%s/labels:cache?product=%s", tt.Host, user.UID, product.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.UserRes{}
+			_, err = res.JSON(&json)
+
+			assert.Nil(err)
+			assert.Equal(1, len(json.Result.GetLabels(product.Name)))
+
+			data := json.Result.GetLabels(product.Name)
+			assert.Equal(label.Name, data[0].Label)
+		})
+
+		t.Run(`"PUT /users/:uid/labels:cache" should apply label、label2 rules without product`, func(t *testing.T) {
+			assert := assert.New(t)
+			res, err := request.Put(fmt.Sprintf("%s/v1/users/%s/labels:cache", tt.Host, user.UID)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.UserRes{}
+			_, err = res.JSON(&json)
+
+			assert.Nil(err)
+			assert.Equal(2, len(json.Result.GetLabels(product.Name)))
+
+			data := json.Result.GetLabels(product.Name)
+			assert.Equal(label2.Name, data[0].Label)
+			assert.Equal(label.Name, data[1].Label)
+		})
+
 		t.Run(`"GET /users/:uid/labels:cache" should support anonymous user`, func(t *testing.T) {
 			assert := assert.New(t)
 			res, err := request.Get(fmt.Sprintf("%s/users/%s/labels:cache?product=%s", tt.Host, "anon-"+user.UID, product.Name)).
@@ -779,10 +858,10 @@ func TestLabelAPIs(t *testing.T) {
 			_, err = res.JSON(&json)
 
 			assert.Nil(err)
-			assert.Equal(1, len(json.Result))
+			assert.Equal(2, len(json.Result))
 
-			data := json.Result[0]
-			assert.Equal(label.Name, data.Label)
+			assert.Equal(label2.Name, json.Result[0].Label)
+			assert.Equal(label.Name, json.Result[1].Label)
 		})
 
 		t.Run(`"GET /v1/products/:product/labels/:label/rules" should work`, func(t *testing.T) {
@@ -868,6 +947,40 @@ func TestLabelAPIs(t *testing.T) {
 			assert.Equal(0, len(json2.Result))
 
 			res, err = request.Delete(fmt.Sprintf("%s/v1/products/%s/labels/%s/rules/%s", tt.Host, product.Name, label.Name, rule.HID)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json = tpl.BoolRes{}
+			_, err = res.JSON(&json)
+			assert.Nil(err)
+			assert.False(json.Result)
+		})
+
+		t.Run(`"DELETE /v1/products/:product/labels/:label/rules/:hid" label2 should work`, func(t *testing.T) {
+			assert := assert.New(t)
+			res, err := request.Delete(fmt.Sprintf("%s/v1/products/%s/labels/%s/rules/%s", tt.Host, product.Name, label2.Name, rule2.HID)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json := tpl.BoolRes{}
+			_, err = res.JSON(&json)
+			assert.Nil(err)
+			assert.True(json.Result)
+
+			res, err = request.Get(fmt.Sprintf("%s/v1/products/%s/labels/%s/rules", tt.Host, product.Name, label2.Name)).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			json2 := tpl.LabelRulesInfoRes{}
+			_, err = res.JSON(&json2)
+
+			assert.Nil(err)
+			assert.Equal(0, len(json2.Result))
+
+			res, err = request.Delete(fmt.Sprintf("%s/v1/products/%s/labels/%s/rules/%s", tt.Host, product.Name, label2.Name, rule2.HID)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
