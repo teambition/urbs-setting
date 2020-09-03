@@ -16,7 +16,7 @@ type SettingRule struct {
 	UpdatedAt time.Time `db:"updated_at" goqu:"skipinsert"`
 	ProductID int64     `db:"product_id"` // 所从属的产品线 ID，与环境标签的产品线一致
 	SettingID int64     `db:"setting_id"` // 规则所指向的环境标签 ID
-	Kind      string    `db:"kind"`       // 规则类型，目前支持 "userPercent"
+	Kind      string    `db:"kind"`       // 规则类型
 	Rule      string    `db:"rule"`       // varchar(1022)，规则值，JSON string，对于 percent 类，其格式为 {"value": percent}
 	Value     string    `db:"value"`      // varchar(255)，配置值
 	Release   int64     `db:"rls"`        // 标签发布（被设置）计数批次

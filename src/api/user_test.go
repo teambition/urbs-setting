@@ -704,3 +704,71 @@ func TestUserAPIs(t *testing.T) {
 		})
 	})
 }
+
+func TestUserApplyRulesAPIs(t *testing.T) {
+	tt, cleanup := SetUpTestTools()
+	defer cleanup()
+
+	t.Run(`apply NewUserPercent label rules`, func(t *testing.T) {
+		product, err := createProduct(tt)
+		assert.Nil(t, err)
+
+		label, err := createLabel(tt, product.Name)
+		assert.Nil(t, err)
+
+		users, err := createUsers(tt, 1)
+		assert.Nil(t, err)
+		user := users[0]
+
+		t.Run(`"POST /v1/products/:product/labels/:label/rules" should work`, func(t *testing.T) {
+			assert := assert.New(t)
+			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/labels/%s/rules", tt.Host, product.Name, label.Name)).
+				Set("Content-Type", "application/json").
+				Send(map[string]interface{}{
+					"kind": schema.RuleNewUserPercent,
+					"rule": map[string]interface{}{
+						"value": 100,
+					},
+				}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			text, err := res.Text()
+			assert.Nil(err)
+			assert.True(strings.Contains(text, `"rule":{"value":100}`))
+			assert.False(strings.Contains(text, `"id"`))
+
+			json := tpl.LabelRuleInfoRes{}
+			res.JSON(&json)
+			data := json.Result
+			assert.True(service.HIDToID(data.HID, "label_rule") > int64(0))
+			assert.Equal(label.ID, service.HIDToID(data.LabelHID, "label"))
+			assert.Equal(schema.RuleNewUserPercent, data.Kind)
+			assert.True(data.CreatedAt.UTC().Unix() > int64(0))
+			assert.True(data.UpdatedAt.UTC().Unix() > int64(0))
+
+		})
+
+		t.Run(`"POST /products/:product/users/rules:apply" should apply rules`, func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Post(fmt.Sprintf("%s/v1/products/%s/users/rules:apply", tt.Host, product.Name)).
+				Set("Content-Type", "application/json").
+				Send(map[string]interface{}{
+					"users": []string{user.UID},
+					"kind":  "newUserPercent",
+				}).End()
+
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			time.Sleep(100 * time.Millisecond)
+
+			ul := &schema.UserLabel{}
+			_, err = tt.DB.ScanStruct(ul, "select * from `user_label` where `user_id` = ? limit 1", user.ID)
+			assert.Nil(err, err)
+			assert.Equal(label.ID, ul.LabelID)
+		})
+	})
+}

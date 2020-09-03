@@ -5,6 +5,7 @@ import (
 	"hash/crc32"
 
 	"github.com/doug-martin/goqu/v9"
+	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
@@ -16,10 +17,14 @@ type SettingRule struct {
 }
 
 // ApplyRules ...
-func (m *SettingRule) ApplyRules(ctx context.Context, productID, userID int64) error {
+func (m *SettingRule) ApplyRules(ctx context.Context, productID, userID int64, kind string) error {
 	rules := []schema.SettingRule{}
+	exps := []exp.Expression{goqu.C("kind").Eq(kind)}
+	if productID > 0 {
+		exps = append(exps, goqu.C("product_id").Eq(productID))
+	}
 	sd := m.RdDB.From(schema.TableSettingRule).
-		Where(goqu.C("product_id").Eq(productID), goqu.C("kind").Eq("userPercent")).
+		Where(exps...).
 		Order(goqu.C("updated_at").Desc()).Limit(1000)
 	err := sd.Executor().ScanStructsContext(ctx, &rules)
 	if err != nil {
@@ -71,10 +76,10 @@ func (m *SettingRule) ApplyRules(ctx context.Context, productID, userID int64) e
 }
 
 // ApplyRulesToAnonymous ...
-func (m *SettingRule) ApplyRulesToAnonymous(ctx context.Context, anonymousID string, productID int64, channel, client string) ([]tpl.MySetting, error) {
+func (m *SettingRule) ApplyRulesToAnonymous(ctx context.Context, anonymousID string, productID int64, channel, client string, kind string) ([]tpl.MySetting, error) {
 	rules := []schema.SettingRule{}
 	sd := m.RdDB.From(schema.TableSettingRule).
-		Where(goqu.C("product_id").Eq(productID), goqu.C("kind").Eq("userPercent")).
+		Where(goqu.C("product_id").Eq(productID), goqu.C("kind").Eq(kind)).
 		Order(goqu.C("updated_at").Desc()).Limit(1000)
 	err := sd.Executor().ScanStructsContext(ctx, &rules)
 	if err != nil {

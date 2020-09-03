@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/teambition/urbs-setting/src/conf"
+	"github.com/teambition/urbs-setting/src/logging"
 	"github.com/teambition/urbs-setting/src/model"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/tpl"
@@ -57,7 +58,7 @@ func (b *User) ListCachedLabels(ctx context.Context, uid, product string) *tpl.C
 	user, err := b.ms.User.Acquire(readCtx, uid)
 	if err != nil {
 		if strings.HasPrefix(uid, "anon-") {
-			if labels, err := b.ms.LabelRule.ApplyRulesToAnonymous(ctx, uid, productID); err == nil {
+			if labels, err := b.ms.LabelRule.ApplyRulesToAnonymous(ctx, uid, productID, schema.RuleUserPercent); err == nil {
 				res.Result = labels
 			}
 		}
@@ -184,7 +185,7 @@ func (b *User) ListSettingsUnionAll(ctx context.Context, req tpl.MySettingsQuery
 	user, err := b.ms.User.Acquire(readCtx, req.UID)
 	if err != nil {
 		if strings.HasPrefix(req.UID, "anon-") {
-			if settings, err := b.ms.SettingRule.ApplyRulesToAnonymous(ctx, req.UID, productID, req.Channel, req.Client); err == nil {
+			if settings, err := b.ms.SettingRule.ApplyRulesToAnonymous(ctx, req.UID, productID, req.Channel, req.Client, schema.RuleUserPercent); err == nil {
 				for i := range settings {
 					settings[i].Product = req.Product
 				}
@@ -243,4 +244,33 @@ func (b *User) CheckExists(ctx context.Context, uid string) bool {
 // BatchAdd ...
 func (b *User) BatchAdd(ctx context.Context, users []string) error {
 	return b.ms.User.BatchAdd(ctx, users)
+}
+
+// ApplyRules ...
+func (b *User) ApplyRules(ctx context.Context, product string, body *tpl.ApplyRulesBody) error {
+	readCtx := context.WithValue(ctx, model.ReadDB, true)
+	productID, err := b.ms.Product.AcquireID(readCtx, product)
+	if err != nil {
+		return err
+	}
+	applyRules := func(gctx context.Context) {
+		for _, UID := range body.Users {
+			userID, err := b.ms.User.AcquireID(gctx, UID)
+			if err != nil {
+				logging.Warningf("newUserAcquireID: userID %d, error %v", userID, err)
+				continue
+			}
+			_, err = b.ms.LabelRule.ApplyRules(gctx, productID, userID, []int64{}, body.Kind)
+			if err != nil {
+				logging.Warningf("newUserApplyLabelRules: userID %d, error %v", userID, err)
+				continue
+			}
+			err = b.ms.SettingRule.ApplyRules(gctx, productID, userID, body.Kind)
+			if err != nil {
+				logging.Warningf("newUserApplySettingRules: userID %d, error %v", userID, err)
+			}
+		}
+	}
+	util.Go(5*time.Minute, applyRules)
+	return nil
 }

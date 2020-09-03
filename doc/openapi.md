@@ -2787,7 +2787,7 @@ Status Code **200**
 |» result|[[LabelRuleInfo](#schemalabelruleinfo)]|false|none|none|
 |»» hid|string|false|none|发布规则的 hid|
 |»» labelHID|string|false|none|发布规则所属环境标签的 hid|
-|»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"|
+|»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
 |»» rule|object|false|none|发布规则内容，JSON 对象，具体格式取决于 kind|
 |»»» value|integer(int64)|false|none|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
 |»» release|integer(int64)|false|none|发布批次（被设置）计数|
@@ -2841,7 +2841,7 @@ Authorization: string
 |product|path|string|true|产品名称|
 |label|path|string|true|环境标签名称|
 |body|body|[LabelRuleBody](#schemalabelrulebody)|true|创建/更新配置项的发布规则|
-|» kind|body|string|false|发布规则类型，目前仅支持 "userPercent"|
+|» kind|body|string|false|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
 |» rule|body|object|false|发布规则内容，JSON 对象，具体格式取决于 kind|
 |»» value|body|integer(int64)|false|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
 |» value|body|string|false|发布规则的配置项值|
@@ -2879,7 +2879,7 @@ Status Code **200**
 |» result|[LabelRuleInfo](#schemalabelruleinfo)|false|none|none|
 |»» hid|string|false|none|发布规则的 hid|
 |»» labelHID|string|false|none|发布规则所属环境标签的 hid|
-|»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"|
+|»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
 |»» rule|object|false|none|发布规则内容，JSON 对象，具体格式取决于 kind|
 |»»» value|integer(int64)|false|none|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
 |»» release|integer(int64)|false|none|发布批次（被设置）计数|
@@ -2934,7 +2934,7 @@ Authorization: string
 |label|path|string|true|环境标签名称|
 |uid|path|string|true|标签/配置项/发布规则 hid|
 |body|body|[LabelRuleBody](#schemalabelrulebody)|true|创建/更新配置项的发布规则|
-|» kind|body|string|false|发布规则类型，目前仅支持 "userPercent"|
+|» kind|body|string|false|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
 |» rule|body|object|false|发布规则内容，JSON 对象，具体格式取决于 kind|
 |»» value|body|integer(int64)|false|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
 |» value|body|string|false|发布规则的配置项值|
@@ -2972,7 +2972,7 @@ Status Code **200**
 |» result|[LabelRuleInfo](#schemalabelruleinfo)|false|none|none|
 |»» hid|string|false|none|发布规则的 hid|
 |»» labelHID|string|false|none|发布规则所属环境标签的 hid|
-|»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"|
+|»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
 |»» rule|object|false|none|发布规则内容，JSON 对象，具体格式取决于 kind|
 |»»» value|integer(int64)|false|none|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
 |»» release|integer(int64)|false|none|发布批次（被设置）计数|
@@ -4185,7 +4185,7 @@ Status Code **200**
 |» result|[[SettingUserInfo](#schemasettinguserinfo)]|false|none|none|
 |»» hid|string|false|none|发布规则的 hid|
 |»» settingHID|string|false|none|发布规则所属配置项的 hid|
-|»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"|
+|»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
 |»» rule|object|false|none|发布规则内容，JSON 对象，具体格式取决于 kind|
 |»»» value|integer(int64)|false|none|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
 |»» value|string|false|none|发布规则的配置项值|
@@ -5262,7 +5262,7 @@ HeaderAuthorizationJWT
 |---|---|---|---|---|
 |hid|string|false|none|发布规则的 hid|
 |labelHID|string|false|none|发布规则所属环境标签的 hid|
-|kind|string|false|none|发布规则类型，目前仅支持 "userPercent"|
+|kind|string|false|none|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
 |rule|object|false|none|发布规则内容，JSON 对象，具体格式取决于 kind|
 |» value|integer(int64)|false|none|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
 |release|integer(int64)|false|none|发布批次（被设置）计数|
@@ -5354,7 +5354,7 @@ HeaderAuthorizationJWT
 |---|---|---|---|---|
 |hid|string|false|none|发布规则的 hid|
 |settingHID|string|false|none|发布规则所属配置项的 hid|
-|kind|string|false|none|发布规则类型，目前仅支持 "userPercent"|
+|kind|string|false|none|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
 |rule|object|false|none|发布规则内容，JSON 对象，具体格式取决于 kind|
 |» value|integer(int64)|false|none|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
 |value|string|false|none|发布规则的配置项值|

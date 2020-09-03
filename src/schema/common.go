@@ -3,6 +3,20 @@ package schema
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/teambition/urbs-setting/src/util"
+)
+
+const (
+	// RuleUserPercent ...
+	RuleUserPercent = "userPercent"
+	// RuleNewUserPercent ...
+	RuleNewUserPercent = "newUserPercent"
+)
+
+var (
+	// RuleKinds ...
+	RuleKinds = []string{RuleUserPercent, RuleNewUserPercent}
 )
 
 // PercentRule ...
@@ -15,7 +29,7 @@ type PercentRule struct {
 
 // Validate ...
 func (r *PercentRule) Validate() error {
-	if r.Kind != "userPercent" {
+	if r.Kind == "" || !util.StringSliceHas(RuleKinds, r.Kind) {
 		return fmt.Errorf("invalid kind: %s", r.Kind)
 	}
 	if r.Rule.Value < 0 || r.Rule.Value > 100 {
@@ -34,9 +48,9 @@ func (r *PercentRule) ToRule() string {
 
 // ToPercentRule ...
 func ToPercentRule(kind, rule string) *PercentRule {
-	r := &PercentRule{Kind: "userPercent"}
+	r := &PercentRule{Kind: kind}
 	r.Rule.Value = -1
-	if kind == "userPercent" && rule != "" {
+	if rule != "" {
 		if err := json.Unmarshal([]byte(rule), &r.Rule); err != nil {
 			r.Rule.Value = -1
 		}
@@ -51,10 +65,5 @@ func ToPercentRule(kind, rule string) *PercentRule {
 
 // ToRuleObject ...
 func ToRuleObject(kind, rule string) interface{} {
-	switch kind {
-	case "userPercent":
-		return ToPercentRule(kind, rule).Rule
-	default:
-		return struct{}{}
-	}
+	return ToPercentRule(kind, rule).Rule
 }

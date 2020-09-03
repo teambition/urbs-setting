@@ -19,10 +19,10 @@ type LabelRule struct {
 }
 
 // ApplyRules ...
-func (m *LabelRule) ApplyRules(ctx context.Context, productID int64, userID int64, excludeLabels []int64) (int, error) {
+func (m *LabelRule) ApplyRules(ctx context.Context, productID int64, userID int64, excludeLabels []int64, kind string) (int, error) {
 	rules := []schema.LabelRule{}
 	// 不把 excludeLabels 放入查询条件，从而尽量复用查询缓存
-	exps := []exp.Expression{goqu.C("kind").Eq("userPercent")}
+	exps := []exp.Expression{goqu.C("kind").Eq(kind)}
 	if productID > 0 {
 		exps = append(exps, goqu.C("product_id").Eq(productID))
 	}
@@ -68,11 +68,11 @@ func (m *LabelRule) ApplyRules(ctx context.Context, productID int64, userID int6
 }
 
 // ApplyRulesToAnonymous ...
-func (m *LabelRule) ApplyRulesToAnonymous(ctx context.Context, anonymousID string, productID int64) ([]schema.UserCacheLabel, error) {
+func (m *LabelRule) ApplyRulesToAnonymous(ctx context.Context, anonymousID string, productID int64, kind string) ([]schema.UserCacheLabel, error) {
 	rules := []schema.LabelRule{}
 	sd := m.RdDB.From(schema.TableLabelRule).
 		Where(
-			goqu.C("kind").Eq("userPercent"),
+			goqu.C("kind").Eq(kind),
 			goqu.C("product_id").Eq(productID)).
 		Order(goqu.C("updated_at").Desc()).Limit(200)
 	err := sd.Executor().ScanStructsContext(ctx, &rules)
