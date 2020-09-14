@@ -34,3 +34,20 @@ type UserRes struct {
 	SuccessResponseType
 	Result schema.User `json:"result"`
 }
+
+// ApplyRulesBody ...
+type ApplyRulesBody struct {
+	UsersBody
+	Kind string `json:"kind"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *ApplyRulesBody) Validate() error {
+	if err := t.UsersBody.Validate(); err != nil {
+		return err
+	}
+	if t.Kind == "" || !StringSliceHas(schema.RuleKinds, t.Kind) {
+		return gear.ErrBadRequest.WithMsgf("invalid kind: %s", t.Kind)
+	}
+	return nil
+}

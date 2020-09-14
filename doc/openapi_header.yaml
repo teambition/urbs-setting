@@ -630,7 +630,7 @@ components:
           example: urbs
         kind:
           type: string
-          description: 发布规则类型，目前仅支持 "userPercent"
+          description: 发布规则类型，目前仅支持 "userPercent"、"newUserPercent"
           example: userPercent
         rule:
           type: object
@@ -763,7 +763,7 @@ components:
           example: urbs
         kind:
           type: string
-          description: 发布规则类型，目前仅支持 "userPercent"
+          description: 发布规则类型，目前仅支持 "userPercent"、"newUserPercent"
           example: userPercent
         rule:
           type: object
@@ -1084,7 +1084,7 @@ components:
             properties:
               kind:
                 type: string
-                description: 发布规则类型，目前仅支持 "userPercent"
+                description: 发布规则类型，目前仅支持 "userPercent"、"newUserPercent"
                 example: userPercent
               rule:
                 type: object
@@ -1106,7 +1106,7 @@ components:
             properties:
               kind:
                 type: string
-                description: 发布规则类型，目前仅支持 "userPercent"
+                description: 发布规则类型，目前仅支持 "userPercent"、"newUserPercent"
                 example: userPercent
               rule:
                 type: object

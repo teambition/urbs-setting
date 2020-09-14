@@ -102,7 +102,8 @@ func newRouters(apis *APIs) []*gear.Router {
 	// routerV1.Put("/products/:product+:online", apis.Product.Online)
 	// 删除指定产品
 	routerV1.Delete("/products/:product", apis.Product.Delete)
-
+	// 触发应用规则
+	routerV1.Post("/products/:product/users/rules:apply", apis.User.ApplyRules)
 	// ***** module ******
 	// 读取指定产品的功能模块
 	routerV1.Get("/products/:product/modules", apis.Module.List)

@@ -69,7 +69,7 @@ func (ms *Models) ApplyLabelRulesAndRefreshUserLabels(ctx context.Context, produ
 	user, labelIDs, ok, err := ms.User.RefreshLabels(ctx, userID, now.Unix(), force)
 	userProductLables := user.GetLabels(product)
 	if ok && len(userProductLables) == 0 {
-		hit, err := ms.LabelRule.ApplyRules(ctx, productID, userID, labelIDs)
+		hit, err := ms.LabelRule.ApplyRules(ctx, productID, userID, labelIDs, schema.RuleUserPercent)
 		if err != nil {
 			return nil, err
 		}
@@ -105,7 +105,7 @@ func (ms *Models) TryApplySettingRules(ctx context.Context, productID, userID in
 
 	// 此处不要释放锁，锁期不再执行对应 setting rule
 	// defer ms.Model.unlock(ctx, key)
-	if err := ms.SettingRule.ApplyRules(ctx, productID, userID); err != nil {
+	if err := ms.SettingRule.ApplyRules(ctx, productID, userID, schema.RuleUserPercent); err != nil {
 		logging.Warningf("%s error: %v", key, err)
 	}
 }
