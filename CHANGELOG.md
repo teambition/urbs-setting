@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file starting fro
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 -----
+## [1.8.0] - 2020-09-16
+
+**Change:**
+- Support parent-child relationship label.
+
 ## [1.7.1] - 2020-08-13
 
 **Change:**
