@@ -21,7 +21,6 @@ type LabelRule struct {
 // ApplyRules ...
 func (m *LabelRule) ApplyRules(ctx context.Context, productID int64, userID int64, excludeLabels []int64, kind string) (int, error) {
 	rules := []schema.LabelRule{}
-	// 不把 excludeLabels 放入查询条件，从而尽量复用查询缓存
 	exps := []exp.Expression{goqu.C("kind").Eq(kind)}
 	if productID > 0 {
 		exps = append(exps, goqu.C("product_id").Eq(productID))
@@ -31,6 +30,36 @@ func (m *LabelRule) ApplyRules(ctx context.Context, productID int64, userID int6
 	if err != nil {
 		return 0, err
 	}
+	// 不把 excludeLabels 放入查询条件，从而尽量复用查询缓存
+	res, err := m.ComputeUserRule(ctx, userID, excludeLabels, rules)
+	if err != nil {
+		return 0, err
+	}
+	return res, nil
+}
+
+// ApplyRule ...
+func (m *LabelRule) ApplyRule(ctx context.Context, productID int64, userID int64, labelID int64, kind string) (int, error) {
+	rules := []schema.LabelRule{}
+	exps := []exp.Expression{
+		goqu.C("kind").Eq(kind),
+		goqu.C("label_id").Eq(labelID),
+		goqu.C("product_id").Eq(productID),
+	}
+	sd := m.RdDB.From(schema.TableLabelRule).Where(exps...).Order(goqu.C("updated_at").Desc()).Limit(200)
+	err := sd.Executor().ScanStructsContext(ctx, &rules)
+	if err != nil {
+		return 0, err
+	}
+	res, err := m.ComputeUserRule(ctx, userID, []int64{}, rules)
+	if err != nil {
+		return 0, err
+	}
+	return res, nil
+}
+
+// ComputeUserRule ...
+func (m *LabelRule) ComputeUserRule(ctx context.Context, userID int64, excludeLabels []int64, rules []schema.LabelRule) (int, error) {
 	ids := make([]interface{}, 0)
 	labelIDs := make([]int64, 0)
 	for _, rule := range rules {

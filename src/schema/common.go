@@ -12,11 +12,13 @@ const (
 	RuleUserPercent = "userPercent"
 	// RuleNewUserPercent ...
 	RuleNewUserPercent = "newUserPercent"
+	// RuleChildLabelUserPercent parent-child relationship label
+	RuleChildLabelUserPercent = "childLabelUserPercent"
 )
 
 var (
 	// RuleKinds ...
-	RuleKinds = []string{RuleUserPercent, RuleNewUserPercent}
+	RuleKinds = []string{RuleUserPercent, RuleNewUserPercent, RuleChildLabelUserPercent}
 )
 
 // PercentRule ...

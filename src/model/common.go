@@ -3,6 +3,8 @@ package model
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
@@ -10,6 +12,7 @@ import (
 	"github.com/teambition/urbs-setting/src/logging"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
+	"github.com/teambition/urbs-setting/src/tpl"
 	"github.com/teambition/urbs-setting/src/util"
 )
 
@@ -76,6 +79,29 @@ func (ms *Models) ApplyLabelRulesAndRefreshUserLabels(ctx context.Context, produ
 		if hit > 0 {
 			// refresh label again
 			user, labelIDs, ok, err = ms.User.RefreshLabels(ctx, userID, now.Unix(), true)
+		}
+	} else if len(userProductLables) > 0 {
+		pg := tpl.Pagination{PageSize: 200}
+		pg.Q = userProductLables[0].Label + "%"
+		labels, _, err := ms.Label.Find(ctx, productID, pg)
+		if err != nil {
+			return nil, err
+		}
+		sort.SliceStable(labels, func(i, j int) bool {
+			return len(labels[i].Name) < len(labels[j].Name)
+		})
+		for _, item := range labels {
+			if !strings.HasPrefix(item.Name, userProductLables[0].Label+"-") {
+				continue
+			}
+			hit, err := ms.LabelRule.ApplyRule(ctx, productID, userID, item.ID, schema.RuleChildLabelUserPercent)
+			if err != nil {
+				return nil, err
+			}
+			if hit > 0 {
+				user, labelIDs, ok, err = ms.User.RefreshLabels(ctx, userID, now.Unix(), true)
+			}
+			break
 		}
 	}
 
