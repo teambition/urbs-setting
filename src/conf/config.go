@@ -1,8 +1,10 @@
 package conf
 
 import (
+	"context"
 	"time"
 
+	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/util"
 )
 
@@ -12,6 +14,7 @@ func init() {
 	if err := p.Validate(); err != nil {
 		panic(err)
 	}
+	p.GlobalCtx = gear.ContextWithSignal(context.Background())
 }
 
 // Logger logger config
@@ -30,20 +33,29 @@ type SQL struct {
 	MaxOpenConns int    `json:"max_open_conns" yaml:"max_open_conns"`
 }
 
+// OpenTrust ...
+type OpenTrust struct {
+	OTID             string   `json:"otid" yaml:"otid"`
+	PrivateKeys      []string `json:"private_keys" yaml:"private_keys"`
+	DomainPublicKeys []string `json:"domain_public_keys" yaml:"domain_public_keys"`
+}
+
 // ConfigTpl ...
 type ConfigTpl struct {
-	SrvAddr          string   `json:"addr" yaml:"addr"`
-	CertFile         string   `json:"cert_file" yaml:"cert_file"`
-	KeyFile          string   `json:"key_file" yaml:"key_file"`
-	Logger           Logger   `json:"logger" yaml:"logger"`
-	MySQL            SQL      `json:"mysql" yaml:"mysql"`
-	MySQLRd          SQL      `json:"mysql_read" yaml:"mysql_read"`
-	CacheLabelExpire string   `json:"cache_label_expire" yaml:"cache_label_expire"`
-	Channels         []string `json:"channels" yaml:"channels"`
-	Clients          []string `json:"clients" yaml:"clients"`
-	HIDKey           string   `json:"hid_key" yaml:"hid_key"`
-	AuthKeys         []string `json:"auth_keys" yaml:"auth_keys"`
-	cacheLabelExpire int64    // seconds, default to 60 seconds
+	GlobalCtx        context.Context
+	SrvAddr          string    `json:"addr" yaml:"addr"`
+	CertFile         string    `json:"cert_file" yaml:"cert_file"`
+	KeyFile          string    `json:"key_file" yaml:"key_file"`
+	Logger           Logger    `json:"logger" yaml:"logger"`
+	MySQL            SQL       `json:"mysql" yaml:"mysql"`
+	MySQLRd          SQL       `json:"mysql_read" yaml:"mysql_read"`
+	CacheLabelExpire string    `json:"cache_label_expire" yaml:"cache_label_expire"`
+	Channels         []string  `json:"channels" yaml:"channels"`
+	Clients          []string  `json:"clients" yaml:"clients"`
+	HIDKey           string    `json:"hid_key" yaml:"hid_key"`
+	AuthKeys         []string  `json:"auth_keys" yaml:"auth_keys"`
+	OpenTrust        OpenTrust `json:"open_trust" yaml:"open_trust"`
+	cacheLabelExpire int64     // seconds, default to 60 seconds
 }
 
 // Validate 用于完成基本的配置验证和初始化工作。业务相关的配置验证建议放到相关代码中实现，如 mysql 的配置。
