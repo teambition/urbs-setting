@@ -253,24 +253,21 @@ func (b *User) ApplyRules(ctx context.Context, product string, body *tpl.ApplyRu
 	if err != nil {
 		return err
 	}
-	applyRules := func(gctx context.Context) {
-		for _, UID := range body.Users {
-			userID, err := b.ms.User.AcquireID(gctx, UID)
-			if err != nil {
-				logging.Warningf("newUserAcquireID: userID %d, error %v", userID, err)
-				continue
-			}
-			_, err = b.ms.LabelRule.ApplyRules(gctx, productID, userID, []int64{}, body.Kind)
-			if err != nil {
-				logging.Warningf("newUserApplyLabelRules: userID %d, error %v", userID, err)
-				continue
-			}
-			err = b.ms.SettingRule.ApplyRules(gctx, productID, userID, body.Kind)
-			if err != nil {
-				logging.Warningf("newUserApplySettingRules: userID %d, error %v", userID, err)
-			}
+	for _, UID := range body.Users {
+		userID, err := b.ms.User.AcquireID(ctx, UID)
+		if err != nil {
+			logging.Warningf("newUserAcquireID: userID %d, error %v", userID, err)
+			continue
+		}
+		_, err = b.ms.LabelRule.ApplyRules(ctx, productID, userID, []int64{}, body.Kind)
+		if err != nil {
+			logging.Warningf("newUserApplyLabelRules: userID %d, error %v", userID, err)
+			continue
+		}
+		err = b.ms.SettingRule.ApplyRules(ctx, productID, userID, body.Kind)
+		if err != nil {
+			logging.Warningf("newUserApplySettingRules: userID %d, error %v", userID, err)
 		}
 	}
-	util.Go(5*time.Minute, applyRules)
-	return nil
+	return err
 }
