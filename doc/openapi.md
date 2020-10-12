@@ -1,8 +1,11 @@
 ---
-title: urbs-setting
+title: urbs-setting v1.4.0
 language_tabs:
   - shell: Shell
   - http: HTTP
+language_clients:
+  - shell: ""
+  - http: ""
 toc_footers: []
 includes: []
 search: true
@@ -10,6 +13,8 @@ highlight_theme: darkula
 headingLevel: 2
 
 ---
+
+<!-- Generator: Widdershins v4.0.1 -->
 
 <h1 id="urbs-setting">urbs-setting v1.4.0</h1>
 
@@ -58,7 +63,7 @@ Accept: application/json
   "name": "urbs-setting",
   "version": "v1.2.0",
   "gitSHA1": "cd7e82a",
-  "buildTime": "2020-07-07T09:12:47.806Z"
+  "buildTime": "2020-03-25T06:24:25Z"
 }
 ```
 
@@ -240,7 +245,7 @@ Authorization: string
       "uid": "5e82d747fe02a50021d339f3",
       "labels": "{\"teambition\":[{\"l\":\"dev\"}]}",
       "activeAt": 1585636012,
-      "createdAt": "2020-07-07T09:12:47.812Z"
+      "createdAt": "2020-03-25T06:24:25Z"
     }
   ]
 }
@@ -323,7 +328,7 @@ Authorization: string
       "value": "disable",
       "lastValue": "",
       "release": 1,
-      "assignedAt": "2020-07-07T09:12:47.813Z"
+      "assignedAt": "2020-03-25T06:24:25Z"
     }
   ]
 }
@@ -404,7 +409,7 @@ Authorization: string
       "name": "task-share",
       "desc": "string",
       "release": 1,
-      "assignedAt": "2020-07-07T09:12:47.813Z"
+      "assignedAt": "2020-03-25T06:24:25Z"
     }
   ]
 }
@@ -442,14 +447,14 @@ HeaderAuthorizationJWT
 
 ```shell
 # You can also use wget
-curl -X PUT https://urbs-setting:8443/v1/users/{uid}/labels:cache \
+curl -X PUT https://urbs-setting:8443/v1/users/{uid}/labels:cache?product=string \
   -H 'Accept: application/json' \
   -H 'Authorization: string'
 
 ```
 
 ```http
-PUT https://urbs-setting:8443/v1/users/{uid}/labels:cache HTTP/1.1
+PUT https://urbs-setting:8443/v1/users/{uid}/labels:cache?product=string HTTP/1.1
 Host: urbs-setting:8443
 Accept: application/json
 Authorization: string
@@ -464,6 +469,7 @@ Authorization: string
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |uid|path|string|true|用户/群组 uid|
+|product|query|string|true|产品名称|
 
 > Example responses
 
@@ -475,7 +481,7 @@ Authorization: string
     "uid": "5e82d747fe02a50021d339f3",
     "labels": "{\"teambition\":[{\"l\":\"dev\"}]}",
     "activeAt": 1585636012,
-    "createdAt": "2020-07-07T09:12:47.813Z"
+    "createdAt": "2020-03-25T06:24:25Z"
   }
 }
 ```
@@ -557,7 +563,7 @@ Authorization: string
       "value": "disable",
       "lastValue": "",
       "release": 1,
-      "assignedAt": "2020-07-07T09:12:47.814Z"
+      "assignedAt": "2020-03-25T06:24:25Z"
     }
   ]
 }
@@ -690,7 +696,7 @@ Authorization: string
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
-|body|body|[UsersBody](#schemausersbody)|true|批量添加用户请求数据|
+|body|body|object|true|批量添加用户请求数据|
 |» users|body|[string]|false|用户 uid 数组，必须符合正则 /^[0-9A-Za-z._=-]{3,63}$/|
 
 > Example responses
@@ -772,7 +778,7 @@ Authorization: string
       "name": "task-share",
       "desc": "string",
       "release": 1,
-      "assignedAt": "2020-07-07T09:12:47.816Z"
+      "assignedAt": "2020-03-25T06:24:25Z"
     }
   ]
 }
@@ -858,7 +864,7 @@ Authorization: string
       "value": "disable",
       "lastValue": "",
       "release": 1,
-      "assignedAt": "2020-07-07T09:12:47.816Z"
+      "assignedAt": "2020-03-25T06:24:25Z"
     }
   ]
 }
@@ -940,8 +946,8 @@ Authorization: string
       "desc": "string",
       "syncAt": 1585636012,
       "status": 99,
-      "createdAt": "2020-07-07T09:12:47.817Z",
-      "updatedAt": "2020-07-07T09:12:47.817Z"
+      "createdAt": "2020-03-25T06:24:25Z",
+      "updatedAt": "2020-03-25T06:24:25Z"
     }
   ]
 }
@@ -1075,7 +1081,7 @@ Authorization: string
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
-|body|body|[GroupsBody](#schemagroupsbody)|true|批量添加群组请求数据|
+|body|body|object|true|批量添加群组请求数据|
 |» groups|body|[object]|false|群组信息数组|
 |»» uid|body|string|false|群组 uid，必须符合正则 /^[0-9A-Za-z._=-]{3,63}$/|
 |»» kind|body|string|false|群组类型|
@@ -1148,7 +1154,7 @@ Authorization: string
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |uid|path|string|true|用户/群组 uid|
-|body|body|[GroupUpdateBody](#schemagroupupdatebody)|true|更新群组请求数据|
+|body|body|object|true|更新群组请求数据|
 |» syncAt|body|integer(int64)|false|群组成员同步时间点，1970 以来的秒数|
 |» desc|body|string|false|群组描述|
 
@@ -1164,8 +1170,8 @@ Authorization: string
     "desc": "string",
     "syncAt": 1585636012,
     "status": 99,
-    "createdAt": "2020-07-07T09:12:47.818Z",
-    "updatedAt": "2020-07-07T09:12:47.818Z"
+    "createdAt": "2020-03-25T06:24:25Z",
+    "updatedAt": "2020-03-25T06:24:25Z"
   }
 }
 ```
@@ -1294,7 +1300,7 @@ Authorization: string
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
-|body|body|[UsersBody](#schemausersbody)|true|批量添加用户请求数据|
+|body|body|object|true|批量添加用户请求数据|
 |» users|body|[string]|false|用户 uid 数组，必须符合正则 /^[0-9A-Za-z._=-]{3,63}$/|
 
 > Example responses
@@ -1370,7 +1376,7 @@ Authorization: string
     {
       "user": "5e82d747fe02a50021d339f3",
       "syncAt": 1585636012,
-      "createdAt": "2020-07-07T09:12:47.819Z"
+      "createdAt": "2020-03-25T06:24:25Z"
     }
   ]
 }
@@ -1508,8 +1514,8 @@ Authorization: string
       "name": "urbs",
       "desc": "string",
       "status": 0,
-      "createdAt": "2020-07-07T09:12:47.821Z",
-      "updatedAt": "2020-07-07T09:12:47.821Z",
+      "createdAt": "2020-03-25T06:24:25Z",
+      "updatedAt": "2020-03-25T06:24:25Z",
       "deletedAt": null,
       "offlineAt": null
     }
@@ -1590,7 +1596,7 @@ Authorization: string
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
-|body|body|[NameDescBody](#schemanamedescbody)|true|创建产品、功能模块等的请求数据|
+|body|body|object|true|创建产品、功能模块等的请求数据|
 |» name|body|string|false|名称，必须符合正则 /^[0-9a-z][0-9a-z.-]{0,61}[0-9a-z]$/|
 |» desc|body|string|false|描述|
 
@@ -1604,8 +1610,8 @@ Authorization: string
     "name": "urbs",
     "desc": "string",
     "status": 0,
-    "createdAt": "2020-07-07T09:12:47.821Z",
-    "updatedAt": "2020-07-07T09:12:47.821Z",
+    "createdAt": "2020-03-25T06:24:25Z",
+    "updatedAt": "2020-03-25T06:24:25Z",
     "deletedAt": null,
     "offlineAt": null
   }
@@ -1692,7 +1698,7 @@ Authorization: string
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
-|body|body|[ProductUpdateBody](#schemaproductupdatebody)|true|更新产品请求数据|
+|body|body|object|true|更新产品请求数据|
 |» desc|body|string|false|产品描述|
 
 > Example responses
@@ -1707,8 +1713,8 @@ Authorization: string
     "desc": "string",
     "syncAt": 1585636012,
     "status": 99,
-    "createdAt": "2020-07-07T09:12:47.822Z",
-    "updatedAt": "2020-07-07T09:12:47.822Z"
+    "createdAt": "2020-03-25T06:24:25Z",
+    "updatedAt": "2020-03-25T06:24:25Z"
   }
 }
 ```
@@ -1924,6 +1930,83 @@ To perform this operation, you must be authenticated by means of one of the foll
 HeaderAuthorizationJWT
 </aside>
 
+## 触发用户应用在指定产品下的规则
+
+> Code samples
+
+```shell
+# You can also use wget
+curl -X POST https://urbs-setting:8443/v1/products/:product/users/rules:apply \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json' \
+  -H 'Authorization: string'
+
+```
+
+```http
+POST https://urbs-setting:8443/v1/products/:product/users/rules:apply HTTP/1.1
+Host: urbs-setting:8443
+Content-Type: application/json
+Accept: application/json
+Authorization: string
+
+```
+
+`POST /v1/products/:product/users/rules:apply`
+
+触发用户应用在指定产品下的规则，同步应用 setting 和 label 规则，由于 label 在网关层有一定时间缓存，会存在用户标签不能及时生效的情况。
+
+> Body parameter
+
+```json
+{
+  "users": [
+    "50c32afae8cf1439d35a87e6",
+    "5e69a9bd6ac3cd00213ea969"
+  ],
+  "kind": "newUserPercent"
+}
+```
+
+<h3 id="触发用户应用在指定产品下的规则-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
+|product|path|string|true|产品名称|
+|body|body|object|true|触发用户应用规则|
+|» users|body|[string]|false|用户 uid 数组，必须符合正则 /^[0-9A-Za-z._=-]{3,63}$/|
+|» kind|body|string|false|规则类型|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "result": true
+}
+```
+
+<h3 id="触发用户应用在指定产品下的规则-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|标准 Boolean 类返回结果|Inline|
+
+<h3 id="触发用户应用在指定产品下的规则-responseschema">Response Schema</h3>
+
+Status Code **200**
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|» result|boolean|false|none|是否成功|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+HeaderAuthorizationJWT
+</aside>
+
 <h1 id="urbs-setting-label">Label</h1>
 
 Label 环境标签相关接口
@@ -1982,8 +2065,8 @@ Authorization: string
       ],
       "status": 100,
       "release": 2,
-      "createdAt": "2020-07-07T09:12:47.823Z",
-      "updatedAt": "2020-07-07T09:12:47.823Z",
+      "createdAt": "2020-03-25T06:24:25Z",
+      "updatedAt": "2020-03-25T06:24:25Z",
       "offlineAt": null
     }
   ]
@@ -2059,7 +2142,7 @@ Authorization: string
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
-|body|body|[LabelBody](#schemalabelbody)|true|创建环境标签的请求数据|
+|body|body|object|true|创建环境标签的请求数据|
 |» name|body|string|false|名称，必须符合正则 /^[0-9a-z][0-9a-z-]{0,61}[0-9a-z]$/|
 |» desc|body|string|false|描述|
 |» channels|body|[string]|false|该环境标签适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有|
@@ -2084,8 +2167,8 @@ Authorization: string
     ],
     "status": 100,
     "release": 2,
-    "createdAt": "2020-07-07T09:12:47.823Z",
-    "updatedAt": "2020-07-07T09:12:47.823Z",
+    "createdAt": "2020-03-25T06:24:25Z",
+    "updatedAt": "2020-03-25T06:24:25Z",
     "offlineAt": null
   }
 }
@@ -2167,7 +2250,7 @@ Authorization: string
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
 |label|path|string|true|环境标签名称|
-|body|body|[LabelUpdateBody](#schemalabelupdatebody)|true|更新环境标签的请求数据|
+|body|body|object|true|更新环境标签的请求数据|
 |» desc|body|string|false|环境标签描述|
 |» channels|body|[string]|false|该环境标签适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有|
 |» clients|body|[string]|false|该环境标签适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有|
@@ -2191,8 +2274,8 @@ Authorization: string
     ],
     "status": 100,
     "release": 2,
-    "createdAt": "2020-07-07T09:12:47.824Z",
-    "updatedAt": "2020-07-07T09:12:47.824Z",
+    "createdAt": "2020-03-25T06:24:25Z",
+    "updatedAt": "2020-03-25T06:24:25Z",
     "offlineAt": null
   }
 }
@@ -2333,7 +2416,7 @@ Authorization: string
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
 |label|path|string|true|环境标签名称|
-|body|body|[UsersGroupsBody](#schemausersgroupsbody)|true|批量为用户或群组设置环境标签或配置项的请求数据|
+|body|body|object|true|批量为用户或群组设置环境标签或配置项的请求数据|
 |» users|body|[string]|false|用户 uid 数组，可以不提供，最大长度受 HTTP 请求最大字节数限制|
 |» groups|body|[string]|false|群组 uid 数组，可以不提供，最大长度受 HTTP 请求最大字节数限制|
 |» value|body|string|false|配置项值，设置环境标签时不必提供|
@@ -2418,7 +2501,7 @@ Authorization: string
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
 |label|path|string|true|环境标签名称|
-|body|body|[RecallBody](#schemarecallbody)|true|撤销/回滚指定发布批次的环境标签或配置项|
+|body|body|object|true|撤销/回滚指定发布批次的环境标签或配置项|
 |» release|body|integer(int64)|false|发布批次（被设置）计数|
 
 > Example responses
@@ -2492,7 +2575,7 @@ Authorization: string
   "result": [
     {
       "labelHID": "urbs",
-      "assignedAt": "2020-07-07T09:12:47.825Z",
+      "assignedAt": "2020-03-25T06:24:25Z",
       "release": 2,
       "user": "50c32afae8cf1439d35a87e6"
     }
@@ -2625,7 +2708,7 @@ Authorization: string
   "result": [
     {
       "labelHID": "urbs",
-      "assignedAt": "2020-07-07T09:12:47.826Z",
+      "assignedAt": "2020-03-25T06:24:25Z",
       "release": 2,
       "group": "50c32afae8cf1439d35a87e6",
       "kind": "organization",
@@ -2765,8 +2848,8 @@ Authorization: string
       "kind": "userPercent",
       "rule": "{\"value\": 10}",
       "release": 2,
-      "createdAt": "2020-07-07T09:12:47.826Z",
-      "updatedAt": "2020-07-07T09:12:47.826Z"
+      "createdAt": "2020-03-25T06:24:25Z",
+      "updatedAt": "2020-03-25T06:24:25Z"
     }
   ]
 }
@@ -2828,8 +2911,7 @@ Authorization: string
 ```json
 {
   "kind": "userPercent",
-  "rule": "{\"value\": 10}",
-  "value": "x"
+  "rule": "{\"value\": 10}"
 }
 ```
 
@@ -2840,11 +2922,10 @@ Authorization: string
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
 |label|path|string|true|环境标签名称|
-|body|body|[LabelRuleBody](#schemalabelrulebody)|true|创建/更新配置项的发布规则|
+|body|body|object|true|创建/更新环境标签的发布规则|
 |» kind|body|string|false|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
 |» rule|body|object|false|发布规则内容，JSON 对象，具体格式取决于 kind|
 |»» value|body|integer(int64)|false|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
-|» value|body|string|false|发布规则的配置项值|
 
 > Example responses
 
@@ -2858,8 +2939,8 @@ Authorization: string
     "kind": "userPercent",
     "rule": "{\"value\": 10}",
     "release": 2,
-    "createdAt": "2020-07-07T09:12:47.827Z",
-    "updatedAt": "2020-07-07T09:12:47.827Z"
+    "createdAt": "2020-03-25T06:24:25Z",
+    "updatedAt": "2020-03-25T06:24:25Z"
   }
 }
 ```
@@ -2920,8 +3001,7 @@ Authorization: string
 ```json
 {
   "kind": "userPercent",
-  "rule": "{\"value\": 10}",
-  "value": "x"
+  "rule": "{\"value\": 10}"
 }
 ```
 
@@ -2933,11 +3013,10 @@ Authorization: string
 |product|path|string|true|产品名称|
 |label|path|string|true|环境标签名称|
 |uid|path|string|true|标签/配置项/发布规则 hid|
-|body|body|[LabelRuleBody](#schemalabelrulebody)|true|创建/更新配置项的发布规则|
+|body|body|object|true|创建/更新环境标签的发布规则|
 |» kind|body|string|false|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
 |» rule|body|object|false|发布规则内容，JSON 对象，具体格式取决于 kind|
 |»» value|body|integer(int64)|false|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
-|» value|body|string|false|发布规则的配置项值|
 
 > Example responses
 
@@ -2951,8 +3030,8 @@ Authorization: string
     "kind": "userPercent",
     "rule": "{\"value\": 10}",
     "release": 2,
-    "createdAt": "2020-07-07T09:12:47.828Z",
-    "updatedAt": "2020-07-07T09:12:47.828Z"
+    "createdAt": "2020-03-25T06:24:25Z",
+    "updatedAt": "2020-03-25T06:24:25Z"
   }
 }
 ```
@@ -3093,8 +3172,8 @@ Authorization: string
       "name": "urbs",
       "desc": "string",
       "status": 0,
-      "createdAt": "2020-07-07T09:12:47.828Z",
-      "updatedAt": "2020-07-07T09:12:47.828Z",
+      "createdAt": "2020-03-25T06:24:25Z",
+      "updatedAt": "2020-03-25T06:24:25Z",
       "offlineAt": null
     }
   ]
@@ -3166,7 +3245,7 @@ Authorization: string
 |---|---|---|---|---|
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
-|body|body|[NameDescBody](#schemanamedescbody)|true|创建产品、功能模块等的请求数据|
+|body|body|object|true|创建产品、功能模块等的请求数据|
 |» name|body|string|false|名称，必须符合正则 /^[0-9a-z][0-9a-z.-]{0,61}[0-9a-z]$/|
 |» desc|body|string|false|描述|
 
@@ -3180,8 +3259,8 @@ Authorization: string
     "name": "urbs",
     "desc": "string",
     "status": 0,
-    "createdAt": "2020-07-07T09:12:47.829Z",
-    "updatedAt": "2020-07-07T09:12:47.829Z",
+    "createdAt": "2020-03-25T06:24:25Z",
+    "updatedAt": "2020-03-25T06:24:25Z",
     "offlineAt": null
   }
 }
@@ -3251,7 +3330,7 @@ Authorization: string
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
 |module|path|string|true|功能模块名称|
-|body|body|[ModuleUpdateBody](#schemamoduleupdatebody)|true|更新功能模块请求数据|
+|body|body|object|true|更新功能模块请求数据|
 |» desc|body|string|false|产品描述|
 
 > Example responses
@@ -3264,8 +3343,8 @@ Authorization: string
     "name": "urbs",
     "desc": "string",
     "status": 0,
-    "createdAt": "2020-07-07T09:12:47.829Z",
-    "updatedAt": "2020-07-07T09:12:47.829Z",
+    "createdAt": "2020-03-25T06:24:25Z",
+    "updatedAt": "2020-03-25T06:24:25Z",
     "offlineAt": null
   }
 }
@@ -3419,8 +3498,8 @@ Authorization: string
         "true",
         "false"
       ],
-      "createdAt": "2020-07-07T09:12:47.830Z",
-      "updatedAt": "2020-07-07T09:12:47.830Z",
+      "createdAt": "2020-03-25T06:24:25Z",
+      "updatedAt": "2020-03-25T06:24:25Z",
       "offlineAt": null
     }
   ]
@@ -3522,8 +3601,8 @@ Authorization: string
         "true",
         "false"
       ],
-      "createdAt": "2020-07-07T09:12:47.831Z",
-      "updatedAt": "2020-07-07T09:12:47.831Z",
+      "createdAt": "2020-03-25T06:24:25Z",
+      "updatedAt": "2020-03-25T06:24:25Z",
       "offlineAt": null
     }
   ]
@@ -3603,7 +3682,7 @@ Authorization: string
 |Authorization|header|string|true|请求 JWT token, 格式如: `Bearer xxx`|
 |product|path|string|true|产品名称|
 |module|path|string|true|功能模块名称|
-|body|body|[SettingBody](#schemasettingbody)|true|创建配置项的请求数据|
+|body|body|object|true|创建配置项的请求数据|
 |» name|body|string|false|名称，必须符合正则 /^[0-9a-z][0-9a-z.-]{0,61}[0-9a-z]$/|
 |» desc|body|string|false|描述|
 |» channels|body|[string]|false|该配置项适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有|
@@ -3638,8 +3717,8 @@ Authorization: string
         "true",
         "false"
       ],
-      "createdAt": "2020-07-07T09:12:47.832Z",
-      "updatedAt": "2020-07-07T09:12:47.832Z",
+      "createdAt": "2020-03-25T06:24:25Z",
+      "updatedAt": "2020-03-25T06:24:25Z",
       "offlineAt": null
     }
   ]
@@ -3736,8 +3815,8 @@ Authorization: string
       "true",
       "false"
     ],
-    "createdAt": "2020-07-07T09:12:47.832Z",
-    "updatedAt": "2020-07-07T09:12:47.832Z",
+    "createdAt": "2020-03-25T06:24:25Z",
+    "updatedAt": "2020-03-25T06:24:25Z",
     "offlineAt": null
   }
 }
@@ -3818,7 +3897,7 @@ Authorization: string
 |product|path|string|true|产品名称|
 |module|path|string|true|功能模块名称|
 |setting|path|string|true|配置项名称|
-|body|body|[SettingUpdateBody](#schemasettingupdatebody)|true|更新配置项请求数据|
+|body|body|object|true|更新配置项请求数据|
 |» desc|body|string|false|产品描述|
 |» channels|body|[string]|false|该配置项适用的产品版本通道，必须是服务端配置的可用版本通道的子集，为空表示适用所有|
 |» clients|body|[string]|false|该配置项适用的客户端类型，必须是服务端配置的可用客户端类型的子集，为空表示适用所有|
@@ -3849,8 +3928,8 @@ Authorization: string
       "true",
       "false"
     ],
-    "createdAt": "2020-07-07T09:12:47.833Z",
-    "updatedAt": "2020-07-07T09:12:47.833Z",
+    "createdAt": "2020-03-25T06:24:25Z",
+    "updatedAt": "2020-03-25T06:24:25Z",
     "offlineAt": null
   }
 }
@@ -3995,7 +4074,7 @@ Authorization: string
 |product|path|string|true|产品名称|
 |module|path|string|true|功能模块名称|
 |setting|path|string|true|配置项名称|
-|body|body|[UsersGroupsBody](#schemausersgroupsbody)|true|批量为用户或群组设置环境标签或配置项的请求数据|
+|body|body|object|true|批量为用户或群组设置环境标签或配置项的请求数据|
 |» users|body|[string]|false|用户 uid 数组，可以不提供，最大长度受 HTTP 请求最大字节数限制|
 |» groups|body|[string]|false|群组 uid 数组，可以不提供，最大长度受 HTTP 请求最大字节数限制|
 |» value|body|string|false|配置项值，设置环境标签时不必提供|
@@ -4083,7 +4162,7 @@ Authorization: string
 |product|path|string|true|产品名称|
 |module|path|string|true|功能模块名称|
 |setting|path|string|true|配置项名称|
-|body|body|[RecallBody](#schemarecallbody)|true|撤销/回滚指定发布批次的环境标签或配置项|
+|body|body|object|true|撤销/回滚指定发布批次的环境标签或配置项|
 |» release|body|integer(int64)|false|发布批次（被设置）计数|
 
 > Example responses
@@ -4157,14 +4236,12 @@ Authorization: string
 {
   "result": [
     {
-      "hid": "urbs",
       "settingHID": "urbs",
-      "kind": "userPercent",
-      "rule": "{\"value\": 10}",
-      "value": "x",
+      "assignedAt": "2020-03-25T06:24:25Z",
       "release": 2,
-      "createdAt": "2020-07-07T09:12:47.835Z",
-      "updatedAt": "2020-07-07T09:12:47.835Z"
+      "user": "50c32afae8cf1439d35a87e6",
+      "value": "b",
+      "lastValue": "a"
     }
   ]
 }
@@ -4183,15 +4260,12 @@ Status Code **200**
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |» result|[[SettingUserInfo](#schemasettinguserinfo)]|false|none|none|
-|»» hid|string|false|none|发布规则的 hid|
-|»» settingHID|string|false|none|发布规则所属配置项的 hid|
-|»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
-|»» rule|object|false|none|发布规则内容，JSON 对象，具体格式取决于 kind|
-|»»» value|integer(int64)|false|none|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
-|»» value|string|false|none|发布规则的配置项值|
+|»» settingHID|string|false|none|配置项的 hid|
+|»» assignedAt|string(date-time)|false|none|配置项设置时间|
 |»» release|integer(int64)|false|none|发布批次（被设置）计数|
-|»» createdAt|string(date-time)|false|none|创建时间|
-|»» updatedAt|string(date-time)|false|none|更新时间|
+|»» user|string|false|none|用户的 uid|
+|»» value|string|false|none|配置项值|
+|»» lastValue|string|false|none|上一个配置项值|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -4363,7 +4437,7 @@ Authorization: string
   "result": [
     {
       "settingHID": "urbs",
-      "assignedAt": "2020-07-07T09:12:47.837Z",
+      "assignedAt": "2020-03-25T06:24:25Z",
       "release": 2,
       "group": "50c32afae8cf1439d35a87e6",
       "kind": "organization",
@@ -4563,7 +4637,18 @@ Authorization: string
 
 ```json
 {
-  "result": []
+  "result": [
+    {
+      "hid": "urbs",
+      "settingHID": "urbs",
+      "kind": "userPercent",
+      "rule": "{\"value\": 10}",
+      "value": "x",
+      "release": 2,
+      "createdAt": "2020-03-25T06:24:25Z",
+      "updatedAt": "2020-03-25T06:24:25Z"
+    }
+  ]
 }
 ```
 
@@ -4579,8 +4664,16 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|» result|array|false|none|none|
-|»» *anonymous*|any|false|none|none|
+|» result|[[SettingRuleInfo](#schemasettingruleinfo)]|false|none|none|
+|»» hid|string|false|none|发布规则的 hid|
+|»» settingHID|string|false|none|发布规则所属配置项的 hid|
+|»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
+|»» rule|object|false|none|发布规则内容，JSON 对象，具体格式取决于 kind|
+|»»» value|integer(int64)|false|none|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
+|»» value|string|false|none|发布规则的配置项值|
+|»» release|integer(int64)|false|none|发布批次（被设置）计数|
+|»» createdAt|string(date-time)|false|none|创建时间|
+|»» updatedAt|string(date-time)|false|none|更新时间|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -4594,6 +4687,7 @@ HeaderAuthorizationJWT
 ```shell
 # You can also use wget
 curl -X POST https://urbs-setting:8443/v1/products/{product}/modules/{module}/settings/{setting}/rules \
+  -H 'Content-Type: application/json' \
   -H 'Accept: application/json' \
   -H 'Authorization: string'
 
@@ -4602,12 +4696,23 @@ curl -X POST https://urbs-setting:8443/v1/products/{product}/modules/{module}/se
 ```http
 POST https://urbs-setting:8443/v1/products/{product}/modules/{module}/settings/{setting}/rules HTTP/1.1
 Host: urbs-setting:8443
+Content-Type: application/json
 Accept: application/json
 Authorization: string
 
 ```
 
 `POST /v1/products/{product}/modules/{module}/settings/{setting}/rules`
+
+> Body parameter
+
+```json
+{
+  "kind": "userPercent",
+  "rule": "{\"value\": 10}",
+  "value": "x"
+}
+```
 
 <h3 id="创建指定产品功能配置项的灰度发布规则，同一个功能配置项同一种-kind-的发布规则只能创建一个-parameters">Parameters</h3>
 
@@ -4617,6 +4722,11 @@ Authorization: string
 |product|path|string|true|产品名称|
 |module|path|string|true|功能模块名称|
 |setting|path|string|true|配置项名称|
+|body|body|object|true|创建/更新配置项的发布规则|
+|» kind|body|string|false|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
+|» rule|body|object|false|发布规则内容，JSON 对象，具体格式取决于 kind|
+|»» value|body|integer(int64)|false|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
+|» value|body|string|false|发布规则的配置项值|
 
 > Example responses
 
@@ -4624,7 +4734,16 @@ Authorization: string
 
 ```json
 {
-  "result": null
+  "result": {
+    "hid": "urbs",
+    "settingHID": "urbs",
+    "kind": "userPercent",
+    "rule": "{\"value\": 10}",
+    "value": "x",
+    "release": 2,
+    "createdAt": "2020-03-25T06:24:25Z",
+    "updatedAt": "2020-03-25T06:24:25Z"
+  }
 }
 ```
 
@@ -4640,7 +4759,16 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|» result|any|false|none|none|
+|» result|[SettingRuleInfo](#schemasettingruleinfo)|false|none|none|
+|»» hid|string|false|none|发布规则的 hid|
+|»» settingHID|string|false|none|发布规则所属配置项的 hid|
+|»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
+|»» rule|object|false|none|发布规则内容，JSON 对象，具体格式取决于 kind|
+|»»» value|integer(int64)|false|none|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
+|»» value|string|false|none|发布规则的配置项值|
+|»» release|integer(int64)|false|none|发布批次（被设置）计数|
+|»» createdAt|string(date-time)|false|none|创建时间|
+|»» updatedAt|string(date-time)|false|none|更新时间|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -4654,6 +4782,7 @@ HeaderAuthorizationJWT
 ```shell
 # You can also use wget
 curl -X PUT https://urbs-setting:8443/v1/products/{product}/modules/{module}/settings/{setting}/rules/{hid} \
+  -H 'Content-Type: application/json' \
   -H 'Accept: application/json' \
   -H 'Authorization: string'
 
@@ -4662,12 +4791,23 @@ curl -X PUT https://urbs-setting:8443/v1/products/{product}/modules/{module}/set
 ```http
 PUT https://urbs-setting:8443/v1/products/{product}/modules/{module}/settings/{setting}/rules/{hid} HTTP/1.1
 Host: urbs-setting:8443
+Content-Type: application/json
 Accept: application/json
 Authorization: string
 
 ```
 
 `PUT /v1/products/{product}/modules/{module}/settings/{setting}/rules/{hid}`
+
+> Body parameter
+
+```json
+{
+  "kind": "userPercent",
+  "rule": "{\"value\": 10}",
+  "value": "x"
+}
+```
 
 <h3 id="更新指定产品功能配置项的灰度发布规则-parameters">Parameters</h3>
 
@@ -4678,6 +4818,11 @@ Authorization: string
 |module|path|string|true|功能模块名称|
 |setting|path|string|true|配置项名称|
 |uid|path|string|true|标签/配置项/发布规则 hid|
+|body|body|object|true|创建/更新配置项的发布规则|
+|» kind|body|string|false|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
+|» rule|body|object|false|发布规则内容，JSON 对象，具体格式取决于 kind|
+|»» value|body|integer(int64)|false|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
+|» value|body|string|false|发布规则的配置项值|
 
 > Example responses
 
@@ -4685,7 +4830,16 @@ Authorization: string
 
 ```json
 {
-  "result": null
+  "result": {
+    "hid": "urbs",
+    "settingHID": "urbs",
+    "kind": "userPercent",
+    "rule": "{\"value\": 10}",
+    "value": "x",
+    "release": 2,
+    "createdAt": "2020-03-25T06:24:25Z",
+    "updatedAt": "2020-03-25T06:24:25Z"
+  }
 }
 ```
 
@@ -4701,7 +4855,16 @@ Status Code **200**
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|» result|any|false|none|none|
+|» result|[SettingRuleInfo](#schemasettingruleinfo)|false|none|none|
+|»» hid|string|false|none|发布规则的 hid|
+|»» settingHID|string|false|none|发布规则所属配置项的 hid|
+|»» kind|string|false|none|发布规则类型，目前仅支持 "userPercent"、"newUserPercent"|
+|»» rule|object|false|none|发布规则内容，JSON 对象，具体格式取决于 kind|
+|»»» value|integer(int64)|false|none|当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]|
+|»» value|string|false|none|发布规则的配置项值|
+|»» release|integer(int64)|false|none|发布批次（被设置）计数|
+|»» createdAt|string(date-time)|false|none|创建时间|
+|»» updatedAt|string(date-time)|false|none|更新时间|
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -4771,16 +4934,19 @@ HeaderAuthorizationJWT
 
 # Schemas
 
-<h2 id="tocSnextpagetoken">NextPageToken</h2>
-
+<h2 id="tocS_NextPageToken">NextPageToken</h2>
+<!-- backwards compatibility -->
 <a id="schemanextpagetoken"></a>
+<a id="schema_NextPageToken"></a>
+<a id="tocSnextpagetoken"></a>
+<a id="tocsnextpagetoken"></a>
 
 ```json
 ""
 
 ```
 
-*nextPageToken*
+nextPageToken
 
 ### Properties
 
@@ -4788,16 +4954,19 @@ HeaderAuthorizationJWT
 |---|---|---|---|---|
 |nextPageToken|string|false|none|用于分页查询时用于获取下一页数据的 token，当为空值时表示没有下一页了|
 
-<h2 id="tocStotalsize">TotalSize</h2>
-
+<h2 id="tocS_TotalSize">TotalSize</h2>
+<!-- backwards compatibility -->
 <a id="schematotalsize"></a>
+<a id="schema_TotalSize"></a>
+<a id="tocStotalsize"></a>
+<a id="tocstotalsize"></a>
 
 ```json
 1
 
 ```
 
-*totalSize*
+totalSize
 
 ### Properties
 
@@ -4805,16 +4974,19 @@ HeaderAuthorizationJWT
 |---|---|---|---|---|
 |totalSize|integer(int64)|false|none|当前分页查询的总数据量|
 
-<h2 id="tocSversion">Version</h2>
-
+<h2 id="tocS_Version">Version</h2>
+<!-- backwards compatibility -->
 <a id="schemaversion"></a>
+<a id="schema_Version"></a>
+<a id="tocSversion"></a>
+<a id="tocsversion"></a>
 
 ```json
 {
   "name": "urbs-setting",
   "version": "v1.2.0",
   "gitSHA1": "cd7e82a",
-  "buildTime": "2020-07-07T09:12:47.840Z"
+  "buildTime": "2020-03-25T06:24:25Z"
 }
 
 ```
@@ -4828,9 +5000,12 @@ HeaderAuthorizationJWT
 |gitSHA1|string|false|none|git commit hash|
 |buildTime|string(date-time)|false|none|打包构建时间|
 
-<h2 id="tocScachelabelinfo">CacheLabelInfo</h2>
-
+<h2 id="tocS_CacheLabelInfo">CacheLabelInfo</h2>
+<!-- backwards compatibility -->
 <a id="schemacachelabelinfo"></a>
+<a id="schema_CacheLabelInfo"></a>
+<a id="tocScachelabelinfo"></a>
+<a id="tocscachelabelinfo"></a>
 
 ```json
 {
@@ -4857,9 +5032,12 @@ HeaderAuthorizationJWT
 |cls|[string]|false|none|环境标签适用的 Clients 客户端类型列表，当列表为空时表示全适用|
 |chs|[string]|false|none|环境标签适用的 Channels 版本通道列表，当列表为空时表示全适用|
 
-<h2 id="tocSlabelinfo">LabelInfo</h2>
-
+<h2 id="tocS_LabelInfo">LabelInfo</h2>
+<!-- backwards compatibility -->
 <a id="schemalabelinfo"></a>
+<a id="schema_LabelInfo"></a>
+<a id="tocSlabelinfo"></a>
+<a id="tocslabelinfo"></a>
 
 ```json
 {
@@ -4875,8 +5053,8 @@ HeaderAuthorizationJWT
   ],
   "status": 100,
   "release": 2,
-  "createdAt": "2020-07-07T09:12:47.840Z",
-  "updatedAt": "2020-07-07T09:12:47.840Z",
+  "createdAt": "2020-03-25T06:24:25Z",
+  "updatedAt": "2020-03-25T06:24:25Z",
   "offlineAt": null
 }
 
@@ -4898,9 +5076,12 @@ HeaderAuthorizationJWT
 |updatedAt|string(date-time)|false|none|环境标签更新时间|
 |offlineAt|string(date-time)|false|none|环境标签下线时间|
 
-<h2 id="tocSmylabel">MyLabel</h2>
-
+<h2 id="tocS_MyLabel">MyLabel</h2>
+<!-- backwards compatibility -->
 <a id="schemamylabel"></a>
+<a id="schema_MyLabel"></a>
+<a id="tocSmylabel"></a>
+<a id="tocsmylabel"></a>
 
 ```json
 {
@@ -4909,7 +5090,7 @@ HeaderAuthorizationJWT
   "name": "task-share",
   "desc": "string",
   "release": 1,
-  "assignedAt": "2020-07-07T09:12:47.840Z"
+  "assignedAt": "2020-03-25T06:24:25Z"
 }
 
 ```
@@ -4925,9 +5106,12 @@ HeaderAuthorizationJWT
 |release|integer(int64)|false|none|被设置批次|
 |assignedAt|string(date-time)|false|none|被设置时间|
 
-<h2 id="tocSmysetting">MySetting</h2>
-
+<h2 id="tocS_MySetting">MySetting</h2>
+<!-- backwards compatibility -->
 <a id="schemamysetting"></a>
+<a id="schema_MySetting"></a>
+<a id="tocSmysetting"></a>
+<a id="tocsmysetting"></a>
 
 ```json
 {
@@ -4939,7 +5123,7 @@ HeaderAuthorizationJWT
   "value": "disable",
   "lastValue": "",
   "release": 1,
-  "assignedAt": "2020-07-07T09:12:47.841Z"
+  "assignedAt": "2020-03-25T06:24:25Z"
 }
 
 ```
@@ -4958,16 +5142,19 @@ HeaderAuthorizationJWT
 |release|integer(int64)|false|none|被设置批次|
 |assignedAt|string(date-time)|false|none|被设置时间|
 
-<h2 id="tocSuser">User</h2>
-
+<h2 id="tocS_User">User</h2>
+<!-- backwards compatibility -->
 <a id="schemauser"></a>
+<a id="schema_User"></a>
+<a id="tocSuser"></a>
+<a id="tocsuser"></a>
 
 ```json
 {
   "uid": "5e82d747fe02a50021d339f3",
   "labels": "{\"teambition\":[{\"l\":\"dev\"}]}",
   "activeAt": 1585636012,
-  "createdAt": "2020-07-07T09:12:47.841Z"
+  "createdAt": "2020-03-25T06:24:25Z"
 }
 
 ```
@@ -4981,9 +5168,12 @@ HeaderAuthorizationJWT
 |activeAt|integer(int64)|false|none|用户活跃时间戳，1970 以来的秒数，非精确值|
 |createdAt|string(date-time)|false|none|用户创建时间|
 
-<h2 id="tocSgroup">Group</h2>
-
+<h2 id="tocS_Group">Group</h2>
+<!-- backwards compatibility -->
 <a id="schemagroup"></a>
+<a id="schema_Group"></a>
+<a id="tocSgroup"></a>
+<a id="tocsgroup"></a>
 
 ```json
 {
@@ -4992,8 +5182,8 @@ HeaderAuthorizationJWT
   "desc": "string",
   "syncAt": 1585636012,
   "status": 99,
-  "createdAt": "2020-07-07T09:12:47.841Z",
-  "updatedAt": "2020-07-07T09:12:47.841Z"
+  "createdAt": "2020-03-25T06:24:25Z",
+  "updatedAt": "2020-03-25T06:24:25Z"
 }
 
 ```
@@ -5010,15 +5200,18 @@ HeaderAuthorizationJWT
 |createdAt|string(date-time)|false|none|环境标签创建时间|
 |updatedAt|string(date-time)|false|none|环境标签更新时间|
 
-<h2 id="tocSgroupmember">GroupMember</h2>
-
+<h2 id="tocS_GroupMember">GroupMember</h2>
+<!-- backwards compatibility -->
 <a id="schemagroupmember"></a>
+<a id="schema_GroupMember"></a>
+<a id="tocSgroupmember"></a>
+<a id="tocsgroupmember"></a>
 
 ```json
 {
   "user": "5e82d747fe02a50021d339f3",
   "syncAt": 1585636012,
-  "createdAt": "2020-07-07T09:12:47.841Z"
+  "createdAt": "2020-03-25T06:24:25Z"
 }
 
 ```
@@ -5031,17 +5224,20 @@ HeaderAuthorizationJWT
 |syncAt|integer(int64)|false|none|该群组成员同步时间，1970 以来的秒数|
 |createdAt|string(date-time)|false|none|该群组成员添加时间|
 
-<h2 id="tocSproduct">Product</h2>
-
+<h2 id="tocS_Product">Product</h2>
+<!-- backwards compatibility -->
 <a id="schemaproduct"></a>
+<a id="schema_Product"></a>
+<a id="tocSproduct"></a>
+<a id="tocsproduct"></a>
 
 ```json
 {
   "name": "urbs",
   "desc": "string",
   "status": 0,
-  "createdAt": "2020-07-07T09:12:47.841Z",
-  "updatedAt": "2020-07-07T09:12:47.841Z",
+  "createdAt": "2020-03-25T06:24:25Z",
+  "updatedAt": "2020-03-25T06:24:25Z",
   "deletedAt": null,
   "offlineAt": null
 }
@@ -5060,9 +5256,12 @@ HeaderAuthorizationJWT
 |deletedAt|string(date-time)|false|none|产品删除时间|
 |offlineAt|string(date-time)|false|none|产品下线时间|
 
-<h2 id="tocSproductstatistics">ProductStatistics</h2>
-
+<h2 id="tocS_ProductStatistics">ProductStatistics</h2>
+<!-- backwards compatibility -->
 <a id="schemaproductstatistics"></a>
+<a id="schema_ProductStatistics"></a>
+<a id="tocSproductstatistics"></a>
+<a id="tocsproductstatistics"></a>
 
 ```json
 {
@@ -5085,17 +5284,20 @@ HeaderAuthorizationJWT
 |release|integer(int64)|false|none|产品下环境标签和配置项总发布次数|
 |status|integer(int64)|false|none|产品下环境标签和配置项总作用人数（非精确值）|
 
-<h2 id="tocSmodule">Module</h2>
-
+<h2 id="tocS_Module">Module</h2>
+<!-- backwards compatibility -->
 <a id="schemamodule"></a>
+<a id="schema_Module"></a>
+<a id="tocSmodule"></a>
+<a id="tocsmodule"></a>
 
 ```json
 {
   "name": "urbs",
   "desc": "string",
   "status": 0,
-  "createdAt": "2020-07-07T09:12:47.842Z",
-  "updatedAt": "2020-07-07T09:12:47.842Z",
+  "createdAt": "2020-03-25T06:24:25Z",
+  "updatedAt": "2020-03-25T06:24:25Z",
   "offlineAt": null
 }
 
@@ -5112,9 +5314,12 @@ HeaderAuthorizationJWT
 |updatedAt|string(date-time)|false|none|功能模块更新时间|
 |offlineAt|string(date-time)|false|none|功能模块下线时间|
 
-<h2 id="tocSsettinginfo">SettingInfo</h2>
-
+<h2 id="tocS_SettingInfo">SettingInfo</h2>
+<!-- backwards compatibility -->
 <a id="schemasettinginfo"></a>
+<a id="schema_SettingInfo"></a>
+<a id="tocSsettinginfo"></a>
+<a id="tocssettinginfo"></a>
 
 ```json
 {
@@ -5136,8 +5341,8 @@ HeaderAuthorizationJWT
     "true",
     "false"
   ],
-  "createdAt": "2020-07-07T09:12:47.842Z",
-  "updatedAt": "2020-07-07T09:12:47.842Z",
+  "createdAt": "2020-03-25T06:24:25Z",
+  "updatedAt": "2020-03-25T06:24:25Z",
   "offlineAt": null
 }
 
@@ -5161,9 +5366,12 @@ HeaderAuthorizationJWT
 |updatedAt|string(date-time)|false|none|配置项更新时间|
 |offlineAt|string(date-time)|false|none|配置项下线时间|
 
-<h2 id="tocSlabelreleaseinfo">LabelReleaseInfo</h2>
-
+<h2 id="tocS_LabelReleaseInfo">LabelReleaseInfo</h2>
+<!-- backwards compatibility -->
 <a id="schemalabelreleaseinfo"></a>
+<a id="schema_LabelReleaseInfo"></a>
+<a id="tocSlabelreleaseinfo"></a>
+<a id="tocslabelreleaseinfo"></a>
 
 ```json
 {
@@ -5187,14 +5395,17 @@ HeaderAuthorizationJWT
 |users|[string]|false|none|用户 uid 数组|
 |groups|[string]|false|none|群组 uid 数组|
 
-<h2 id="tocSlabelgroupinfo">LabelGroupInfo</h2>
-
+<h2 id="tocS_LabelGroupInfo">LabelGroupInfo</h2>
+<!-- backwards compatibility -->
 <a id="schemalabelgroupinfo"></a>
+<a id="schema_LabelGroupInfo"></a>
+<a id="tocSlabelgroupinfo"></a>
+<a id="tocslabelgroupinfo"></a>
 
 ```json
 {
   "labelHID": "urbs",
-  "assignedAt": "2020-07-07T09:12:47.842Z",
+  "assignedAt": "2020-03-25T06:24:25Z",
   "release": 2,
   "group": "50c32afae8cf1439d35a87e6",
   "kind": "organization",
@@ -5216,14 +5427,17 @@ HeaderAuthorizationJWT
 |desc|string|false|none|群组的描述|
 |status|integer(int64)|false|none|群组成员数量，非精确值|
 
-<h2 id="tocSlabeluserinfo">LabelUserInfo</h2>
-
+<h2 id="tocS_LabelUserInfo">LabelUserInfo</h2>
+<!-- backwards compatibility -->
 <a id="schemalabeluserinfo"></a>
+<a id="schema_LabelUserInfo"></a>
+<a id="tocSlabeluserinfo"></a>
+<a id="tocslabeluserinfo"></a>
 
 ```json
 {
   "labelHID": "urbs",
-  "assignedAt": "2020-07-07T09:12:47.842Z",
+  "assignedAt": "2020-03-25T06:24:25Z",
   "release": 2,
   "user": "50c32afae8cf1439d35a87e6"
 }
@@ -5239,9 +5453,12 @@ HeaderAuthorizationJWT
 |release|integer(int64)|false|none|发布批次（被设置）计数|
 |user|string|false|none|用户的 uid|
 
-<h2 id="tocSlabelruleinfo">LabelRuleInfo</h2>
-
+<h2 id="tocS_LabelRuleInfo">LabelRuleInfo</h2>
+<!-- backwards compatibility -->
 <a id="schemalabelruleinfo"></a>
+<a id="schema_LabelRuleInfo"></a>
+<a id="tocSlabelruleinfo"></a>
+<a id="tocslabelruleinfo"></a>
 
 ```json
 {
@@ -5250,8 +5467,8 @@ HeaderAuthorizationJWT
   "kind": "userPercent",
   "rule": "{\"value\": 10}",
   "release": 2,
-  "createdAt": "2020-07-07T09:12:47.843Z",
-  "updatedAt": "2020-07-07T09:12:47.843Z"
+  "createdAt": "2020-03-25T06:24:25Z",
+  "updatedAt": "2020-03-25T06:24:25Z"
 }
 
 ```
@@ -5269,9 +5486,12 @@ HeaderAuthorizationJWT
 |createdAt|string(date-time)|false|none|创建时间|
 |updatedAt|string(date-time)|false|none|更新时间|
 
-<h2 id="tocSsettingreleaseinfo">SettingReleaseInfo</h2>
-
+<h2 id="tocS_SettingReleaseInfo">SettingReleaseInfo</h2>
+<!-- backwards compatibility -->
 <a id="schemasettingreleaseinfo"></a>
+<a id="schema_SettingReleaseInfo"></a>
+<a id="tocSsettingreleaseinfo"></a>
+<a id="tocssettingreleaseinfo"></a>
 
 ```json
 {
@@ -5297,14 +5517,17 @@ HeaderAuthorizationJWT
 |groups|[string]|false|none|群组 uid 数组|
 |value|string|false|none|配置项值|
 
-<h2 id="tocSsettinggroupinfo">SettingGroupInfo</h2>
-
+<h2 id="tocS_SettingGroupInfo">SettingGroupInfo</h2>
+<!-- backwards compatibility -->
 <a id="schemasettinggroupinfo"></a>
+<a id="schema_SettingGroupInfo"></a>
+<a id="tocSsettinggroupinfo"></a>
+<a id="tocssettinggroupinfo"></a>
 
 ```json
 {
   "settingHID": "urbs",
-  "assignedAt": "2020-07-07T09:12:47.843Z",
+  "assignedAt": "2020-03-25T06:24:25Z",
   "release": 2,
   "group": "50c32afae8cf1439d35a87e6",
   "kind": "organization",
@@ -5330,9 +5553,42 @@ HeaderAuthorizationJWT
 |value|string|false|none|配置项值|
 |lastValue|string|false|none|上一个配置项值|
 
-<h2 id="tocSsettinguserinfo">SettingUserInfo</h2>
-
+<h2 id="tocS_SettingUserInfo">SettingUserInfo</h2>
+<!-- backwards compatibility -->
 <a id="schemasettinguserinfo"></a>
+<a id="schema_SettingUserInfo"></a>
+<a id="tocSsettinguserinfo"></a>
+<a id="tocssettinguserinfo"></a>
+
+```json
+{
+  "settingHID": "urbs",
+  "assignedAt": "2020-03-25T06:24:25Z",
+  "release": 2,
+  "user": "50c32afae8cf1439d35a87e6",
+  "value": "b",
+  "lastValue": "a"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|settingHID|string|false|none|配置项的 hid|
+|assignedAt|string(date-time)|false|none|配置项设置时间|
+|release|integer(int64)|false|none|发布批次（被设置）计数|
+|user|string|false|none|用户的 uid|
+|value|string|false|none|配置项值|
+|lastValue|string|false|none|上一个配置项值|
+
+<h2 id="tocS_SettingRuleInfo">SettingRuleInfo</h2>
+<!-- backwards compatibility -->
+<a id="schemasettingruleinfo"></a>
+<a id="schema_SettingRuleInfo"></a>
+<a id="tocSsettingruleinfo"></a>
+<a id="tocssettingruleinfo"></a>
 
 ```json
 {
@@ -5342,8 +5598,8 @@ HeaderAuthorizationJWT
   "rule": "{\"value\": 10}",
   "value": "x",
   "release": 2,
-  "createdAt": "2020-07-07T09:12:47.843Z",
-  "updatedAt": "2020-07-07T09:12:47.843Z"
+  "createdAt": "2020-03-25T06:24:25Z",
+  "updatedAt": "2020-03-25T06:24:25Z"
 }
 
 ```
