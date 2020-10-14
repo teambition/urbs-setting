@@ -27,6 +27,13 @@ func init() {
 			logging.Panicf("Parse Open Trust config failed: %s", err)
 		}
 	}
+	if err := otConf.LegacyOTID.Validate(); err == nil {
+		otLegacyVerifier, err = otgo.NewVerifier(conf.Config.GlobalCtx, otConf.LegacyOTID, false,
+			otConf.DomainPublicKeys...)
+		if err != nil {
+			logging.Panicf("Parse Open Trust config failed: %s", err)
+		}
+	}
 
 	if otVerifier == nil && Auther == nil {
 		logging.Warningf("`auth_keys` is empty, Auth middleware will not be executed.")
@@ -34,6 +41,7 @@ func init() {
 }
 
 var otVerifier *otgo.Verifier
+var otLegacyVerifier *otgo.Verifier
 
 // Auther 是基于 JWT 的身份验证，当 config.auth_keys 配置了才会启用
 var Auther *auth.Auth
@@ -47,6 +55,9 @@ func Auth(ctx *gear.Context) error {
 		}
 
 		vid, err := otVerifier.ParseOTVID(token)
+		if err != nil && otLegacyVerifier != nil {
+			vid, err = otLegacyVerifier.ParseOTVID(token)
+		}
 		if err != nil {
 			if Auther != nil { // 兼容老的 jwt 验证
 				return oldAuth(ctx)
@@ -54,7 +65,7 @@ func Auth(ctx *gear.Context) error {
 			return gear.ErrUnauthorized.WithMsg("authorization token verification failed")
 		}
 
-		logging.AccessLogger.SetTo(ctx, "otSub", vid.ID.String())
+		logging.AccessLogger.SetTo(ctx, "subject", vid.ID.String())
 		return nil
 	}
 	return oldAuth(ctx)

@@ -37,6 +37,7 @@ type SQL struct {
 // OpenTrust ...
 type OpenTrust struct {
 	OTID             otgo.OTID `json:"otid" yaml:"otid"`
+	LegacyOTID       otgo.OTID `json:"legacy_otid" yaml:"legacy_otid"`
 	PrivateKeys      []string  `json:"private_keys" yaml:"private_keys"`
 	DomainPublicKeys []string  `json:"domain_public_keys" yaml:"domain_public_keys"`
 }
