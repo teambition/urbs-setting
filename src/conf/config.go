@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	otgo "github.com/open-trust/ot-go-lib"
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/util"
 )
@@ -35,9 +36,9 @@ type SQL struct {
 
 // OpenTrust ...
 type OpenTrust struct {
-	OTID             string   `json:"otid" yaml:"otid"`
-	PrivateKeys      []string `json:"private_keys" yaml:"private_keys"`
-	DomainPublicKeys []string `json:"domain_public_keys" yaml:"domain_public_keys"`
+	OTID             otgo.OTID `json:"otid" yaml:"otid"`
+	PrivateKeys      []string  `json:"private_keys" yaml:"private_keys"`
+	DomainPublicKeys []string  `json:"domain_public_keys" yaml:"domain_public_keys"`
 }
 
 // ConfigTpl ...

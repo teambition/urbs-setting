@@ -20,14 +20,9 @@ func init() {
 		Auther = auth.New(authjwt.StrToKeys(keys...)...)
 		Auther.JWT().SetExpiresIn(time.Minute * 10)
 	}
-	if otConf.OTID != "" {
-		var err error
-		otid, err := otgo.ParseOTID(otConf.OTID)
-		if err != nil {
-			logging.Panicf("Parse Open Trust config failed: %s", err)
-		}
-
-		otVerifier, err = otgo.NewVerifier(conf.Config.GlobalCtx, otid, false, otConf.DomainPublicKeys...)
+	if err := otConf.OTID.Validate(); err == nil {
+		otVerifier, err = otgo.NewVerifier(conf.Config.GlobalCtx, otConf.OTID, false,
+			otConf.DomainPublicKeys...)
 		if err != nil {
 			logging.Panicf("Parse Open Trust config failed: %s", err)
 		}
