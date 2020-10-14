@@ -89,3 +89,19 @@
       responses:
         '200':
           $ref: '#/components/responses/ProductStatisticsRes'
+  /v1/products/:product/users/rules:apply:
+    post:
+      tags:
+        - Product
+      summary: 触发用户应用在指定产品下的规则
+      description: 触发用户应用在指定产品下的规则，同步应用 setting 和 label 规则，由于 label 在网关层有一定时间缓存，会存在用户标签不能及时生效的情况。
+      security:
+        - HeaderAuthorizationJWT: {}
+      parameters:
+        - $ref: '#/components/parameters/HeaderAuthorization'
+        - $ref: "#/components/parameters/PathProduct"
+      requestBody:
+        $ref: '#/components/requestBodies/ApplyRulesBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/BoolRes'

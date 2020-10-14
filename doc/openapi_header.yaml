@@ -750,7 +750,7 @@ components:
           type: string
           description: 上一个配置项值
           example: a
-      SettingRuleInfo:
+    SettingRuleInfo:
       type: object
       properties:
         hid:
@@ -1096,7 +1096,7 @@ components:
                     description: 当 kind 为 "userPercent" 时，value 为百分比，取值 [0, 100]
                     example: 10
                 example: '{"value": 10}'
-      SettingRuleBody:
+    SettingRuleBody:
       required: true
       description: 创建/更新配置项的发布规则
       content:
@@ -1122,6 +1122,25 @@ components:
                 type: string
                 description: 发布规则的配置项值
                 example: x
+    ApplyRulesBody:
+      required: true
+      description: 触发用户应用规则
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              users:
+                type: array
+                description: 用户 uid 数组，必须符合正则 /^[0-9A-Za-z._=-]{3,63}$/
+                required: true
+                example: ["50c32afae8cf1439d35a87e6", "5e69a9bd6ac3cd00213ea969"]
+                items:
+                  type: string
+              kind:
+                type: string
+                description: 规则类型
+                example: newUserPercent
   responses:
     ErrorResponse:
       description: 标准错误返回结果
