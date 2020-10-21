@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/teambition/urbs-setting/src/model"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
@@ -106,13 +107,14 @@ func TestUsers(t *testing.T) {
 	})
 }
 
-func TestChildLabelUserPercen(t *testing.T) {
+func TestChildLabelUserPercent(t *testing.T) {
 
 	user := &User{ms: model.NewModels(service.NewDB())}
 	product := &Product{ms: model.NewModels(service.NewDB())}
 
 	t.Run("childLabelUserPercen should work with apply rule", func(t *testing.T) {
 		assert := assert.New(t)
+		require := require.New(t)
 		ctx := context.Background()
 
 		uid1 := tpl.RandUID()
@@ -162,7 +164,7 @@ func TestChildLabelUserPercen(t *testing.T) {
 		assert.Nil(err)
 
 		userRes, err := user.ms.ApplyLabelRulesAndRefreshUserLabels(ctx, productRes.Result.ID, productName, userObj.ID, time.Now().UTC(), true)
-		assert.Nil(err)
+		require.Nil(err)
 		userLabels := userRes.GetLabels(productName)
 		assert.True(len(userLabels) == 1)
 		assert.Equal(labelRes.Name, userLabels[0].Label)

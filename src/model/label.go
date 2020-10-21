@@ -138,7 +138,7 @@ func (m *Label) Offline(ctx context.Context, labelID int64) error {
 }
 
 // Assign 把标签批量分配给用户或群组，如果用户或群组不存在则忽略
-func (m *Label) Assign(ctx context.Context, labelID int64, users, groups []string) (*tpl.LabelReleaseInfo, error) {
+func (m *Label) Assign(ctx context.Context, labelID int64, users []string, groups []*tpl.GroupKindUID) (*tpl.LabelReleaseInfo, error) {
 	var err error
 	totalRowsAffected := int64(0)
 	release, err := m.AcquireRelease(ctx, labelID)
@@ -178,19 +178,27 @@ func (m *Label) Assign(ctx context.Context, labelID int64, users, groups []strin
 	}
 
 	if len(groups) > 0 {
-		sd := m.DB.Insert(schema.TableGroupLabel).Cols("group_id", "label_id", "rls").
-			FromQuery(goqu.From(goqu.T(schema.TableGroup).As("t1")).
-				Select(goqu.I("t1.id"), goqu.V(labelID), goqu.V(release)).
-				Where(goqu.I("t1.uid").In(tpl.StrSliceToInterface(groups)...))).
-			OnConflict(goqu.DoUpdate("rls", goqu.C("rls").Set(goqu.V(release))))
+		groupsMap := map[string][]string{}
+		for _, group := range groups {
+			groupsMap[group.Kind] = append(groupsMap[group.Kind], group.UID)
+		}
+		var rowsAffecteds int64
+		for k, v := range groupsMap {
+			sd := m.DB.Insert(schema.TableGroupLabel).Cols("group_id", "label_id", "rls").
+				FromQuery(goqu.From(goqu.T(schema.TableGroup).As("t1")).
+					Select(goqu.I("t1.id"), goqu.V(labelID), goqu.V(release)).
+					Where(goqu.I("t1.uid").In(tpl.StrSliceToInterface(v)...), goqu.I("t1.kind").Eq(k))).
+				OnConflict(goqu.DoUpdate("rls", goqu.C("rls").Set(goqu.V(release))))
 
-		rowsAffected, err := service.DeResult(sd.Executor().ExecContext(ctx))
-		if err != nil {
-			return nil, err
+			rowsAffected, err := service.DeResult(sd.Executor().ExecContext(ctx))
+			if err != nil {
+				return nil, err
+			}
+			rowsAffecteds += rowsAffected
 		}
 
-		totalRowsAffected += rowsAffected
-		if rowsAffected > 0 {
+		totalRowsAffected += rowsAffecteds
+		if rowsAffecteds > 0 {
 			sd := m.DB.Select(goqu.I("t2.uid")).
 				From(
 					goqu.T(schema.TableGroupLabel).As("t1"),

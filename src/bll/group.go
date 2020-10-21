@@ -28,8 +28,8 @@ func (b *Group) List(ctx context.Context, kind string, pg tpl.Pagination) (*tpl.
 }
 
 // ListLabels ...
-func (b *Group) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.MyLabelsRes, error) {
-	group, err := b.ms.Group.Acquire(context.WithValue(ctx, model.ReadDB, true), uid)
+func (b *Group) ListLabels(ctx context.Context, kind, uid string, pg tpl.Pagination) (*tpl.MyLabelsRes, error) {
+	group, err := b.ms.Group.Acquire(context.WithValue(ctx, model.ReadDB, true), kind, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -49,8 +49,8 @@ func (b *Group) ListLabels(ctx context.Context, uid string, pg tpl.Pagination) (
 }
 
 // ListMembers ...
-func (b *Group) ListMembers(ctx context.Context, uid string, pg tpl.Pagination) (*tpl.GroupMembersRes, error) {
-	group, err := b.ms.Group.Acquire(context.WithValue(ctx, model.ReadDB, true), uid)
+func (b *Group) ListMembers(ctx context.Context, kind, uid string, pg tpl.Pagination) (*tpl.GroupMembersRes, error) {
+	group, err := b.ms.Group.Acquire(context.WithValue(ctx, model.ReadDB, true), kind, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (b *Group) ListMembers(ctx context.Context, uid string, pg tpl.Pagination) 
 
 // ListSettings ...
 func (b *Group) ListSettings(ctx context.Context, req tpl.MySettingsQueryURL) (*tpl.MySettingsRes, error) {
-	group, err := b.ms.Group.Acquire(ctx, req.UID)
+	group, err := b.ms.Group.Acquire(ctx, req.Kind, req.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -117,8 +117,8 @@ func (b *Group) ListSettings(ctx context.Context, req tpl.MySettingsQueryURL) (*
 }
 
 // CheckExists ...
-func (b *Group) CheckExists(ctx context.Context, uid string) bool {
-	group, _ := b.ms.Group.FindByUID(ctx, uid, "id")
+func (b *Group) CheckExists(ctx context.Context, kind, uid string) bool {
+	group, _ := b.ms.Group.FindByUID(ctx, kind, uid, "id")
 	return group != nil
 }
 
@@ -128,8 +128,8 @@ func (b *Group) BatchAdd(ctx context.Context, groups []tpl.GroupBody) error {
 }
 
 // BatchAddMembers 批量给群组添加成员，如果用户未加入系统，则会自动加入
-func (b *Group) BatchAddMembers(ctx context.Context, uid string, users []string) error {
-	group, err := b.ms.Group.Acquire(ctx, uid)
+func (b *Group) BatchAddMembers(ctx context.Context, kind, uid string, users []string) error {
+	group, err := b.ms.Group.Acquire(ctx, kind, uid)
 	if err != nil {
 		return err
 	}
@@ -142,8 +142,8 @@ func (b *Group) BatchAddMembers(ctx context.Context, uid string, users []string)
 }
 
 // RemoveMembers ...
-func (b *Group) RemoveMembers(ctx context.Context, uid, userUID string, syncLt int64) error {
-	group, err := b.ms.Group.Acquire(ctx, uid)
+func (b *Group) RemoveMembers(ctx context.Context, kind, uid, userUID string, syncLt int64) error {
+	group, err := b.ms.Group.Acquire(ctx, kind, uid)
 	if err != nil {
 		return err
 	}
@@ -159,8 +159,8 @@ func (b *Group) RemoveMembers(ctx context.Context, uid, userUID string, syncLt i
 }
 
 // Update ...
-func (b *Group) Update(ctx context.Context, uid string, body tpl.GroupUpdateBody) (*tpl.GroupRes, error) {
-	group, err := b.ms.Group.Acquire(ctx, uid)
+func (b *Group) Update(ctx context.Context, kind, uid string, body tpl.GroupUpdateBody) (*tpl.GroupRes, error) {
+	group, err := b.ms.Group.Acquire(ctx, kind, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -172,8 +172,8 @@ func (b *Group) Update(ctx context.Context, uid string, body tpl.GroupUpdateBody
 }
 
 // Delete ...
-func (b *Group) Delete(ctx context.Context, uid string) error {
-	group, _ := b.ms.Group.FindByUID(ctx, uid, "id")
+func (b *Group) Delete(ctx context.Context, kind, uid string) error {
+	group, _ := b.ms.Group.FindByUID(ctx, kind, uid, "id")
 	if group == nil {
 		return nil
 	}

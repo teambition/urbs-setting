@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `urbs`.`urbs_user` (
   `description` varchar(1022) NOT NULL DEFAULT '',
   `status` bigint NOT NULL  DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_group_uid` (`uid`),
+  UNIQUE KEY `uk_group_uid_kind` (`uid`,`kind`),
   KEY `idx_group_kind` (`kind`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 

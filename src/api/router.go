@@ -193,5 +193,21 @@ func newRouters(apis *APIs) []*gear.Router {
 	routerV1.Get("/products/:product/labels/:label/groups", apis.Label.ListGroups)
 	// 移除指定群组的指定环境标签
 	routerV1.Delete("/products/:product/labels/:label/groups/:uid", apis.Label.DeleteGroup)
-	return []*gear.Router{router, routerV1}
+
+	return []*gear.Router{router, routerV1, newRoutersV2(apis)}
+}
+
+func newRoutersV2(apis *APIs) *gear.Router {
+	routerV1 := gear.NewRouter(gear.RouterOptions{
+		Root: "/v2",
+	})
+	routerV1.Use(middleware.Auth)
+	// ***** label ******
+	// 批量为用户或群组设置产品环境标签
+	routerV1.Post("/products/:product/labels/:label+:assign", apis.Label.AssignV2)
+	// ***** setting ******
+	// 批量为用户或群组设置产品功能模块配置项
+	routerV1.Post("/products/:product/modules/:module/settings/:setting+:assign", apis.Setting.AssignV2)
+
+	return routerV1
 }

@@ -14,6 +14,5 @@ require (
 	github.com/teambition/gear-tracing v1.1.1
 	go.uber.org/dig v1.10.0
 	golang.org/x/tools v0.0.0-20200917221617-d56e4e40bc9d // indirect
-	google.golang.org/appengine v1.6.6 // indirect
 	gopkg.in/yaml.v2 v2.3.0
 )
