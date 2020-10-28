@@ -9,6 +9,8 @@ import (
 	"github.com/DavidCai1993/request"
 	"github.com/doug-martin/goqu/v9"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/teambition/urbs-setting/src/dto"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
@@ -19,7 +21,7 @@ func createGroup(tt *TestTools) (group schema.Group, err error) {
 	res, err := request.Post(fmt.Sprintf("%s/v1/groups:batch", tt.Host)).
 		Set("Content-Type", "application/json").
 		Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
-			{UID: uid, Kind: "org", Desc: uid},
+			{UID: uid, Kind: dto.GroupOrgKind, Desc: uid},
 		}}).
 		End()
 
@@ -40,7 +42,7 @@ func createGroupWithUsers(tt *TestTools, count int) (group schema.Group, users [
 	res, err := request.Post(fmt.Sprintf("%s/v1/groups:batch", tt.Host)).
 		Set("Content-Type", "application/json").
 		Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
-			{UID: groupUID, Kind: "org", Desc: groupUID},
+			{UID: groupUID, Kind: "organization", Desc: groupUID},
 		}}).
 		End()
 
@@ -65,21 +67,52 @@ func createGroupWithUsers(tt *TestTools, count int) (group schema.Group, users [
 	return
 }
 
+func checkGroupExists(tt *TestTools, t *testing.T, uid, kind string) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	res, err := request.Get(fmt.Sprintf("%s/v1/groups/%s:exists?kind=%s", tt.Host, uid, kind)).
+		End()
+	require.Nil(err)
+	assert.Equal(200, res.StatusCode)
+
+	json := tpl.BoolRes{}
+	res.JSON(&json)
+	assert.True(json.Result)
+}
+
 func TestGroupAPIs(t *testing.T) {
 	tt, cleanup := SetUpTestTools()
 	defer cleanup()
 
 	uid1 := tpl.RandUID()
 	uid2 := tpl.RandUID()
+	uid3 := tpl.RandUID()
 
 	t.Run(`"POST /v1/groups:batch"`, func(t *testing.T) {
+
+		t.Run("should work with project kind", func(t *testing.T) {
+			assert := assert.New(t)
+
+			res, err := request.Post(fmt.Sprintf("%s/v1/groups:batch", tt.Host)).
+				Set("Content-Type", "application/json").
+				Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
+					{UID: uid3, Kind: "project", Desc: "test"},
+				}}).
+				End()
+			assert.Nil(err)
+			assert.Equal(200, res.StatusCode)
+
+			checkGroupExists(tt, t, uid3, "project")
+		})
+
 		t.Run("should work", func(t *testing.T) {
 			assert := assert.New(t)
 
 			res, err := request.Post(fmt.Sprintf("%s/v1/groups:batch", tt.Host)).
 				Set("Content-Type", "application/json").
 				Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
-					{UID: uid1, Kind: "org", Desc: "test"},
+					{UID: uid1, Kind: dto.GroupOrgKind, Desc: "test"},
 				}}).
 				End()
 			assert.Nil(err)
@@ -97,7 +130,7 @@ func TestGroupAPIs(t *testing.T) {
 			var group schema.Group
 			_, err = tt.DB.ScanStruct(&group, "select * from `urbs_group` where `uid` = ? limit 1", uid1)
 			assert.Nil(err)
-			assert.Equal("org", group.Kind)
+			assert.Equal(dto.GroupOrgKind, group.Kind)
 			assert.Equal(group.CreatedAt, group.UpdatedAt)
 		})
 
@@ -107,7 +140,7 @@ func TestGroupAPIs(t *testing.T) {
 			res, err := request.Post(fmt.Sprintf("%s/v1/groups:batch", tt.Host)).
 				Set("Content-Type", "application/json").
 				Send(tpl.GroupsBody{Groups: []tpl.GroupBody{
-					{UID: uid1, Kind: "org", Desc: "test"},
+					{UID: uid1, Kind: dto.GroupOrgKind, Desc: "test"},
 					{UID: uid2, Kind: "project", Desc: "test"},
 				}}).
 				End()
@@ -130,7 +163,7 @@ func TestGroupAPIs(t *testing.T) {
 			var group schema.Group
 			_, err = tt.DB.ScanStruct(&group, "select * from `urbs_group` where `uid` = ? limit 1", uid1)
 			assert.Nil(err)
-			assert.Equal("org", group.Kind)
+			assert.Equal("organization", group.Kind)
 			assert.Equal(group.CreatedAt, group.UpdatedAt)
 		})
 
@@ -181,7 +214,7 @@ func TestGroupAPIs(t *testing.T) {
 			text, err := res.Text()
 			assert.Nil(err)
 			assert.True(strings.Contains(text, uid1))
-			assert.True(strings.Contains(text, `"kind":"org"`))
+			assert.True(strings.Contains(text, `"kind":"organization"`))
 			assert.True(strings.Contains(text, `"kind":"project"`))
 			assert.False(strings.Contains(text, `"id"`))
 
@@ -194,7 +227,7 @@ func TestGroupAPIs(t *testing.T) {
 		t.Run("should work with kind", func(t *testing.T) {
 			assert := assert.New(t)
 
-			res, err := request.Get(fmt.Sprintf("%s/v1/groups?kind=org", tt.Host)).
+			res, err := request.Get(fmt.Sprintf("%s/v1/groups?kind=organization", tt.Host)).
 				End()
 			assert.Nil(err)
 			assert.Equal(200, res.StatusCode)
@@ -202,30 +235,20 @@ func TestGroupAPIs(t *testing.T) {
 			text, err := res.Text()
 			assert.Nil(err)
 			assert.True(strings.Contains(text, uid1))
-			assert.True(strings.Contains(text, `"kind":"org"`))
+			assert.True(strings.Contains(text, `"kind":"organization"`))
 			assert.False(strings.Contains(text, `"kind":"project"`))
 			assert.False(strings.Contains(text, `"id"`))
 
 			json := tpl.GroupsRes{}
 			res.JSON(&json)
 			assert.True(len(json.Result) > 0)
-			assert.Equal("org", json.Result[0].Kind)
+			assert.Equal("organization", json.Result[0].Kind)
 		})
 	})
 
 	t.Run(`"GET /v1/groups/:uid+:exists"`, func(t *testing.T) {
-		t.Run(`should work`, func(t *testing.T) {
-			assert := assert.New(t)
 
-			res, err := request.Get(fmt.Sprintf("%s/v1/groups/%s:exists", tt.Host, uid2)).
-				End()
-			assert.Nil(err)
-			assert.Equal(200, res.StatusCode)
-
-			json := tpl.BoolRes{}
-			res.JSON(&json)
-			assert.True(json.Result)
-		})
+		checkGroupExists(tt, t, uid2, "project")
 
 		t.Run(`should work if not exists`, func(t *testing.T) {
 			assert := assert.New(t)

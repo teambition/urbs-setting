@@ -97,7 +97,7 @@ func (b *Label) Offline(ctx context.Context, productName, labelName string) (*tp
 }
 
 // Assign 把标签批量分配给用户或群组
-func (b *Label) Assign(ctx context.Context, productName, labelName string, users, groups []string) (*tpl.LabelReleaseInfo, error) {
+func (b *Label) Assign(ctx context.Context, productName, labelName string, users []string, groups []*tpl.GroupKindUID) (*tpl.LabelReleaseInfo, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
@@ -378,7 +378,7 @@ func (b *Label) ListGroups(ctx context.Context, productName, labelName string, p
 }
 
 // DeleteGroup ...
-func (b *Label) DeleteGroup(ctx context.Context, productName, labelName, uid string) (*tpl.BoolRes, error) {
+func (b *Label) DeleteGroup(ctx context.Context, productName, labelName, kind, uid string) (*tpl.BoolRes, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
@@ -389,7 +389,7 @@ func (b *Label) DeleteGroup(ctx context.Context, productName, labelName, uid str
 		return nil, err
 	}
 
-	group, err := b.ms.Group.Acquire(ctx, uid)
+	group, err := b.ms.Group.Acquire(ctx, kind, uid)
 	if err != nil {
 		return nil, err
 	}

@@ -233,6 +233,7 @@ type MySettingsRes struct {
 // MySettingsQueryURL ...
 type MySettingsQueryURL struct {
 	Pagination
+	Kind    string `json:"kind" query:"kind"`
 	UID     string `json:"uid" param:"uid"`
 	Product string `json:"product" query:"product"`
 	Module  string `json:"module" query:"module"`

@@ -148,7 +148,7 @@ func (b *Setting) Offline(ctx context.Context, productName, moduleName, settingN
 }
 
 // Assign 把配置项批量分配给用户或群组
-func (b *Setting) Assign(ctx context.Context, productName, moduleName, settingName, value string, users, groups []string) (*tpl.SettingReleaseInfo, error) {
+func (b *Setting) Assign(ctx context.Context, productName, moduleName, settingName, value string, users []string, groups []*tpl.GroupKindUID) (*tpl.SettingReleaseInfo, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
@@ -533,7 +533,7 @@ func (b *Setting) ListGroups(ctx context.Context, productName, moduleName, setti
 }
 
 // RollbackGroupSetting ...
-func (b *Setting) RollbackGroupSetting(ctx context.Context, productName, moduleName, settingName, uid string) (*tpl.BoolRes, error) {
+func (b *Setting) RollbackGroupSetting(ctx context.Context, productName, moduleName, settingName, kind, uid string) (*tpl.BoolRes, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
@@ -549,7 +549,7 @@ func (b *Setting) RollbackGroupSetting(ctx context.Context, productName, moduleN
 		return nil, err
 	}
 
-	group, err := b.ms.Group.Acquire(ctx, uid)
+	group, err := b.ms.Group.Acquire(ctx, kind, uid)
 	if err != nil {
 		return nil, err
 	}
@@ -562,7 +562,7 @@ func (b *Setting) RollbackGroupSetting(ctx context.Context, productName, moduleN
 }
 
 // DeleteGroup ...
-func (b *Setting) DeleteGroup(ctx context.Context, productName, moduleName, settingName, uid string) (*tpl.BoolRes, error) {
+func (b *Setting) DeleteGroup(ctx context.Context, productName, moduleName, settingName, kind, uid string) (*tpl.BoolRes, error) {
 	productID, err := b.ms.Product.AcquireID(ctx, productName)
 	if err != nil {
 		return nil, err
@@ -578,7 +578,7 @@ func (b *Setting) DeleteGroup(ctx context.Context, productName, moduleName, sett
 		return nil, err
 	}
 
-	group, err := b.ms.Group.Acquire(ctx, uid)
+	group, err := b.ms.Group.Acquire(ctx, kind, uid)
 	if err != nil {
 		return nil, err
 	}

@@ -164,6 +164,38 @@ func (t *UsersGroupsBody) Validate() error {
 	return nil
 }
 
+// UsersGroupsBodyV2 ...
+type UsersGroupsBodyV2 struct {
+	Users  []string        `json:"users"`
+	Groups []*GroupKindUID `json:"groups"`
+	Value  string          `json:"value"`
+}
+
+// Validate 实现 gear.BodyTemplate。
+func (t *UsersGroupsBodyV2) Validate() error {
+	if len(t.Users) == 0 && len(t.Groups) == 0 {
+		return gear.ErrBadRequest.WithMsg("users and groups are empty")
+	}
+
+	for _, uid := range t.Users {
+		if !validIDReg.MatchString(uid) {
+			return gear.ErrBadRequest.WithMsgf("invalid user: %s", uid)
+		}
+	}
+	for _, group := range t.Groups {
+		if !validIDReg.MatchString(group.UID) {
+			return gear.ErrBadRequest.WithMsgf("invalid group: %s", group.UID)
+		}
+		if !validLabelReg.MatchString(group.Kind) {
+			return gear.ErrBadRequest.WithMsgf("invalid kind: %s", group.Kind)
+		}
+	}
+	if t.Value != "" && !validValueReg.MatchString(t.Value) {
+		return gear.ErrBadRequest.WithMsgf("invalid value: %s", t.Value)
+	}
+	return nil
+}
+
 // RecallBody ...
 type RecallBody struct {
 	Release int64 `json:"release"`

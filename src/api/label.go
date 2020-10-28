@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/teambition/gear"
 	"github.com/teambition/urbs-setting/src/bll"
+	"github.com/teambition/urbs-setting/src/dto"
 	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
 )
@@ -89,7 +90,15 @@ func (a *Label) Assign(ctx *gear.Context) error {
 		return err
 	}
 
-	res, err := a.blls.Label.Assign(ctx, req.Product, req.Label, body.Users, body.Groups)
+	groups := []*tpl.GroupKindUID{}
+	for _, uid := range body.Groups {
+		groups = append(groups, &tpl.GroupKindUID{
+			Kind: dto.GroupOrgKind,
+			UID:  uid,
+		})
+	}
+
+	res, err := a.blls.Label.Assign(ctx, req.Product, req.Label, body.Users, groups)
 	if err != nil {
 		return err
 	}
@@ -260,12 +269,12 @@ func (a *Label) ListGroups(ctx *gear.Context) error {
 
 // DeleteGroup ..
 func (a *Label) DeleteGroup(ctx *gear.Context) error {
-	req := tpl.ProductLabelUIDURL{}
+	req := tpl.ProductLabelGroupURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res, err := a.blls.Label.DeleteGroup(ctx, req.Product, req.Label, req.UID)
+	res, err := a.blls.Label.DeleteGroup(ctx, req.Product, req.Label, req.Kind, req.UID)
 	if err != nil {
 		return err
 	}

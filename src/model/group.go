@@ -6,6 +6,7 @@ import (
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/teambition/gear"
+	"github.com/teambition/urbs-setting/src/dto"
 	"github.com/teambition/urbs-setting/src/schema"
 	"github.com/teambition/urbs-setting/src/service"
 	"github.com/teambition/urbs-setting/src/tpl"
@@ -17,10 +18,13 @@ type Group struct {
 	*Model
 }
 
-// FindByUID 根据 uid 返回 user 数据
-func (m *Group) FindByUID(ctx context.Context, uid string, selectStr string) (*schema.Group, error) {
+// FindByUID 根据 uid 返回 group 数据
+func (m *Group) FindByUID(ctx context.Context, kind, uid, selectStr string) (*schema.Group, error) {
+	if kind == "" {
+		kind = dto.GroupOrgKind
+	}
 	group := &schema.Group{}
-	ok, err := m.findOneByCols(ctx, schema.TableGroup, goqu.Ex{"uid": uid}, selectStr, group)
+	ok, err := m.findOneByCols(ctx, schema.TableGroup, goqu.Ex{"uid": uid, "kind": kind}, selectStr, group)
 	if err != nil {
 		return nil, err
 	}
@@ -31,8 +35,8 @@ func (m *Group) FindByUID(ctx context.Context, uid string, selectStr string) (*s
 }
 
 // Acquire ...
-func (m *Group) Acquire(ctx context.Context, uid string) (*schema.Group, error) {
-	group, err := m.FindByUID(ctx, uid, "")
+func (m *Group) Acquire(ctx context.Context, kind, uid string) (*schema.Group, error) {
+	group, err := m.FindByUID(ctx, kind, uid, "")
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +47,8 @@ func (m *Group) Acquire(ctx context.Context, uid string) (*schema.Group, error) 
 }
 
 // AcquireID ...
-func (m *Group) AcquireID(ctx context.Context, uid string) (int64, error) {
-	group, err := m.FindByUID(ctx, uid, "id, uid")
+func (m *Group) AcquireID(ctx context.Context, kind, uid string) (int64, error) {
+	group, err := m.FindByUID(ctx, kind, uid, "id, uid")
 	if err != nil {
 		return 0, err
 	}

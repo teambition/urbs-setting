@@ -181,7 +181,7 @@ func (m *Setting) Offline(ctx context.Context, moduleID, settingID int64) error 
 }
 
 // Assign 把标签批量分配给用户或群组，如果用户或群组不存在则忽略，如果已经分配，则把原值保存到 last_value 并更新值
-func (m *Setting) Assign(ctx context.Context, settingID int64, value string, users, groups []string) (*tpl.SettingReleaseInfo, error) {
+func (m *Setting) Assign(ctx context.Context, settingID int64, value string, users []string, groups []*tpl.GroupKindUID) (*tpl.SettingReleaseInfo, error) {
 	totalRowsAffected := int64(0)
 	release, err := m.AcquireRelease(ctx, settingID)
 	if err != nil {
@@ -224,23 +224,30 @@ func (m *Setting) Assign(ctx context.Context, settingID int64, value string, use
 	}
 
 	if len(groups) > 0 {
-		sd := m.DB.Insert(schema.TableGroupSetting).Cols("group_id", "setting_id", "value", "rls").
-			FromQuery(goqu.From(goqu.T(schema.TableGroup).As("t1")).
-				Select(goqu.I("t1.id"), goqu.V(settingID), goqu.V(value), goqu.V(release)).
-				Where(goqu.I("t1.uid").In(tpl.StrSliceToInterface(groups)...))).
-			OnConflict(goqu.DoUpdate("", goqu.Record{
-				"last_value": goqu.T(schema.TableGroupSetting).Col("value"),
-				"value":      value,
-				"rls":        release,
-			}))
-
-		rowsAffected, err := service.DeResult(sd.Executor().ExecContext(ctx))
-		if err != nil {
-			return nil, err
+		groupsMap := map[string][]string{}
+		for _, group := range groups {
+			groupsMap[group.Kind] = append(groupsMap[group.Kind], group.UID)
 		}
+		var rowsAffecteds int64
+		for k, v := range groupsMap {
+			sd := m.DB.Insert(schema.TableGroupSetting).Cols("group_id", "setting_id", "value", "rls").
+				FromQuery(goqu.From(goqu.T(schema.TableGroup).As("t1")).
+					Select(goqu.I("t1.id"), goqu.V(settingID), goqu.V(value), goqu.V(release)).
+					Where(goqu.I("t1.uid").In(tpl.StrSliceToInterface(v)...), goqu.I("t1.kind").Eq(k))).
+				OnConflict(goqu.DoUpdate("", goqu.Record{
+					"last_value": goqu.T(schema.TableGroupSetting).Col("value"),
+					"value":      value,
+					"rls":        release,
+				}))
 
-		totalRowsAffected += rowsAffected
-		if rowsAffected > 0 {
+			rowsAffected, err := service.DeResult(sd.Executor().ExecContext(ctx))
+			if err != nil {
+				return nil, err
+			}
+			rowsAffecteds += rowsAffected
+		}
+		totalRowsAffected += rowsAffecteds
+		if rowsAffecteds > 0 {
 			sd := m.DB.Select(goqu.I("t2.uid")).
 				From(
 					goqu.T(schema.TableGroupSetting).As("t1"),

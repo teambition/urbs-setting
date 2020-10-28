@@ -28,12 +28,12 @@ func (a *Group) List(ctx *gear.Context) error {
 
 // ListLabels ..
 func (a *Group) ListLabels(ctx *gear.Context) error {
-	req := tpl.UIDPaginationURL{}
+	req := tpl.GroupPaginationURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res, err := a.blls.Group.ListLabels(ctx, req.UID, req.Pagination)
+	res, err := a.blls.Group.ListLabels(ctx, req.Kind, req.UID, req.Pagination)
 	if err != nil {
 		return err
 	}
@@ -43,12 +43,12 @@ func (a *Group) ListLabels(ctx *gear.Context) error {
 
 // ListMembers ..
 func (a *Group) ListMembers(ctx *gear.Context) error {
-	req := tpl.UIDPaginationURL{}
+	req := tpl.GroupPaginationURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res, err := a.blls.Group.ListMembers(ctx, req.UID, req.Pagination)
+	res, err := a.blls.Group.ListMembers(ctx, req.Kind, req.UID, req.Pagination)
 	if err != nil {
 		return err
 	}
@@ -73,12 +73,12 @@ func (a *Group) ListSettings(ctx *gear.Context) error {
 
 // CheckExists ..
 func (a *Group) CheckExists(ctx *gear.Context) error {
-	req := tpl.UIDURL{}
+	req := tpl.GroupURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
 
-	res := tpl.BoolRes{Result: a.blls.Group.CheckExists(ctx, req.UID)}
+	res := tpl.BoolRes{Result: a.blls.Group.CheckExists(ctx, req.Kind, req.UID)}
 	return ctx.OkJSON(res)
 }
 
@@ -98,7 +98,7 @@ func (a *Group) BatchAdd(ctx *gear.Context) error {
 
 // Update ..
 func (a *Group) Update(ctx *gear.Context) error {
-	req := tpl.UIDURL{}
+	req := tpl.GroupURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (a *Group) Update(ctx *gear.Context) error {
 		return err
 	}
 
-	res, err := a.blls.Group.Update(ctx, req.UID, body)
+	res, err := a.blls.Group.Update(ctx, req.Kind, req.UID, body)
 	if err != nil {
 		return err
 	}
@@ -117,11 +117,11 @@ func (a *Group) Update(ctx *gear.Context) error {
 
 // Delete ..
 func (a *Group) Delete(ctx *gear.Context) error {
-	req := tpl.UIDURL{}
+	req := tpl.GroupURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
-	if err := a.blls.Group.Delete(ctx, req.UID); err != nil {
+	if err := a.blls.Group.Delete(ctx, req.Kind, req.UID); err != nil {
 		return err
 	}
 
@@ -130,7 +130,7 @@ func (a *Group) Delete(ctx *gear.Context) error {
 
 // BatchAddMembers ..
 func (a *Group) BatchAddMembers(ctx *gear.Context) error {
-	req := tpl.UIDURL{}
+	req := tpl.GroupURL{}
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func (a *Group) BatchAddMembers(ctx *gear.Context) error {
 		return err
 	}
 
-	if err := a.blls.Group.BatchAddMembers(ctx, req.UID, body.Users); err != nil {
+	if err := a.blls.Group.BatchAddMembers(ctx, req.Kind, req.UID, body.Users); err != nil {
 		return err
 	}
 
@@ -153,7 +153,7 @@ func (a *Group) RemoveMembers(ctx *gear.Context) error {
 	if err := ctx.ParseURL(&req); err != nil {
 		return err
 	}
-	if err := a.blls.Group.RemoveMembers(ctx, req.UID, req.User, req.SyncLt); err != nil {
+	if err := a.blls.Group.RemoveMembers(ctx, req.Kind, req.UID, req.User, req.SyncLt); err != nil {
 		return err
 	}
 
