@@ -65,19 +65,21 @@ func (b *User) ListCachedLabels(ctx context.Context, uid, product string) *tpl.C
 		return res
 	}
 
+	activeAt := user.GetCache(product).ActiveAt
 	// user 上缓存的 labels 过期，则刷新获取最新，RefreshUser 要考虑并发场景
-	if user.ActiveAt == 0 {
+	if activeAt == 0 {
 		if user = b.ms.TryApplyLabelRulesAndRefreshUserLabels(ctx, productID, product, user.ID, now, true); user == nil {
 			return res
 		}
-	} else if conf.Config.IsCacheLabelExpired(now.Unix()-5, user.ActiveAt) { // 提前 5s 异步处理
+	} else if conf.Config.IsCacheLabelExpired(now.Unix()-5, activeAt) { // 提前 5s 异步处理
 		util.Go(10*time.Second, func(gctx context.Context) {
 			b.ms.TryApplyLabelRulesAndRefreshUserLabels(gctx, productID, product, user.ID, now, false)
 		})
 	}
+	userCache := user.GetCache(product)
 
-	res.Result = user.GetLabels(product)
-	res.Timestamp = user.ActiveAt
+	res.Result = userCache.Labels
+	res.Timestamp = userCache.ActiveAt
 	return res
 }
 

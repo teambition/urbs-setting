@@ -177,3 +177,49 @@ func TestChildLabelUserPercent(t *testing.T) {
 		assert.Equal(labelRes.Name, userLabels[1].Label)
 	})
 }
+
+func TestUserListCachedLabels(t *testing.T) {
+	user := &User{ms: model.NewModels(service.NewDB())}
+	product := &Product{ms: model.NewModels(service.NewDB())}
+
+	require := require.New(t)
+	ctx := context.Background()
+
+	uid1 := tpl.RandUID()
+	user.BatchAdd(ctx, []string{uid1})
+	userObj, err := user.ms.User.Acquire(ctx, uid1)
+	require.Nil(err)
+
+	for i := 0; i < 3; i++ {
+		productName := tpl.RandName()
+		productRes, err := product.Create(ctx, productName, productName)
+
+		label := &schema.Label{
+			ProductID: productRes.Result.ID,
+			Name:      tpl.RandName(),
+		}
+		err = user.ms.Label.Create(ctx, label)
+		require.Nil(err)
+
+		labelRes, err := user.ms.Label.Acquire(ctx, productRes.Result.ID, label.Name)
+		require.Nil(err)
+		labelRule := &schema.LabelRule{
+			ProductID: productRes.Result.ID,
+			LabelID:   labelRes.ID,
+			Kind:      schema.RuleUserPercent,
+			Rule:      `{"value": 100 }`,
+		}
+		require.Equal(100, labelRule.ToPercent())
+		err = user.ms.LabelRule.Create(ctx, labelRule)
+		require.Nil(err)
+
+		res1 := user.ListCachedLabels(ctx, userObj.UID, productName)
+		require.Equal(1, len(res1.Result), i)
+		require.Equal(label.Name, res1.Result[0].Label)
+		time.Sleep(time.Millisecond * 1100)
+		// test cache
+		res2 := user.ListCachedLabels(ctx, userObj.UID, productName)
+		require.Equal(1, len(res2.Result))
+		require.Equal(res1.Timestamp, res2.Timestamp)
+	}
+}
