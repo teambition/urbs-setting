@@ -85,7 +85,7 @@ func (m *User) Find(ctx context.Context, pg tpl.Pagination) ([]schema.User, int,
 }
 
 // RefreshLabels 更新 user 上的 labels 缓存，包括通过 group 关系获得的 labels
-func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force bool) (*schema.User, []int64, bool, error) {
+func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force bool, product string) (*schema.User, []int64, bool, error) {
 	user := &schema.User{}
 	labelIDs := make([]int64, 0)
 	refreshed := false
@@ -107,12 +107,25 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force boo
 			return gear.ErrNotFound.WithMsgf("user %d not found for RefreshLabels", id)
 		}
 
-		if !force && !conf.Config.IsCacheLabelExpired(now-5, user.ActiveAt) {
+		if !force && product != "" && !conf.Config.IsCacheLabelExpired(now-5, user.GetCache(product).ActiveAt) {
 			// 已被其它请求更新
 			return nil
 		}
 
-		data := make(schema.UserCacheLabels)
+		data := user.GetCacheMap()
+		for _, v := range data { // 清空旧标签缓存
+			v.Labels = make([]schema.UserCacheLabel, 0)
+			if product == "" {
+				v.ActiveAt = now //强制刷新缓存，更新所有活跃时间
+			}
+		}
+		if product != "" {
+			// 放在外面赋值，是为了新产品的第一次更新。
+			data[product] = &schema.UserCache{
+				Labels:   make([]schema.UserCacheLabel, 0),
+				ActiveAt: now, // 只更新该产品缓存的刷新时间
+			}
+		}
 
 		sd = tx.Select(
 			goqu.I("t1.created_at"),
@@ -169,11 +182,14 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force boo
 			set[myLabelInfo.ID] = struct{}{}
 
 			labelIDs = append(labelIDs, myLabelInfo.ID)
-			arr, ok := data[myLabelInfo.Product]
+			uclm, ok := data[myLabelInfo.Product]
 			if !ok {
-				arr = make([]schema.UserCacheLabel, 0)
+				uclm = &schema.UserCache{
+					Labels: make([]schema.UserCacheLabel, 0),
+				}
+				data[myLabelInfo.Product] = uclm
 			}
-			data[myLabelInfo.Product] = append(arr, schema.UserCacheLabel{
+			data[myLabelInfo.Product].Labels = append(uclm.Labels, schema.UserCacheLabel{
 				Label:    myLabelInfo.Name,
 				Clients:  tpl.StringToSlice(myLabelInfo.Clients),
 				Channels: tpl.StringToSlice(myLabelInfo.Channels),
@@ -189,7 +205,7 @@ func (m *User) RefreshLabels(ctx context.Context, id int64, now int64, force boo
 
 		refreshed = true
 		user.ActiveAt = time.Now().UTC().Unix()
-		_ = user.PutLabels(data)
+		_ = user.PutCacheMap(data)
 		_, err = service.DeResult(tx.Update(schema.TableUser).
 			Where(goqu.C("id").Eq(id)).
 			Set(goqu.Record{"labels": user.Labels, "active_at": user.ActiveAt}).

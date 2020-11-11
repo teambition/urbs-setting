@@ -45,6 +45,12 @@ type MyLabelInfo struct {
 	Product   string    `db:"product"`
 }
 
+// UserCache 用于在 User 数据上缓存数据
+type UserCache struct {
+	ActiveAt int64            `json:"activeAt"` // 最近活跃时间戳，1970 以来的秒数，但不及时更新
+	Labels   []UserCacheLabel `json:"labels"`
+}
+
 // UserCacheLabel 用于在 User 数据上缓存 labels
 type UserCacheLabel struct {
 	Label    string   `json:"l"`
@@ -52,28 +58,41 @@ type UserCacheLabel struct {
 	Channels []string `json:"chs,omitempty"`
 }
 
-// UserCacheLabels 用于在 User 数据上缓存 labels
-type UserCacheLabels map[string][]UserCacheLabel
+// UserCacheLabelMap 用于在 User 数据上缓存
+type UserCacheLabelMap map[string]*UserCache
+
+// GetCache 从 user 上读取结构化的缓存数据
+func (u *User) GetCache(product string) *UserCache {
+	userCache := &UserCache{}
+	if u.Labels == "" {
+		return userCache
+	}
+	data := u.GetCacheMap()
+	for k, ucl := range data {
+		if k == product {
+			return ucl
+		}
+	}
+	return userCache
+}
 
 // GetLabels 从 user 上读取结构化的 labels 数据
 func (u *User) GetLabels(product string) []UserCacheLabel {
-	data := make(UserCacheLabels)
-	labels := []UserCacheLabel{}
-	if u.Labels == "" {
-		return labels
-	}
-
-	_ = json.Unmarshal([]byte(u.Labels), &data)
-	for k, arr := range data {
-		if k == product {
-			return arr
-		}
-	}
-	return labels
+	return u.GetCache(product).Labels
 }
 
-// PutLabels 把结构化的 labels 数据转成字符串设置在 user.Labels 上
-func (u *User) PutLabels(labels UserCacheLabels) error {
+// GetCacheMap 从 user 上读取结构化的缓存数据
+func (u *User) GetCacheMap() UserCacheLabelMap {
+	data := make(UserCacheLabelMap)
+	if u.Labels == "" {
+		return data
+	}
+	_ = json.Unmarshal([]byte(u.Labels), &data)
+	return data
+}
+
+// PutCacheMap 把结构化的 labels 数据转成字符串设置在 user.Labels 上
+func (u *User) PutCacheMap(labels UserCacheLabelMap) error {
 	data, err := json.Marshal(labels)
 	if err == nil {
 		u.Labels = string(data)

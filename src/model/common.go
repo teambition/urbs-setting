@@ -69,7 +69,7 @@ func NewModels(sql *service.SQL) *Models {
 
 // ApplyLabelRulesAndRefreshUserLabels ...
 func (ms *Models) ApplyLabelRulesAndRefreshUserLabels(ctx context.Context, productID int64, product string, userID int64, now time.Time, force bool) (*schema.User, error) {
-	user, labelIDs, ok, err := ms.User.RefreshLabels(ctx, userID, now.Unix(), force)
+	user, labelIDs, ok, err := ms.User.RefreshLabels(ctx, userID, now.Unix(), force, product)
 	userProductLables := user.GetLabels(product)
 	if ok && len(userProductLables) == 0 {
 		hit, err := ms.LabelRule.ApplyRules(ctx, productID, userID, labelIDs, schema.RuleUserPercent)
@@ -78,7 +78,7 @@ func (ms *Models) ApplyLabelRulesAndRefreshUserLabels(ctx context.Context, produ
 		}
 		if hit > 0 {
 			// refresh label again
-			user, labelIDs, ok, err = ms.User.RefreshLabels(ctx, userID, now.Unix(), true)
+			user, labelIDs, ok, err = ms.User.RefreshLabels(ctx, userID, now.Unix(), true, product)
 		}
 	} else if len(userProductLables) > 0 {
 		pg := tpl.Pagination{PageSize: 200}
@@ -99,7 +99,7 @@ func (ms *Models) ApplyLabelRulesAndRefreshUserLabels(ctx context.Context, produ
 				return nil, err
 			}
 			if hit > 0 {
-				user, labelIDs, ok, err = ms.User.RefreshLabels(ctx, userID, now.Unix(), true)
+				user, labelIDs, ok, err = ms.User.RefreshLabels(ctx, userID, now.Unix(), true, product)
 			}
 			break
 		}
