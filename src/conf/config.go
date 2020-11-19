@@ -44,20 +44,21 @@ type OpenTrust struct {
 
 // ConfigTpl ...
 type ConfigTpl struct {
-	GlobalCtx        context.Context
-	SrvAddr          string    `json:"addr" yaml:"addr"`
-	CertFile         string    `json:"cert_file" yaml:"cert_file"`
-	KeyFile          string    `json:"key_file" yaml:"key_file"`
-	Logger           Logger    `json:"logger" yaml:"logger"`
-	MySQL            SQL       `json:"mysql" yaml:"mysql"`
-	MySQLRd          SQL       `json:"mysql_read" yaml:"mysql_read"`
-	CacheLabelExpire string    `json:"cache_label_expire" yaml:"cache_label_expire"`
-	Channels         []string  `json:"channels" yaml:"channels"`
-	Clients          []string  `json:"clients" yaml:"clients"`
-	HIDKey           string    `json:"hid_key" yaml:"hid_key"`
-	AuthKeys         []string  `json:"auth_keys" yaml:"auth_keys"`
-	OpenTrust        OpenTrust `json:"open_trust" yaml:"open_trust"`
-	cacheLabelExpire int64     // seconds, default to 60 seconds
+	GlobalCtx              context.Context
+	SrvAddr                string    `json:"addr" yaml:"addr"`
+	CertFile               string    `json:"cert_file" yaml:"cert_file"`
+	KeyFile                string    `json:"key_file" yaml:"key_file"`
+	Logger                 Logger    `json:"logger" yaml:"logger"`
+	MySQL                  SQL       `json:"mysql" yaml:"mysql"`
+	MySQLRd                SQL       `json:"mysql_read" yaml:"mysql_read"`
+	CacheLabelExpire       string    `json:"cache_label_expire" yaml:"cache_label_expire"`
+	Channels               []string  `json:"channels" yaml:"channels"`
+	Clients                []string  `json:"clients" yaml:"clients"`
+	HIDKey                 string    `json:"hid_key" yaml:"hid_key"`
+	AuthKeys               []string  `json:"auth_keys" yaml:"auth_keys"`
+	OpenTrust              OpenTrust `json:"open_trust" yaml:"open_trust"`
+	cacheLabelExpire       int64     // seconds, default to 60 seconds
+	cacheLabelDoubleExpire int64     // cacheLabelDoubleExpire * 2
 }
 
 // Validate 用于完成基本的配置验证和初始化工作。业务相关的配置验证建议放到相关代码中实现，如 mysql 的配置。
@@ -70,12 +71,18 @@ func (c *ConfigTpl) Validate() error {
 		du = time.Minute
 	}
 	c.cacheLabelExpire = int64(du / time.Second)
+	c.cacheLabelDoubleExpire = 2 * c.cacheLabelExpire
 	return nil
 }
 
 // IsCacheLabelExpired 判断用户缓存的 labels 是否超过有效期
 func (c *ConfigTpl) IsCacheLabelExpired(now, activeAt int64) bool {
 	return now-activeAt > c.cacheLabelExpire
+}
+
+// IsCacheLabelDoubleExpired 判断用户缓存的 labels 是否超过缓存时间的 2 倍
+func (c *ConfigTpl) IsCacheLabelDoubleExpired(now, activeAt int64) bool {
+	return now-activeAt > c.cacheLabelDoubleExpire
 }
 
 // Config ...

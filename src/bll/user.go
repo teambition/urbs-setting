@@ -72,9 +72,15 @@ func (b *User) ListCachedLabels(ctx context.Context, uid, product string) *tpl.C
 			return res
 		}
 	} else if conf.Config.IsCacheLabelExpired(now.Unix()-5, activeAt) { // 提前 5s 异步处理
-		util.Go(10*time.Second, func(gctx context.Context) {
-			b.ms.TryApplyLabelRulesAndRefreshUserLabels(gctx, productID, product, user.ID, now, false)
-		})
+		if conf.Config.IsCacheLabelDoubleExpired(now.Unix(), activeAt) { // 大于等于 2 倍过期时间的缓存，同步等待结果。
+			if user = b.ms.TryApplyLabelRulesAndRefreshUserLabels(ctx, productID, product, user.ID, now, false); user == nil {
+				return res
+			}
+		} else {
+			util.Go(10*time.Second, func(gctx context.Context) {
+				b.ms.TryApplyLabelRulesAndRefreshUserLabels(gctx, productID, product, user.ID, now, false)
+			})
+		}
 	}
 	userCache := user.GetCache(product)
 
