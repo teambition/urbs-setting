@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"hash/crc32"
+	"math/rand"
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
@@ -77,6 +78,10 @@ func (m *LabelRule) ComputeUserRule(ctx context.Context, userID int64, excludeLa
 	}
 
 	if len(ids) > 0 {
+		index := rand.Intn(len(ids))
+		ids = []interface{}{ids[index]}
+		labelIDs = []int64{labelIDs[index]}
+
 		sd := m.DB.Insert(schema.TableUserLabel).Cols("user_id", "label_id", "rls").
 			FromQuery(goqu.From(goqu.T(schema.TableLabelRule).As("t1")).
 				Select(goqu.V(userID), goqu.I("t1.label_id"), goqu.I("t1.id")).
