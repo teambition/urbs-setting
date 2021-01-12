@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"sort"
 	"strings"
 	"time"
@@ -18,6 +19,7 @@ import (
 
 func init() {
 	util.DigProvide(NewModels)
+	rand.Seed(time.Now().UnixNano())
 }
 
 type dbMode string
